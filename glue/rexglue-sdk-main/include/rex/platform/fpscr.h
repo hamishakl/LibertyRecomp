@@ -75,7 +75,8 @@ struct FPSCRPlatform {
     return csr;
   }
 
-  static inline void setcsr(u32 csr) noexcept { __asm__ __volatile__("msr fpcr, %0" : : "r"(csr)); }
+  // msr takes a 64-bit Xt; widen explicitly so FPCR's upper bits are zero, not stale.
+  static inline void setcsr(u32 csr) noexcept { __asm__ __volatile__("msr fpcr, %0" : : "r"(static_cast<u64>(csr))); }
 
   static inline void InitHostExceptions(u32& csr) noexcept {
     csr &= ~ExceptionMask;  // Clear enable bits to disable exceptions
