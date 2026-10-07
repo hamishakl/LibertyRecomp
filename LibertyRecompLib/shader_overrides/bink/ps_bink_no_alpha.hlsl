@@ -255,7 +255,7 @@ PixelShaderOutput shaderMain(
 		else if (alphaTestFunction == 2u) alphaTestPass = output.oC0.w == g_AlphaThreshold;
 		else if (alphaTestFunction == 3u) alphaTestPass = output.oC0.w <= g_AlphaThreshold;
 		else if (alphaTestFunction == 4u) alphaTestPass = output.oC0.w > g_AlphaThreshold;
-		else if (alphaTestFunction == 5u) alphaTestPass = isnan(output.oC0.w) || isnan(g_AlphaThreshold) || output.oC0.w != g_AlphaThreshold;
+		else if (alphaTestFunction == 5u) alphaTestPass = any(isnan(float2(output.oC0.w, g_AlphaThreshold))) || output.oC0.w != g_AlphaThreshold;
 		else if (alphaTestFunction == 6u) alphaTestPass = output.oC0.w >= g_AlphaThreshold;
 		else alphaTestPass = true;
 		clip(alphaTestPass ? 1.0 : -1.0);

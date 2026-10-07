@@ -469,7 +469,8 @@ def compile_shader(
         "-e",
         runtime_entry_point(entry),
         "-g0",
-        "-Os",
+        # No -Os: glslang 16's size passes drop unused push-constant members,
+        # which renumbers the shared-address member the native translator needs.
         "-I" + str(source_root),
         "-I" + str(source.parent),
     ]

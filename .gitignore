@@ -673,6 +673,7 @@ build-codegen/
 *.sh
 *.py
 /tools/*.py
+!glue/rexglue-sdk-main/tools/compile_metal_library.py
 !glue/rexglue-sdk-main/gta4-recomp/tools/derive_draw_distance_hooks.py
 !glue/rexglue-sdk-main/gta4-recomp/tools/derive_frontend_advanced_menu_layout.py
 !glue/rexglue-sdk-main/gta4-recomp/tools/verify_gta4_keyboard_consumers.py
