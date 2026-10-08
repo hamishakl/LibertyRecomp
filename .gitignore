@@ -44,6 +44,7 @@ docs/*.md
 !docs/INSTALLATION_ARCHITECTURE.md
 !docs/ONLINE_MULTIPLAYER.md
 !docs/PLATFORM_SETUP.md
+!docs/DEV-NOTES.md
 
 # Sample/Reference Projects - Not part of this repo
 Sample Recomp Projects/
@@ -653,6 +654,7 @@ docs/*.md
 !docs/INSTALLATION_ARCHITECTURE.md
 !docs/ONLINE_MULTIPLAYER.md
 !docs/PLATFORM_SETUP.md
+!docs/DEV-NOTES.md
 !docs/SHADER_PIPELINE.md
 !docs/RPF_EXTRACTION_DESIGN.md
 !docs/GTA4_COLLISION_VPKUWUS_ALIASING_FIX.md
