@@ -41,14 +41,14 @@ using rex::input::AbsolutePointerEvent;
 using rex::input::AbsolutePointerPhase;
 
 constexpr uint32_t kMapScreen = 3;
-constexpr uint32_t kCurrentScreenAddress = 0x82BFA124;
-constexpr uint32_t kMapZoomLevelAddress = 0x82BF9D88;
+constexpr uint32_t kCurrentScreenAddress = 0x82C30BF4;
+constexpr uint32_t kMapZoomLevelAddress = 0x82C30858;
 constexpr uint32_t kMapZoomMinimum = 0;
 constexpr uint32_t kMapZoomMaximum = 5;
 
 constexpr uint32_t kFrontendChannel = 0;
-constexpr uint32_t kFrontendChannelTableAddress = 0x82CC7BD0;
-constexpr uint32_t kFrontendHudCaller = 0x8229E7C0;
+constexpr uint32_t kFrontendChannelTableAddress = 0x82CD056C;
+constexpr uint32_t kFrontendHudCaller = 0x822B18F0;
 constexpr uint32_t kFrontendRowVisibleOffset = 2944;
 constexpr uint32_t kFrontendRowSelectableOffset = 2964;
 constexpr uint32_t kFrontendColumnOffsetBase = 3112;
@@ -60,7 +60,7 @@ constexpr uint32_t kFrontendPayloadPresentOffset = 4;
 constexpr uint32_t kMaximumFrontendRows = 64;
 constexpr uint32_t kMaximumFrontendLists = 16;
 
-constexpr uint32_t kRadarQuadCaller = 0x8233AB4C;
+constexpr uint32_t kRadarQuadCaller = 0x82345154;
 constexpr uint32_t kRadarVertexCount = 4;
 constexpr uint32_t kRadarVertexStride = 16;
 constexpr uint32_t kRadarVertexXOffset = 0;
@@ -70,7 +70,7 @@ constexpr uint32_t kActionArrayOffset = 2328;
 constexpr uint32_t kActionStride = 12;
 constexpr uint32_t kActionCurrentOffset = 2;
 constexpr uint32_t kLastInputTimeOffset = 4200;
-constexpr uint32_t kGameInputTimeAddress = 0x82C6C2A4;
+constexpr uint32_t kGameInputTimeAddress = 0x82C74EAC;
 constexpr uint8_t kPressed = 255;
 
 enum class Action : uint32_t {
@@ -302,7 +302,7 @@ Point NormalizedPoint(const AbsolutePointerEvent& event) noexcept {
 bool FrontendActive(PPCContext& context, uint8_t* base) {
   PPCContext nested = context;
   nested.r3.u32 = kFrontendChannel;
-  __imp__sub_8224EEF8(nested, base);
+  __imp__sub_822612A0(nested, base);
   return nested.r3.u8 != 0;
 }
 
@@ -311,7 +311,7 @@ void SelectFrontendRow(PPCContext& context, uint8_t* base, uint32_t channel, uin
   PPCContext nested = context;
   nested.r3.u32 = channel;
   nested.r4.u32 = row;
-  __imp__sub_8224EE98(nested, base);
+  __imp__sub_82261240(nested, base);
   if (REXCVAR_GET(gta4_touch_trace)) {
     REXLOG_INFO(
         "gta4-touch: epoch={} event={} pointer={} generation={} owner=frontend op=select "
@@ -841,7 +841,7 @@ void GTA4_TouchCaptureFrontendDraw(PPCContext& context, uint8_t* base,
   g_row_capture = std::move(previous);
 }
 
-extern "C" void sub_821BF050(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821BEED0(PPCContext& context, uint8_t* base) {
   if (g_radar_capture.active && context.lr == kRadarQuadCaller && context.r4.u32) {
     Rect quad{};
     bool first = true;
@@ -874,10 +874,10 @@ extern "C" void sub_821BF050(PPCContext& context, uint8_t* base) {
       g_radar_capture.has_quad = true;
     }
   }
-  __imp__sub_821BF050(context, base);
+  __imp__sub_821BEED0(context, base);
 }
 
-extern "C" void sub_8239C468(PPCContext& context, uint8_t* base) {
+extern "C" void sub_8236C200(PPCContext& context, uint8_t* base) {
   const auto pass = gta4::input::ConsumeTouchRadarPass(base, context.r3.u32);
   RadarCapture previous = g_radar_capture;
   g_radar_capture = {.active = true};
@@ -888,7 +888,7 @@ extern "C" void sub_8239C468(PPCContext& context, uint8_t* base) {
   const gta4::aspect::Scope aspect_scope(pass.gameplay ? gta4::aspect::RadarLocalUi() :
                                          gta4::aspect::CurrentUi(base));
 #endif
-  __imp__sub_8239C468(context, base);
+  __imp__sub_8236C200(context, base);
   const auto bounds = pass.bounds;
   const bool visible = pass.gameplay && g_radar_capture.has_quad &&
       bounds.right > bounds.left && bounds.bottom > bounds.top;

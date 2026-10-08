@@ -27,7 +27,7 @@ inline VehicleMotionActions BuildVehicleMotionActions(VehicleMotionKind kind, fl
   if (kind == VehicleMotionKind::kAutomobile && !airborne) {
     return {};
   }
-  // Generated .12 sub_822ABEE0 and .44/.45 vehicle control consumers negate
+  // Generated .12 sub_822BBED0 and .44/.45 vehicle control consumers negate
   // the lateral stick. 30/31 drives bank/steering; 57/58 is separate heli yaw.
   const int32_t lateral = -QuantizeMotionAxis(roll);
   const int32_t longitudinal = QuantizeMotionAxis(pitch);

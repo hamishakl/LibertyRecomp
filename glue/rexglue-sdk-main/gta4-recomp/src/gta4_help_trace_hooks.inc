@@ -1,6 +1,6 @@
 // Opt-in help-box observation. Sources are the compiled generated .7
-// sub_82223CF8, .6 sub_821F32B8/32F8/6E38, .4 DC constructors/executors,
-// and .0 sub_82146790. No game state, geometry, or command order is changed.
+// sub_821DF9D0, .6 sub_822224E8/32F8/6E38, .4 DC constructors/executors,
+// and .0 sub_82146780. No game state, geometry, or command order is changed.
 #include "input/context_touch_context.h"
 
 namespace {
@@ -67,14 +67,14 @@ struct HelpFontState {
 };
 HelpFontState ReadHelpFont(PPCContext& ctx, uint8_t* base) {
   HelpFontState state;
-  state.index = LoadU32(base, 0x82A935A4);
+  state.index = LoadU32(base, 0x82A94674);
   if (state.index == UINT32_MAX) {
     const uint32_t tls = ctx.r13.u32 ? LoadU32(base, ctx.r13.u32) : 0;
     if (!tls) return state;
     state.index = (LoadU32(base, tls + 8) >> 2) & 1u;
   }
   if (state.index > 1) return state;
-  state.address = 0x82B9A118 + state.index * 68;
+  state.address = 0x82BDCBA8 + state.index * 68;
   state.enabled = LoadU8(base, state.address + 20);
   state.mode = LoadU8(base, state.address + 21);
   state.color = LoadU32(base, state.address + 28);
@@ -116,9 +116,9 @@ void HelpIncomplete(std::string_view reason, uint64_t call, uint32_t dc = 0) {
 }
 const char* HelpChoiceSite(uint32_t caller) {
   switch (caller) {
-    case 0x82223FE0: case 0x82223FF0: return "layout";
-    case 0x82224B1C: case 0x82224B2C: return "text-render";
-    case 0x82224500: return "separate-icon-background";
+    case 0x821DFCB8: case 0x821DFCC8: return "layout";
+    case 0x821E07F4: case 0x821E0804: return "text-render";
+    case 0x821E01D8: return "separate-icon-background";
     default: return "other";
   }
 }
@@ -176,7 +176,7 @@ void HelpExecute(PPCContext& ctx, uint8_t* base, uint32_t expected_vtable,
     else { bg = found->second; g_help_dcs.erase(found); }
   }
   if (!bg.id) { original(ctx, base); return; }
-  // .0 sub_82146790 changes length bits 0x0003FF80, not constructor identity.
+  // .0 sub_82146780 changes length bits 0x0003FF80, not constructor identity.
   const bool identity = LoadU32(base, bg.dc) == expected_vtable && bg.vtable == expected_vtable &&
       ((LoadU32(base, bg.dc + 4) ^ bg.token) & 0xFFFC007F) == 0 &&
       XXH3_64bits(GuestPointer(base, bg.dc + 8), bg.bytes - 8) == bg.payload_hash;
@@ -285,31 +285,31 @@ void GTA4_HelpTraceTextSubmit(PPCContext& ctx, uint8_t* base,
   --call.text_depth;
 }
 
-extern "C" void sub_82223CF8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DF9D0(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::Scope aspect_scope(gta4::aspect::UiRole::kHelp);
   gta4::input::BeginTouchHelpDraw(base, ctx.r3.u32);
   struct TouchHelpScope { ~TouchHelpScope() { gta4::input::EndTouchHelpDraw(); } } touch_help;
-  if (!HelpEnabled() || !base || !ctx.r3.u32) { __imp__sub_82223CF8(ctx, base); return; }
+  if (!HelpEnabled() || !base || !ctx.r3.u32) { __imp__sub_821DF9D0(ctx, base); return; }
   HelpCall call;
   call.object = ctx.r3.u32;
   // Empty idle calls are not evidence of a rendered help box.
   if (!LoadU8(base, call.object + 828) && !LoadU8(base, call.object + 1235) &&
       !LoadU8(base, call.object + 400) && !LoadU32(base, call.object + 800)) {
-    __imp__sub_82223CF8(ctx, base);
+    __imp__sub_821DF9D0(ctx, base);
     return;
   }
   call.id = g_help_calls.fetch_add(1, std::memory_order_relaxed) + 1;
   if (call.id > HelpConfig().limit) {
     if (call.id == uint64_t(HelpConfig().limit) + 1)
       HelpIncomplete("help-call-limit-exhausted", call.id);
-    __imp__sub_82223CF8(ctx, base);
+    __imp__sub_821DF9D0(ctx, base);
     return;
   }
   call.frame = GetNativeLightSubmittedFrame(base);
-  call.hour = int32_t(LoadU32(base, 0x82DF3924));
-  call.hour_override = int32_t(LoadU32(base, 0x82DF3928));
+  call.hour = int32_t(LoadU32(base, 0x82DF37F4));
+  call.hour_override = int32_t(LoadU32(base, 0x82DF37F8));
   call.effective_hour = call.hour_override == -1 ? call.hour : call.hour_override;
-  call.positive_gate = int32_t(LoadU32(base, 0x831D535C));
+  call.positive_gate = int32_t(LoadU32(base, 0x831D51DC));
   call.slot = LoadU8(base, call.object + 828) ? 0 : 1;
   const auto requested = ReadHelpText(base, call.object + 828 + call.slot * 407);
   // Optional thinning always retains message, clock, lane, and presentation changes.
@@ -332,9 +332,9 @@ extern "C" void sub_82223CF8(PPCContext& ctx, uint8_t* base) {
                 requested.quoted, call.hour, call.hour_override, call.effective_hour,
                 call.positive_gate, call.positive_gate > 0 ||
                   (call.effective_hour >= 6 && call.effective_hour <= 20),
-                LoadU32(base, 0x82B39504), LoadU32(base, call.object + 800),
+                LoadU32(base, 0x82B39384), LoadU32(base, call.object + 800),
                 LoadU8(base, call.object + 823), LoadU8(base, call.object + 1234));
-  __imp__sub_82223CF8(ctx, base);
+  __imp__sub_821DF9D0(ctx, base);
   if (call.sample)
     REXLOG_INFO("gta4-help-trace: point=help-end call={} frame={} "
                 "text-submissions={} last-font-valid={} last-font-bg-chosen={} "
@@ -347,9 +347,9 @@ extern "C" void sub_82223CF8(PPCContext& ctx, uint8_t* base) {
                 call.text_submits ? "text-submitted" : "no-text-submission-on-this-call");
   g_help_call = previous;
 }
-extern "C" void sub_821F32B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822224E8(PPCContext& ctx, uint8_t* base) {
   const uint32_t enabled = ctx.r3.u8, mode = ctx.r4.u8, caller = uint32_t(ctx.lr);
-  __imp__sub_821F32B8(ctx, base);
+  __imp__sub_822224E8(ctx, base);
   if (!g_help_call) return;
   ++g_help_call->choices;
   const auto font = ReadHelpFont(ctx, base);
@@ -359,67 +359,67 @@ extern "C" void sub_821F32B8(PPCContext& ctx, uint8_t* base) {
                 g_help_call->id, GetNativeLightSubmittedFrame(base), caller,
                 HelpChoiceSite(caller), enabled, mode, font.valid, font.enabled, font.mode);
 }
-extern "C" void sub_821F32F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82222528(PPCContext& ctx, uint8_t* base) {
   const uint32_t color = ctx.r3.u32, caller = uint32_t(ctx.lr);
-  __imp__sub_821F32F8(ctx, base);
+  __imp__sub_82222528(ctx, base);
   if (g_help_call && g_help_call->sample)
     REXLOG_INFO("gta4-help-trace: point=background-color call={} frame={} "
                 "caller={:08X} color={:08X} alpha={}",
                 g_help_call->id, GetNativeLightSubmittedFrame(base), caller, color, color >> 24);
 }
-extern "C" void sub_821BF348(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BF1C8(PPCContext& ctx, uint8_t* base) {
   const uint32_t dc = ctx.r3.u32, caller = uint32_t(ctx.lr);
-  __imp__sub_821BF348(ctx, base);
+  __imp__sub_821BF1C8(ctx, base);
   HelpConstructed(base, dc, caller, "solid-quad", 48, 44, 40);
 }
-extern "C" void sub_821BF490(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BF310(PPCContext& ctx, uint8_t* base) {
   const uint32_t dc = ctx.r3.u32, caller = uint32_t(ctx.lr);
-  __imp__sub_821BF490(ctx, base);
+  __imp__sub_821BF310(ctx, base);
   HelpConstructed(base, dc, caller, "textured-quad", 80, 76, 72);
 }
-extern "C" void sub_821BF628(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BF4A8(PPCContext& ctx, uint8_t* base) {
   const uint32_t dc = ctx.r3.u32, caller = uint32_t(ctx.lr);
-  __imp__sub_821BF628(ctx, base);
+  __imp__sub_821BF4A8(ctx, base);
   HelpConstructed(base, dc, caller, "window", 28, 24, 0);
 }
-extern "C" void sub_821BD2D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BD150(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::DcScope aspect_scope(ctx, base);
-  HelpExecute(ctx, base, 0x8200146C, __imp__sub_821BD2D8);
+  HelpExecute(ctx, base, 0x8200146C, __imp__sub_821BD150);
 }
-extern "C" void sub_821BD4C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BD340(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::DcScope aspect_scope(ctx, base);
-  HelpExecute(ctx, base, 0x820014A4, __imp__sub_821BD4C8);
+  HelpExecute(ctx, base, 0x820014A4, __imp__sub_821BD340);
 }
-extern "C" void sub_821BD538(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BD3B0(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::DcScope aspect_scope(ctx, base);
-  HelpExecute(ctx, base, 0x820014DC, __imp__sub_821BD538);
+  HelpExecute(ctx, base, 0x820014DC, __imp__sub_821BD3B0);
 }
 static void AspectTraceSolidQuad(PPCContext& ctx, uint8_t* base) {
-  if (!g_help_call || g_help_execution) { __imp__sub_8227E948(ctx, base); return; }
-  HelpImmediate(ctx, base, "solid-quad", LoadU32(base, ctx.r7.u32), __imp__sub_8227E948);
+  if (!g_help_call || g_help_execution) { __imp__sub_82292E28(ctx, base); return; }
+  HelpImmediate(ctx, base, "solid-quad", LoadU32(base, ctx.r7.u32), __imp__sub_82292E28);
 }
-extern "C" void sub_8227E948(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82292E28(PPCContext& ctx, uint8_t* base) {
   gta4::aspect::DrawQuad(ctx, base, AspectTraceSolidQuad, false);
 }
 static void AspectTraceTexturedQuad(PPCContext& ctx, uint8_t* base) {
-  if (!g_help_call || g_help_execution) { __imp__sub_8227EA50(ctx, base); return; }
+  if (!g_help_call || g_help_execution) { __imp__sub_82292F30(ctx, base); return; }
   const uint32_t color_pointer = LoadU32(base, ctx.r1.u32 + 84);
-  HelpImmediate(ctx, base, "textured-quad", LoadU32(base, color_pointer), __imp__sub_8227EA50);
+  HelpImmediate(ctx, base, "textured-quad", LoadU32(base, color_pointer), __imp__sub_82292F30);
 }
-extern "C" void sub_8227EA50(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82292F30(PPCContext& ctx, uint8_t* base) {
   gta4::aspect::DrawQuad(ctx, base, AspectTraceTexturedQuad, true);
 }
 static void AspectTraceWindow(PPCContext& ctx, uint8_t* base) {
-  HelpImmediate(ctx, base, "window", ctx.r7.u32, __imp__sub_8224D1E0);
+  HelpImmediate(ctx, base, "window", ctx.r7.u32, __imp__sub_8225F588);
 }
-extern "C" void sub_8224D1E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8225F588(PPCContext& ctx, uint8_t* base) {
   gta4::aspect::DrawWindow(ctx, base, AspectTraceWindow);
 }
-extern "C" void sub_821F6550(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82225780(PPCContext& ctx, uint8_t* base) {
   // Window rendering flushes preceding glyphs. Do not misattribute that flush
-  // to the background's native draws (.9 sub_8224D1E0 starts with this call).
+  // to the background's native draws (.9 sub_8225F588 starts with this call).
   auto* previous = g_help_execution;
   g_help_execution = nullptr;
-  __imp__sub_821F6550(ctx, base);
+  __imp__sub_82225780(ctx, base);
   g_help_execution = previous;
 }

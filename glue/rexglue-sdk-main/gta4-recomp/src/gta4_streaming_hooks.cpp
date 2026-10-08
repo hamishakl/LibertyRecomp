@@ -48,8 +48,8 @@ namespace gta4::streaming {
 namespace {
 
 // Verified in generated gta4_recomp.4/.33 and the parser's data references.
-constexpr uint32_t kManager = 0x82A9AA7C;
-constexpr uint32_t kEntriesGlobal = 0x83032744;
+constexpr uint32_t kManager = 0x82A9AD00;
+constexpr uint32_t kEntriesGlobal = 0x83084B14;
 constexpr size_t kTraceCapacity = 32768;
 constexpr uint64_t kTraceEventLimit = 65536;
 
@@ -218,8 +218,8 @@ struct WorldScope {
   ~WorldScope() { world = previous; }
 };
 
-// Only the operand of the final preload test in sub_821D8848 calls this.
-// The existing caller consumes return code 3 via sub_821D00F0 -> sub_825120E8.
+// Only the operand of the final preload test in sub_821EE9E8 calls this.
+// The existing caller consumes return code 3 via sub_82210EA0 -> sub_8259AAA8.
 // No visible-distance, alpha, entity transform or script-owned state is changed.
 float EntityPreloadMargin(uint8_t* base, uint32_t entity, uint32_t view,
                           double distance, double draw_distance, float retail_margin) {
@@ -251,14 +251,14 @@ void ObserveClassification(uint8_t* base, uint32_t entity, uint32_t view,
   if (!trace_enabled.load(std::memory_order_relaxed)) return;
   uint32_t index = kInvalidEntry;
   uint32_t bytes = 0;
-  // Same model->module-base addition as generated sub_8251D960 and
-  // sub_821D00F0. Reject the signed invalid model ID and module sentinel.
+  // Same model->module-base addition as generated sub_82515870 and
+  // sub_82210EA0. Reject the signed invalid model ID and module sentinel.
   const int16_t model_id = std::bit_cast<int16_t>(static_cast<uint16_t>(world.model));
-  const uint32_t module = REX_LOAD_U32(0x82B58604);
+  const uint32_t module = REX_LOAD_U32(0x82B58484);
   const uint32_t table = REX_LOAD_U32(kEntriesGlobal);
   if (model_id >= 0 && module < 0xFF && table && table == REX_LOAD_U32(kManager)) {
     BindTable(table);
-    const uint32_t module_base = REX_LOAD_U32(0x82D515B8 + module * 100 + 88);
+    const uint32_t module_base = REX_LOAD_U32(0x82D59CB0 + module * 100 + 88);
     const uint64_t candidate = static_cast<uint64_t>(module_base) + model_id;
     const uint64_t address = static_cast<uint64_t>(table) + candidate * kEntryStride;
     if (candidate < kInvalidEntry && address + kEntryStride <= (uint64_t{1} << 32) &&
@@ -391,15 +391,15 @@ void Initialize(uint8_t* base) {
 
 using namespace gta4::streaming;
 
-extern "C" void sub_8251D960(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82515870(PPCContext& ctx, uint8_t* base) {
   if (!config.modern && !trace_enabled.load(std::memory_order_relaxed)) {
-    __imp__sub_8251D960(ctx, base); return;
+    __imp__sub_82515870(ctx, base); return;
   }
   WorldScope scope(base, ctx.r3.u32, ctx.r5.u32);
-  __imp__sub_8251D960(ctx, base);
+  __imp__sub_82515870(ctx, base);
 }
 
-extern "C" void sub_825120E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8259AAA8(PPCContext& ctx, uint8_t* base) {
   const uint32_t manager = ctx.r3.u32;
   const uint32_t index = ctx.r4.u32;
   const bool observed = manager == kManager && index < kInvalidEntry &&
@@ -430,7 +430,7 @@ extern "C" void sub_825120E8(PPCContext& ctx, uint8_t* base) {
       }
     }
   }
-  __imp__sub_825120E8(ctx, base);
+  __imp__sub_8259AAA8(ctx, base);
   if (observed) {
     pending_count.store(REX_LOAD_U32(manager + 56), std::memory_order_relaxed);
     const uint32_t table = REX_LOAD_U32(manager);
@@ -445,14 +445,14 @@ extern "C" void sub_825120E8(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82511890(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8259A250(PPCContext& ctx, uint8_t* base) {
   if (!config.modern && !trace_enabled.load(std::memory_order_relaxed)) {
-    __imp__sub_82511890(ctx, base);
+    __imp__sub_8259A250(ctx, base);
     return;
   }
   const uint32_t entry = ctx.r3.u32;
   const uint32_t before = REX_LOAD_U32(entry + 8) >> kStateShift;
-  __imp__sub_82511890(ctx, base);
+  __imp__sub_8259A250(ctx, base);
   if (!config.modern && !trace_enabled.load(std::memory_order_relaxed)) return;
   const uint32_t table = REX_LOAD_U32(kEntriesGlobal);
   const uint32_t index = EntryIndex(table, entry);
@@ -486,23 +486,23 @@ extern "C" void sub_82511890(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82511C50(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8259A610(PPCContext& ctx, uint8_t* base) {
   const uint32_t manager = ctx.r3.u32, requested = ctx.r4.u32;
   if (config.modern && manager == kManager) {
     ctx.r4.u32 = RequestedBudget(requested, config.budget_scale);
   }
   const uint32_t target = ctx.r4.u32;
-  __imp__sub_82511C50(ctx, base);
+  __imp__sub_8259A610(ctx, base);
   if (manager == kManager) REXLOG_INFO("gta4-streaming: budget virtual original={} target={} effective={}",
                                      requested, target, REX_LOAD_U32(manager + 32));
 }
-extern "C" void sub_82511CD8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8259A698(PPCContext& ctx, uint8_t* base) {
   const uint32_t manager = ctx.r3.u32, requested = ctx.r4.u32;
   if (config.modern && manager == kManager) {
     ctx.r4.u32 = RequestedBudget(requested, config.budget_scale);
   }
   const uint32_t target = ctx.r4.u32;
-  __imp__sub_82511CD8(ctx, base);
+  __imp__sub_8259A698(ctx, base);
   if (manager == kManager) {
     const uint32_t allocator_clamped = REX_LOAD_U32(manager + 44);
     const uint32_t effective = config.modern

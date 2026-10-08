@@ -39,14 +39,14 @@ bool ContextTouchHudLayoutActive() noexcept {
 
 namespace {
 
-// Generated sub_822B7DD0 and the action decoders use this record layout.
+// Generated sub_822CA6B0 and the action decoders use this record layout.
 constexpr uint32_t kActionArrayOffset = 2328;
 constexpr uint32_t kActionStride = 12;
 constexpr uint32_t kActionCurrentOffset = 2;
 constexpr uint32_t kControlUserIndexOffset = 3412;
 constexpr uint32_t kLastInputTimeOffset = 4200;
-constexpr uint32_t kGameInputTimeAddress = 0x82C6C2A4;
-constexpr uint32_t kGameplayTimeStepAddress = 0x82C6C2AC;
+constexpr uint32_t kGameInputTimeAddress = 0x82C74EAC;
+constexpr uint32_t kGameplayTimeStepAddress = 0x82C74EB4;
 constexpr uint64_t kScriptQueryExpiryEpochs = 6;
 constexpr uint64_t kScopedObservationExpiryEpochs = 2;
 constexpr uint32_t kParachuteFreefallState = 3;
@@ -1052,8 +1052,8 @@ uint8_t NativeTriggerValue(const ContextTouchControl& control) {
   if (control.action == TouchAction::kFreeAim && !g_runtime.context.aim_settings_known) return 0;
   if ((control.action == TouchAction::kAim || control.action == TouchAction::kFreeAim) &&
       g_runtime.context.aim_settings_known) {
-    // sub_823C4728 admits lock-on before sub_823C5EE0 acquires/sets a target.
-    // sub_823C4510 admits the complementary free-aim range. The alternate
+    // sub_823C4AC0 admits lock-on before sub_823C6268 acquires/sets a target.
+    // sub_823C48A8 admits the complementary free-aim range. The alternate
     // setting reverses these ranges; an empty native range stays inactive.
     const int threshold = g_runtime.context.aim_threshold;
     const bool alternate = g_runtime.context.alternate_aim_setting;

@@ -80,7 +80,7 @@ void GTA4_SonyObserveDamage(PPCContext& ctx, uint8_t* base) {
   const gta4::sony::DamageState before = local ? ReadDamage(base, victim, response)
                                               : gta4::sony::DamageState{};
 
-  __imp__sub_824DC670(ctx, base);
+  __imp__sub_824DB050(ctx, base);
 
   if (!before.valid) return;
   const float strength =
@@ -97,19 +97,19 @@ void GTA4_SonyObserveDamage(PPCContext& ctx, uint8_t* base) {
 // Consumer builds compose the observer inside gta4_multiplayer_64_hooks.cpp's
 // primary-player alias wrapper. Legacy desktop adapters have no such module.
 #if !defined(GTA4_SONY_PRIMARY_PLAYER_ALIAS)
-extern "C" void sub_824DC670(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_824DB050(PPCContext& ctx, uint8_t* base) {
   GTA4_SonyObserveDamage(ctx, base);
 }
 #endif
 
-extern "C" void sub_8226F428(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82288590(PPCContext& ctx, uint8_t* base) {
   const uint32_t weapon = ctx.r3.u32;
   const uint32_t owner = ctx.r4.u32;
   GTA4SonyLocalPlayer player{};
   const bool local = GTA4_SonyReadLocalPlayer(ctx, base, player) && player.state.active &&
                      owner != 0 && owner == player.ped;
 
-  __imp__sub_8226F428(ctx, base);
+  __imp__sub_82288590(ctx, base);
 
   const uint8_t result = ctx.r3.u8;
   if (local && gta4::sony::SuccessfulLocalShot(weapon, owner, player.ped, result) &&
@@ -118,7 +118,7 @@ extern "C" void sub_8226F428(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_822343C0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822720B0(PPCContext& ctx, uint8_t* base) {
   const uint32_t position_address = ctx.r7.u32;
   GTA4SonyLocalPlayer player{};
   std::array<float, 3> position{};
@@ -126,7 +126,7 @@ extern "C" void sub_822343C0(PPCContext& ctx, uint8_t* base) {
                           player.state.active && player.position_valid &&
                           ReadExplosionPosition(base, position_address, position);
 
-  __imp__sub_822343C0(ctx, base);
+  __imp__sub_822720B0(ctx, base);
 
   const uint32_t result = ctx.r3.u32;
   if (!observable) return;

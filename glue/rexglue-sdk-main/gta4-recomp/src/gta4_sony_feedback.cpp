@@ -27,31 +27,31 @@ namespace {
 namespace sony = rex::input::sony;
 
 // Derived with Python from generated retail PPC; see verify_gta4_sony_sites.py.
-constexpr uint32_t kPrimaryPlayer = 0x82A98778;
-constexpr uint32_t kPlayerInfoTable = 0x82C01C70;
-constexpr uint32_t kPlayerGenerationTable = 0x82C01C30;
+constexpr uint32_t kPrimaryPlayer = 0x82A938A8;
+constexpr uint32_t kPlayerInfoTable = 0x82B61DF0;
+constexpr uint32_t kPlayerGenerationTable = 0x82B61DB0;
 constexpr uint32_t kRetailPlayerCount = 16;
-constexpr uint32_t kGameplayControl = 0x82B2A2F0;
+constexpr uint32_t kGameplayControl = 0x82B2A170;
 constexpr uint32_t kControlSpan = 4204;
 constexpr uint32_t kControlUserOffset = 3412;
 constexpr uint32_t kActionArray = 2328;
 constexpr uint32_t kActionStride = 12;
 constexpr uint32_t kLastInput = 4200;
-constexpr uint32_t kInputClock = 0x82C6C2A4;
-constexpr uint32_t kEpisode = 0x82B39504;
-constexpr uint32_t kGameMode = 0x82B3950C;
-constexpr uint32_t kAliveThreshold = 0x82000D68;
-constexpr uint32_t kCutscene = 0x82B977F0;
-constexpr uint32_t kMinigame = 0x82BA1D40;
-constexpr uint32_t kPauseVisible = 0x82BFA144;
-constexpr uint32_t kPauseTransition = 0x82BFA13C;
-constexpr uint32_t kFrontendWidgetIndex = 0x82BFA10C;
-constexpr uint32_t kFrontendWidgets = 0x82CC7BD0;
-constexpr uint32_t kFrontendWidgetFlags = 0x82CC7BDC;
-constexpr uint32_t kPhoneCreated = 0x831D4DD4;
-constexpr uint32_t kPhoneOffscreen = 0x831D534C;
-constexpr uint32_t kPhoneIndex = 0x82B3A0F0;
-constexpr uint32_t kPhoneObjects = 0x82B39990;
+constexpr uint32_t kInputClock = 0x82C74EAC;
+constexpr uint32_t kEpisode = 0x82B39384;
+constexpr uint32_t kGameMode = 0x82B3938C;
+constexpr uint32_t kAliveThreshold = 0x82000D64;
+constexpr uint32_t kCutscene = 0x82BDA278;
+constexpr uint32_t kMinigame = 0x82BE3110;
+constexpr uint32_t kPauseVisible = 0x82C30C14;
+constexpr uint32_t kPauseTransition = 0x82C30C0C;
+constexpr uint32_t kFrontendWidgetIndex = 0x82C30BDC;
+constexpr uint32_t kFrontendWidgets = 0x82CD056C;
+constexpr uint32_t kFrontendWidgetFlags = 0x82CD0578;
+constexpr uint32_t kPhoneCreated = 0x831D4C54;
+constexpr uint32_t kPhoneOffscreen = 0x831D51CC;
+constexpr uint32_t kPhoneIndex = 0x82B39F70;
+constexpr uint32_t kPhoneObjects = 0x82B39810;
 
 bool GuestSpan(uint8_t* base, uint32_t address, size_t size, bool writable = false) {
   if (!base || !address || !size || size > std::numeric_limits<uint32_t>::max()) return false;
@@ -78,7 +78,7 @@ bool FrontendActive(uint8_t* base) {
     const uint32_t transition = REX_LOAD_U32(kPauseTransition);
     return transition != 2 && transition != 6;
   }
-  // sub_8224EEF8(0) -> sub_8229C4B8. A negative widget sentinel is inactive.
+  // sub_822612A0(0) -> sub_822AF5B8. A negative widget sentinel is inactive.
   const uint32_t index = REX_LOAD_U32(kFrontendWidgetIndex);
   if (index == static_cast<uint32_t>(-90)) return false;
   if (index >= 3 || !GuestSpan(base, kFrontendWidgetFlags + index, 1) ||
@@ -158,7 +158,7 @@ void ReadAliased(PPCContext&, uint8_t* base) {
   state.aiming = state.active && rex::input::mnk::DecodeActionMagnitude(
                                     REX_LOAD_U8(aim), REX_LOAD_U8(aim + 2)) > 127;
 
-  // Checked equivalent of sub_823D4D60: both object+600 and manager+32
+  // Checked equivalent of sub_823D50E8: both object+600 and manager+32
   // contain pointers, not inline CWeapon structures. Unarmed/special fallback
   // slots are deliberately excluded from trigger resistance.
   const uint32_t manager = ped + 640;
@@ -168,7 +168,7 @@ void ReadAliased(PPCContext&, uint8_t* base) {
     const uint32_t weapon = REX_LOAD_U32(object + 600);
     if (GuestSpan(base, weapon, 36) &&
         REX_LOAD_U32(weapon + 20) == REX_LOAD_U32(manager + 36 + slot * 8)) {
-      // Local fire dispatch sub_8226F428 admits state 0, or state 1 for a
+      // Local fire dispatch sub_82288590 admits state 0, or state 1 for a
       // continuing shot. Other states are rejected even with rounds left in
       // the clip, so partial-clip reloads must release trigger resistance too.
       const uint32_t weapon_state = REX_LOAD_U32(weapon + 24);
@@ -182,7 +182,7 @@ void ReadAliased(PPCContext&, uint8_t* base) {
     state.trigger_context = sony::TriggerContext::kWeapon;
   }
 
-  // Entity position selection in sub_822343C0: matrix+48 or inline+16.
+  // Entity position selection in sub_822720B0: matrix+48 or inline+16.
   const uint32_t matrix = REX_LOAD_U32(ped + 32);
   uint32_t position = 0;
   if (matrix && GuestSpan(base, matrix, 60)) position = matrix + 48;

@@ -30,7 +30,7 @@ bool SameBinding(TouchScriptControl a, TouchScriptControl b) {
 std::string_view ExtraLabel(TouchScriptControl binding) {
   binding = CanonicalTouchScriptControl(binding);
   if (binding.kind == Q::kRawButton) {
-    // Raw script IDs, verified at sub_825D1308, not glyph ordinals.
+    // Raw script IDs, verified at sub_825F8C38, not glyph ordinals.
     constexpr std::array raw{"L BUMPER", "L TRIGGER", "R BUMPER", "R TRIGGER",
         "UP", "DOWN", "LEFT", "RIGHT", "PAUSE", "VIEW", "X", "Y", "A", "B", "L3", "R3"};
     return binding.action >= 4 && binding.action < 20 ? raw[binding.action - 4] : "ACTION";

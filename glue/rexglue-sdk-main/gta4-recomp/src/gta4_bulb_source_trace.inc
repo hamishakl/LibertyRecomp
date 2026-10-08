@@ -60,16 +60,16 @@ std::string BulbSourceFloats(uint8_t* base, uint32_t address, uint32_t count) {
 }
 void TraceBulbCoronaBatch(uint8_t* base, std::string_view phase, uint64_t event) {
   if (!event) return;
-  // Generated sub_822072D0 selects one of the queued counts with this index.
+  // Generated sub_82230650 selects one of the queued counts with this index.
   const auto selector = LoadU32(base,0x82B307A4);
-  if (selector > 1 || !BulbSourceReadable(base,0x82BAFA80,20)) {
+  if (selector > 1 || !BulbSourceReadable(base,0x82BF0E30,20)) {
     REXLOG_INFO("gta4-bulb-source: point=corona-batch event={} phase={} selector={} state=unsupported",event,phase,selector);
     return;
   }
   REXLOG_INFO("gta4-bulb-source: point=corona-batch event={} phase={} guest-frame={} selector={} selected-count={} count0={} count1={} producer-count={} "
               "physical-contribution-not-measured=true",
-              event,phase,BulbSourceGuestFrame(base),selector,LoadU32(base,0x82BAFA80+selector*4),
-              LoadU32(base,0x82BAFA80),LoadU32(base,0x82BAFA84),LoadU32(base,0x82BAFA8C));
+              event,phase,BulbSourceGuestFrame(base),selector,LoadU32(base,0x82BF0E30+selector*4),
+              LoadU32(base,0x82BF0E30),LoadU32(base,0x82BF0E54),LoadU32(base,0x82BF0E3C));
 }
 uint64_t BeginBulbCoronaBatch(uint8_t* base) {
   if (!BulbSourceObservationActive(base)) return 0;
@@ -79,7 +79,7 @@ uint64_t BeginBulbCoronaBatch(uint8_t* base) {
 }
 } // namespace
 
-extern "C" void sub_822077D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82230B58(PPCContext& ctx, uint8_t* base) {
   if (!BulbSourceObservationActive(base)) { CallBulbSourceOriginalWithProvenance(ctx,base); return; }
   const auto event=g_bulb_source_event.fetch_add(1,std::memory_order_relaxed)+1;
   if(event>4096){CallBulbSourceOriginalWithProvenance(ctx,base);return;}
@@ -94,37 +94,37 @@ extern "C" void sub_822077D8(PPCContext& ctx, uint8_t* base) {
               "no-corona-is-not-no-room-light=true",event,source.frame,source.object,source.queued);
   g_bulb_source_observer=previous;
 }
-extern "C" void sub_82207118(PPCContext& ctx,uint8_t* base) {
+extern "C" void sub_82230498(PPCContext& ctx,uint8_t* base) {
   auto* source=g_bulb_source_observer;
-  if(!source){__imp__sub_82207118(ctx,base);return;}
+  if(!source){__imp__sub_82230498(ctx,base);return;}
   const auto scale_output=ctx.r5.u32;
   const auto caller=ctx.lr;
-  __imp__sub_82207118(ctx,base);
+  __imp__sub_82230498(ctx,base);
   REXLOG_INFO("gta4-bulb-source: point=source-selection event={} guest-frame={} caller={:08X} return={} output-scale={} "
               "boolean-meaning=raw-original-result",
               source->event,source->frame,caller,ctx.r3.u32,BulbSourceFloats(base,scale_output,1));
 }
-extern "C" void sub_82207008(PPCContext& ctx,uint8_t* base) {
-  if (!BulbSourceObservationActive(base)) { __imp__sub_82207008(ctx,base); return; }
+extern "C" void sub_82230388(PPCContext& ctx,uint8_t* base) {
+  if (!BulbSourceObservationActive(base)) { __imp__sub_82230388(ctx,base); return; }
   const auto event=g_bulb_queue_event.fetch_add(1,std::memory_order_relaxed)+1;
-  if(event>4096){__imp__sub_82207008(ctx,base);return;}
+  if(event>4096){__imp__sub_82230388(ctx,base);return;}
   auto* source=g_bulb_source_observer;
   if(source)++source->queued;
   const auto frame=BulbSourceGuestFrame(base);
   const auto caller=ctx.lr;
-  const auto before=LoadU32(base,0x82BAFA8C);
+  const auto before=LoadU32(base,0x82BF0E3C);
   const auto position=BulbSourceFloats(base,ctx.r8.u32&~uint32_t{15},4);
   // r31 holds the attribute returned by the generated entity virtual getter at
   // these two call sites only. Never infer it for scripts or vehicle callers.
-  const bool entity_call=source && (caller==0x82207DDC || caller==0x82207E30);
+  const bool entity_call=source && (caller==0x8223115C || caller==0x822311B0);
   const uint32_t attribute=entity_call?ctx.r31.u32:0;
   const auto rgb=std::array<uint32_t,3>{ctx.r4.u8,ctx.r5.u8,ctx.r6.u8};
   const auto size=ctx.f1.f64;
   std::string attributes="unknown";
   if(entity_call && BulbSourceReadable(base,attribute,96))
     attributes=fmt::format("flags{:08X}:variant{}:params{}",LoadU32(base,attribute+76),LoadU8(base,attribute+88),BulbSourceFloats(base,attribute+36,10));
-  __imp__sub_82207008(ctx,base);
-  const auto after=LoadU32(base,0x82BAFA8C);
+  __imp__sub_82230388(ctx,base);
+  const auto after=LoadU32(base,0x82BF0E3C);
   const bool advanced=before<768 && after==before+1;
   REXLOG_INFO("gta4-bulb-source: point=corona-enqueue event={} source={} guest-frame={} caller={:08X} before={} after={} accepted={} "
               "position={} rgb={},{},{} size={:.8g} attribute={:08X} details={} gpu-drawn=unknown",

@@ -187,13 +187,13 @@ inline double ExpandVerticalFov(double authored_degrees, double aspect) noexcept
 // Verified CViewport owners. Its grcViewport member begins at owner + 16.
 // Deliberately exclude the generic 3D scene, radar, HTML, reflection and shadow views.
 constexpr bool ScreenCameraOwner(uint32_t vtable) noexcept {
-  return vtable == 0x820B9284 || vtable == 0x820212F4 || vtable == 0x820BCB40;
+  return vtable == 0x820B91E4 || vtable == 0x820212E4 || vtable == 0x820BCAA0;
 }
 constexpr bool PhoneCameraOwner(uint32_t vtable) noexcept {
-  return vtable == 0x820B95F0;
+  return vtable == 0x820B9550;
 }
 constexpr bool PrimaryUiOwner(uint32_t vtable) noexcept {
-  return vtable == 0x820B92C4;
+  return vtable == 0x820B9224;
 }
 inline double EdgeAnchor(double position) noexcept {
   return position < 1.0 / 3.0 ? 0.0 : position > 2.0 / 3.0 ? 1.0 : 0.5;
@@ -214,7 +214,7 @@ inline Transform CoveringBackground(Transform t, Rect r) noexcept {
   return t;
 }
 constexpr bool IsLoadingArt(uint32_t caller) noexcept {
-  return caller == 0x821440C0;
+  return caller == 0x821440F0;
 }
 // Post-projection UI mapping for the independently rendered phone. All four rows
 // include the homogeneous term; the retail rebuild updates inverse/frustum data next.
@@ -235,7 +235,7 @@ inline double FontScale(uint32_t offset, Transform t) noexcept {
 }
 // Constructors publish an instance sequence in the high bits. Both the common
 // Append helper and the frontend's inline Append subsequently change only the
-// command-size bits 0x0003FF80 (generated sub_8229D8A8 / sub_82146790).
+// command-size bits 0x0003FF80 (generated sub_822B09D8 / sub_82146780).
 constexpr uint32_t StableDcToken(uint32_t token) noexcept {
   return token & 0xFFFC007Fu;
 }

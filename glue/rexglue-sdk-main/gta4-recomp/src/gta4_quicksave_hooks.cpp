@@ -31,10 +31,10 @@ REXCVAR_DEFINE_BOOL(gta4_trace_quicksave, false, "GTA IV/Diagnostics",
 namespace gta4::quicksave {
 namespace {
 // All addresses below come from generated PPC and the existing script-aware input hooks.
-constexpr uint32_t kEpisode = 0x82B39504, kExecutingThread = 0x8319277C, kGlobals = 0x831927B4;
-constexpr uint32_t kPlayerIndex = 0x82A98778, kPlayerTable = 0x82C01C70;
-constexpr uint32_t kPhoneCreated = 0x831D4DD4, kFrontendRequest = 0x82BFA13C,
-                   kFrontendVisible = 0x82BFA144, kSaveSucceeded = 0x82BF984D;
+constexpr uint32_t kEpisode = 0x82B39384, kExecutingThread = 0x831925FC, kGlobals = 0x83192634;
+constexpr uint32_t kPlayerIndex = 0x82A938A8, kPlayerTable = 0x82B61DF0;
+constexpr uint32_t kPhoneCreated = 0x831D4C54, kFrontendRequest = 0x82C30C0C,
+                   kFrontendVisible = 0x82C30C14, kSaveSucceeded = 0x82B5E3C5;
 constexpr uint32_t kPedOffset = 1400, kVehicleFlags = 572, kInVehicle = 0x20000000;
 constexpr uint32_t kThreadProgram = 8, kThreadLocals = 80, kThreadState = 12, kThreadName = 92;
 constexpr uint32_t kMaxSCO = 1024 * 1024;
@@ -161,7 +161,7 @@ std::optional<uint32_t> Invoke(PPCContext& parent, uint8_t* base, std::string_vi
   PPCContext call = parent;
   call.r1.u32 = frame;
   call.r3.u32 = context;
-  call.lr = 0x82844BA0;
+  call.lr = 0x82844870;
   function(call, base);
   return Read(base, result);
 }
@@ -396,9 +396,9 @@ bool EnsureThunks() {
   if (!dispatcher)
     return false;
   if (!request_thunk)
-    request_thunk = dispatcher->AllocateThunk(NativeRequest, 0x82846780);
+    request_thunk = dispatcher->AllocateThunk(NativeRequest, 0x828463B8);
   if (!observe_thunk)
-    observe_thunk = dispatcher->AllocateThunk(NativeObserve, 0x82846780);
+    observe_thunk = dispatcher->AllocateThunk(NativeObserve, 0x828463B8);
   return request_thunk && observe_thunk;
 }
 void ResetWorld() {
@@ -459,7 +459,7 @@ void Poll(PPCContext& parent, uint8_t* base) {
     // Keep the original native's on-foot preparation and its result reset. No
     // apartment time advance, ped teleport, vehicle-bit spoofing or direct I/O.
     PPCContext call = parent;
-    sub_825D28A8(call, base);
+    sub_825FA1E8(call, base);
     if (Read(base, kFrontendRequest) != 11) {
       {
         std::lock_guard lock(state_mutex);
@@ -524,7 +524,7 @@ bool ResolveText(PPCContext& context, uint8_t* base) {
 }
 }  // namespace gta4::quicksave
 
-extern "C" void sub_82846AE8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82846648(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::quicksave;
   const auto name = ProgramName(base, ctx.r4.u32);
   LoadFrame frame{.phone = name == "spcellphonemain"};
@@ -535,9 +535,9 @@ extern "C" void sub_82846AE8(PPCContext& ctx, uint8_t* base) {
     ~Restore() { loading = previous; }
   } restore{loading};
   loading = &frame;
-  __imp__sub_82846AE8(ctx, base);
+  __imp__sub_82846648(ctx, base);
 }
-extern "C" void sub_828453F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_828450C8(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::quicksave;
   if (loading && !loading->activity_name.empty() && ctx.r4.u32 <= kMaxSCO &&
       Span(base, ctx.r3.u32, ctx.r4.u32)) {
@@ -562,13 +562,13 @@ extern "C" void sub_828453F8(PPCContext& ctx, uint8_t* base) {
       REXLOG_WARN("gta4-quicksave: unsupported phone script; unchanged size={} sha256={}",
                   ctx.r4.u32, digest);
   }
-  __imp__sub_828453F8(ctx, base);
+  __imp__sub_828450C8(ctx, base);
   if (loading && ctx.r3.u32 == 0) {
     loading->profile = nullptr;
     loading->activity_profile.reset();
   }
 }
-extern "C" void sub_82846780(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_828463B8(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::quicksave;
   const auto name = ProgramName(base, ctx.r4.u32);
   if (name == "main" || name == "initial")
@@ -581,7 +581,7 @@ extern "C" void sub_82846780(PPCContext& ctx, uint8_t* base) {
     const bool valid = activity && ctx.r5.u32 == loading->activity_source &&
         ctx.r6.u32 == activity->code_size && ctx.r8.u32 == activity->local_count && ctx.r10.u32 == 0 &&
         Span(base, ctx.r5.u32, ctx.r6.u32);
-    __imp__sub_82846780(ctx, base);
+    __imp__sub_828463B8(ctx, base);
     if (valid && Span(base, ctx.r3.u32, 28) && Read(base, ctx.r3.u32 + 4) == activity->program_key &&
         Read(base, ctx.r3.u32 + 16) == activity->code_size) {
       PublishTouchActivityProgram(*index, ctx.r3.u32);
@@ -594,13 +594,13 @@ extern "C" void sub_82846780(PPCContext& ctx, uint8_t* base) {
   if (!profile || name != "spcellphonemain" || ctx.r5.u32 != loading->linked_source ||
       ctx.r6.u32 != profile->code_size || ctx.r8.u32 != profile->local_count || ctx.r10.u32 != 0 ||
       !Span(base, ctx.r5.u32, ctx.r6.u32) || !EnsureThunks()) {
-    __imp__sub_82846780(ctx, base);
+    __imp__sub_828463B8(ctx, base);
     return;
   }
   auto* kernel = REX_KERNEL_STATE();
   auto* memory = kernel ? kernel->memory() : nullptr;
   if (!memory) {
-    __imp__sub_82846780(ctx, base);
+    __imp__sub_828463B8(ctx, base);
     return;
   }
   uint32_t temporary = 0;
@@ -613,14 +613,14 @@ extern "C" void sub_82846780(PPCContext& ctx, uint8_t* base) {
     REXLOG_ERROR("gta4-quicksave: phone extension rejected; original retained: {}", error.what());
   }
   if (!temporary) {
-    __imp__sub_82846780(ctx, base);
+    __imp__sub_828463B8(ctx, base);
     return;
   }
   std::memcpy(rex::memory::GuestPtr(base, temporary), patch.code.data(), patch.code.size());
   ctx.r5.u32 = temporary;
   ctx.r6.u32 = uint32_t(patch.code.size());
   // Original constructor owns its own code copy; the temporary is never retained.
-  __imp__sub_82846780(ctx, base);
+  __imp__sub_828463B8(ctx, base);
   memory->SystemHeapFree(temporary);
   if (Span(base, ctx.r3.u32, 28) && Read(base, ctx.r3.u32 + 4) == kPhoneProgramKey &&
       Read(base, ctx.r3.u32 + 16) == patch.code.size()) {
@@ -635,11 +635,11 @@ extern "C" void sub_82846780(PPCContext& ctx, uint8_t* base) {
   } else
     REXLOG_ERROR("gta4-quicksave: program publication validation failed");
 }
-extern "C" void sub_825E87C8(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_825E87C8(ctx, base);
+extern "C" void sub_826100E0(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_826100E0(ctx, base);
   gta4::quicksave::Poll(ctx, base);
 }
-extern "C" void sub_82243260(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82243260(ctx, base);
+extern "C" void sub_821D3528(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_821D3528(ctx, base);
   gta4::quicksave::Poll(ctx, base);
 }

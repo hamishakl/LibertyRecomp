@@ -1,6 +1,6 @@
 // Host-only temporal metadata. Original retail instruction bodies are untouched.
 // The primary viewport is the same embedded grcViewport at renderContext+176
-// used by generated sub_8267D528/sub_8267D750 (.46). Projection and inverse view
+// used by generated sub_8267D890/sub_8267DAB8 (.46). Projection and inverse view
 // offsets are shared with the verified environmental capture above.
 namespace temporal_host {
 struct Instance {

@@ -31,7 +31,7 @@ struct VehicleYawButtons {
 
 constexpr VehicleYawButtons MergeVehicleYawButtons(uint8_t left, uint8_t right,
                                                   int32_t requested) {
-  // sub_822ABEE0 subtracts independent button magnitudes for 57/58. They
+  // sub_822BBED0 subtracts independent button magnitudes for 57/58. They
   // are not the centered stick records used by the aircraft's pitch axis.
   const int32_t current = static_cast<int32_t>(right) - left;
   const int32_t clamped = std::clamp(requested, -255, 255);

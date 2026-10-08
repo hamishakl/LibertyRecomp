@@ -9,7 +9,7 @@
 
 namespace gta4::quicksave {
 // Decoded installed SCO SHA-256, not the linked/mutated native operand stream.
-// Derived from executable scripts and generated .60:sub_828453F8/82843700.
+// Derived from executable scripts and generated .60:sub_828450C8/82843700.
 struct PhoneProfile {
   std::string_view name, sha256;
   uint32_t episode, code_size, local_count;

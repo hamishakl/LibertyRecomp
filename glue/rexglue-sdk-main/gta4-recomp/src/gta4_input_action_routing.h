@@ -50,7 +50,7 @@ constexpr bool PhoneOwnsKeyboard(bool created, bool moving_offscreen,
   return created && !moving_offscreen && render_visible;
 }
 
-// IS_PAUSE_MENU_ACTIVE (generated sub_825DAA40) excludes both retail exit
+// IS_PAUSE_MENU_ACTIVE (generated sub_82602368) excludes both retail exit
 // transitions. The currently selected widget's own active bit is independent.
 constexpr bool RetailPauseMenuActive(bool visible, uint32_t transition) {
   return visible && transition != 2 && transition != 6;
@@ -71,7 +71,7 @@ struct KeyboardActionBytes {
   bool operator==(const KeyboardActionBytes&) const = default;
 };
 
-// Generated sub_828D3058 advances action +2 into +3 before polling a device.
+// Generated sub_828D5910 advances action +2 into +3 before polling a device.
 // A frontend consumer may select an object which was not replayed, however.
 // Retire only our own overlay in that case, preserving the controller bytes
 // captured before injection. A real replay or an intervening guest write is
@@ -107,8 +107,8 @@ constexpr bool IsKeyboardWasd(rex::ui::VirtualKey key) {
          key == VirtualKey::kS || key == VirtualKey::kD;
 }
 
-// Retail action indices are derived from sub_822B6560 and consumed by
-// sub_8224FFC8. Keep the key/context decision testable independently of guest
+// Retail action indices are derived from sub_822C8E40 and consumed by
+// sub_82262370. Keep the key/context decision testable independently of guest
 // pointers, and share it between replay and consumer fallback injection.
 constexpr bool ShouldInjectKeyboardInterfaceAction(
     uint32_t action, rex::ui::VirtualKey key,

@@ -19,12 +19,12 @@
 
 namespace {
 namespace policy = gta4::presentation::policy;
-constexpr uint32_t kActive = 0x831D5335;
-constexpr uint32_t kCurrentScreen = 0x831D5340;
-constexpr uint32_t kScreenCount = 0x831D5344;
-constexpr uint32_t kIntroPending = 0x831D5348;
-constexpr uint32_t kDefinitions = 0x831D5498;
-constexpr uint32_t kEpisode = 0x82B39504;  // retail GET_CURRENT_EPISODE, sub_825D4CC8
+constexpr uint32_t kActive = 0x831D51B5;
+constexpr uint32_t kCurrentScreen = 0x831D51C0;
+constexpr uint32_t kScreenCount = 0x831D51C4;
+constexpr uint32_t kIntroPending = 0x831D51C8;
+constexpr uint32_t kDefinitions = 0x831D5318;
+constexpr uint32_t kEpisode = 0x82B39384;  // retail GET_CURRENT_EPISODE, sub_825FC5F0
 constexpr uint32_t kEffectLinkOffset = 108;
 constexpr uint32_t kCompositeTechniqueOffset = 732;
 thread_local bool cold_parser_scope = false;
@@ -69,7 +69,7 @@ std::optional<uint32_t> BoundaryWord(uint8_t* base,uint32_t object,uint32_t offs
   return REX_LOAD_U32(uint32_t(address));
 }
 std::pair<uint32_t,uint64_t> BoundaryFrame(uint8_t* base) {
-  const auto device=BoundaryWord(base,0x831C22A4);
+  const auto device=BoundaryWord(base,0x831C2124);
   const auto submitted=device?BoundaryWord(base,*device,16544):std::nullopt;
   return device&&submitted?std::pair{*device,uint64_t(*submitted)+1}:std::pair<uint32_t,uint64_t>{};
 }
@@ -124,10 +124,10 @@ Decision DeclaredBoundary(uint8_t* base,uint32_t device,uint64_t sequence,uint32
 // Vtable slot 4 of the exact retail DrawScene and GBuffer phases receives the
 // shared render context in r4. Observe AFTER the original camera/context update;
 // retain no guest object beyond the matching device/submitted-frame sequence.
-extern "C" void sub_8235DF98(PPCContext& ctx,uint8_t* base) {
+extern "C" void sub_8235DAF0(PPCContext& ctx,uint8_t* base) {
   const uint32_t phase=ctx.r3.u32,context=ctx.r4.u32;
   const auto frame=BoundaryFrame(base);
-  __imp__sub_8235DF98(ctx,base);
+  __imp__sub_8235DAF0(ctx,base);
   const auto type=BoundaryWord(base,phase);
   const auto flags=BoundaryWord(base,phase,gta4::temporal_boundary::kCompositeFlagsOffset);
   const auto list=BoundaryWord(base,phase,gta4::temporal_boundary::kSceneListOffset);
@@ -136,17 +136,17 @@ extern "C" void sub_8235DF98(PPCContext& ctx,uint8_t* base) {
   temporal_boundaries.Composite(frame.first,frame.second,context,phase,
       gta4::temporal_boundary::DeclaresComposite(*flags,*list));
 }
-extern "C" void sub_8267CFF8(PPCContext& ctx,uint8_t* base) {
+extern "C" void sub_8267D348(PPCContext& ctx,uint8_t* base) {
   const uint32_t phase=ctx.r3.u32,context=ctx.r4.u32;
   const auto frame=BoundaryFrame(base);
-  __imp__sub_8267CFF8(ctx,base);
+  __imp__sub_8267D348(ctx,base);
   const auto type=BoundaryWord(base,phase);
   if(!type||*type!=gta4::temporal_boundary::kGBufferVtable||frame!=BoundaryFrame(base))return;
   std::lock_guard lock(temporal_boundary_mutex);
   temporal_boundaries.GBuffer(frame.first,frame.second,phase,context);
 }
 
-extern "C" void sub_82145420(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82145450(PPCContext& ctx, uint8_t* base) {
   const gta4::input::ContextTouchGameplayTransition touch_transition;
   const uint32_t caller = ctx.lr;
   const bool cold = policy::IsColdStart(caller, ctx.r3.u32, ctx.r4.u32);
@@ -158,14 +158,14 @@ extern "C" void sub_82145420(PPCContext& ctx, uint8_t* base) {
   }
   const ParserScope scope(eligible && gta4::presentation::SkipIntroAtLaunch());
   // Keep arguments, asset loading, timer setup and publication entirely retail.
-  __imp__sub_82145420(ctx, base);
+  __imp__sub_82145450(ctx, base);
   if (eligible)
     TraceStartup(base, "cold-start-ready", caller);
 }
 
-extern "C" void sub_82145968(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82145998(PPCContext& ctx, uint8_t* base) {
   const bool apply = cold_parser_scope && ctx.lr == policy::kParserCaller;
-  __imp__sub_82145968(ctx, base);
+  __imp__sub_82145998(ctx, base);
   if (!apply)
     return;
   if (!GuestSpan(base, kScreenCount, sizeof(uint32_t)))
@@ -201,23 +201,23 @@ extern "C" void sub_82145968(PPCContext& ctx, uint8_t* base) {
 }
 
 // Observation only: the original routine owns screen advancement and clocks.
-extern "C" void sub_82144708(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82144738(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller = ctx.lr;
-  __imp__sub_82144708(ctx, base);
+  __imp__sub_82144738(ctx, base);
   TraceStartup(base, "screen-advanced", caller);
 }
 
-extern "C" void sub_82142230(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82142260(PPCContext& ctx, uint8_t* base) {
   // This is the stock frontend/profile/DLC workflow, not proof of rendered UI.
   TraceStartup(base, "frontend-workflow-enter", ctx.lr);
   observe_startup.store(false, std::memory_order_relaxed);
-  __imp__sub_82142230(ctx, base);
+  __imp__sub_82142260(ctx, base);
 }
 
-extern "C" void sub_822CF300(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822E1A88(PPCContext& ctx, uint8_t* base) {
   const uint32_t requested = ctx.r6.u32;
   const uint32_t caller = ctx.lr;
-  // Retail sub_822CFC00's final call leaves r4 null to draw into the current
+  // Retail sub_822E2388's final call leaves r4 null to draw into the current
   // framebuffer; its intermediate calls supply an offscreen destination.
   // This scope follows actual execution, independent of queued phase markers.
   const gta4::gpu_pass::ScopedFinalComposite final_composite_scope(
@@ -227,7 +227,7 @@ extern "C" void sub_822CF300(PPCContext& ctx, uint8_t* base) {
   const bool trace = Diagnostics();
   if (caller != policy::kCompositeCaller || (!disable && motion_blur && !trace) ||
       !GuestSpan(base, kEpisode, sizeof(uint32_t))) {
-    __imp__sub_822CF300(ctx, base);
+    __imp__sub_822E1A88(ctx, base);
     return;
   }
   const uint32_t episode = REX_LOAD_U32(kEpisode);
@@ -260,5 +260,5 @@ extern "C" void sub_822CF300(PPCContext& ctx, uint8_t* base) {
   // Never change the script FORCE_NOISE_OFF byte or the profile's preference.
   if (selected != requested)
     ctx.r6.u64 = selected;
-  __imp__sub_822CF300(ctx, base);
+  __imp__sub_822E1A88(ctx, base);
 }

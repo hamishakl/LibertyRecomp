@@ -7,7 +7,7 @@ struct Selection {
   uint32_t font;
   uint32_t bank;
 };
-// sub_821F2ED0, generated gta4_recomp.6.cpp:2390-2541. FONTS.DAT IDs
+// sub_82222100, generated gta4_recomp.6.cpp:2390-2541. FONTS.DAT IDs
 // are not texture filename suffixes: IDs 0,1,2 address font1,font3,font2.
 constexpr Selection DecodeStyle(int32_t style) noexcept {
   switch (style) {
@@ -38,16 +38,16 @@ constexpr std::string_view Bank(uint32_t bank) noexcept {
 constexpr std::string_view Kind(uint32_t caller) noexcept {
   // Only named sites supported by inspected generated callers are classified.
   switch (caller) {
-    case 0x8214498C:
+    case 0x821449BC:
       return "legal";
-    case 0x82224C20:
+    case 0x821E08F8:
       return "help-tutorial";
-    case 0x8229E044:
-    case 0x8229E200:
-    case 0x8229E7C0:
+    case 0x822B1174:
+    case 0x822B1330:
+    case 0x822B18F0:
       return "frontend-widget";
-    case 0x8225468C:
-    case 0x82254A00:
+    case 0x82266A4C:
+    case 0x82266DC0:
       return "frontend-controls";
     default:
       return "unclassified-caller";

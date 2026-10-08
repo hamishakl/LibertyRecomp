@@ -45,14 +45,14 @@ namespace {
 constexpr uint32_t kDisplayScreen = 8;
 constexpr uint32_t kAudioScreen = 7;
 constexpr uint32_t kGameScreen = 9;
-constexpr uint32_t kScreenDescriptorsAddress = 0x831DAE28;
+constexpr uint32_t kScreenDescriptorsAddress = 0x831D6A20;
 constexpr uint32_t kScreenDescriptorSize = 24;
 constexpr uint32_t kScreenOptionsOffset = 16;
-constexpr uint32_t kDisplayOptionsPointer = 0x831DAEF8;
-constexpr uint32_t kDisplayOptionsCount = 0x831DAEFC;
-constexpr uint32_t kDisplayOptionsCapacity = 0x831DAEFE;
-constexpr uint32_t kCurrentScreenAddress = 0x82BFA124;
-constexpr uint32_t kPauseMenuActiveAddress = 0x82BF9EF4;
+constexpr uint32_t kDisplayOptionsPointer = 0x831D6AF0;
+constexpr uint32_t kDisplayOptionsCount = 0x831D6AF4;
+constexpr uint32_t kDisplayOptionsCapacity = 0x831D6AF6;
+constexpr uint32_t kCurrentScreenAddress = 0x82C30BF4;
+constexpr uint32_t kPauseMenuActiveAddress = 0x82C309C4;
 constexpr uint32_t kOptionRecordSize = 22;
 constexpr uint32_t kOptionActionOffset = 0;
 constexpr uint32_t kOptionLabelOffset = 1;
@@ -65,20 +65,20 @@ constexpr uint8_t kMenuOptionJump = 10;
 constexpr uint8_t kEndOfMenuOptions = 36;
 constexpr uint16_t kSafeStockPreference = 0;
 constexpr uint8_t kSafeStockDisplayValue = 0;
-constexpr uint32_t kAdjustmentDeltaReturnAddress = 0x8225903C;
+constexpr uint32_t kAdjustmentDeltaReturnAddress = 0x8226B3FC;
 constexpr uint32_t kMenuTraceStringCapacity = 128;
 constexpr uint32_t kMenuTraceRowLimit = 64;
 constexpr uint32_t kMenuTraceCallLimit = 256;
 constexpr uint32_t kUiRowRecordSize = 68;
 constexpr uint32_t kUiRowLabelCapacity = 60;
-constexpr uint32_t kLeftListBuildReturnAddress = 0x82255E38;
-constexpr uint32_t kFrontendWidgetPointerTable = 0x82CC7BD0;
+constexpr uint32_t kLeftListBuildReturnAddress = 0x822681F8;
+constexpr uint32_t kFrontendWidgetPointerTable = 0x82CD056C;
 constexpr uint32_t kFrontendWidgetActiveCountOffset = 3020;
 constexpr uint32_t kFrontendWidgetSelectedOffset = 3196;
 constexpr uint32_t kFrontendWidgetTransitionProgressOffset = 3208;
 constexpr uint32_t kFrontendWidgetTransitionAnchorOffset = 3212;
 constexpr uint32_t kFrontendWidgetStateSize = 3216;
-// sub_8229CD40 fills and clears exactly 20 fixed list slots in the retail UI
+// sub_822AFE40 fills and clears exactly 20 fixed list slots in the retail UI
 // object. Keep this diagnostic constant tied to that generated-code bound.
 constexpr int32_t kRetailListSlotCapacity = gta4::frontend_menu::policy::kRetailListSlotCapacity;
 
@@ -1362,7 +1362,7 @@ void ReleaseDisplayExtension(PPCContext& ctx, uint8_t* base) {
   g_display_menu = {};
   if (gta4::frontend_menu::policy::ShouldFreeGuestAllocation(owns_published_descriptor,
                                                               allocation)) {
-    InvokeGuest(ctx, base, sub_821B3560, allocation);
+    InvokeGuest(ctx, base, sub_821B3570, allocation);
   } else if (allocation != 0) {
     // Host-side menu state survives an episode/title reload, but its guest
     // allocation does not. A changed descriptor means the guest no longer
@@ -1457,7 +1457,7 @@ void InstallDisplayExtension(PPCContext& ctx, uint8_t* base) {
   }
 
   const uint32_t allocation =
-      InvokeGuest(ctx, base, sub_821B3510, static_cast<uint32_t>(allocation_bytes)).r3.u32;
+      InvokeGuest(ctx, base, sub_821B3520, static_cast<uint32_t>(allocation_bytes)).r3.u32;
   if (allocation == 0) {
     REXLOG_ERROR("GTA IV Advanced Graphics disabled: allocation of {} bytes failed",
                  allocation_bytes);
@@ -1466,7 +1466,7 @@ void InstallDisplayExtension(PPCContext& ctx, uint8_t* base) {
   if (!IsGuestSpanValid(allocation, allocation_bytes)) {
     REXLOG_ERROR("GTA IV Advanced Graphics disabled: allocator returned invalid span {:08X}+{}",
                  allocation, allocation_bytes);
-    InvokeGuest(ctx, base, sub_821B3560, allocation);
+    InvokeGuest(ctx, base, sub_821B3570, allocation);
     return;
   }
 
@@ -1486,7 +1486,7 @@ void InstallDisplayExtension(PPCContext& ctx, uint8_t* base) {
   const uint32_t primary_extension =
       next.primary_rows + static_cast<uint32_t>(sentinel_index) * kOptionRecordSize;
   if (!WriteJumpRow(base, primary_extension, kAdvancedKey)) {
-    InvokeGuest(ctx, base, sub_821B3560, allocation);
+    InvokeGuest(ctx, base, sub_821B3570, allocation);
     return;
   }
   WriteSentinelRow(base, primary_extension + kOptionRecordSize);
@@ -1504,32 +1504,32 @@ void InstallDisplayExtension(PPCContext& ctx, uint8_t* base) {
     for (std::size_t index = 0; index < slice.item_count; ++index) {
       const Setting& setting = *visible_settings[slice.first_item + index];
       if (!WriteSettingRow(base, destination, setting)) {
-        InvokeGuest(ctx, base, sub_821B3560, allocation);
+        InvokeGuest(ctx, base, sub_821B3570, allocation);
         return;
       }
       destination += kOptionRecordSize;
     }
     if (slice.has_previous) {
       if (!WriteJumpRow(base, destination, kPreviousPageKey)) {
-        InvokeGuest(ctx, base, sub_821B3560, allocation);
+        InvokeGuest(ctx, base, sub_821B3570, allocation);
         return;
       }
       destination += kOptionRecordSize;
     }
     if (slice.has_next) {
       if (!WriteJumpRow(base, destination, kNextPageKey)) {
-        InvokeGuest(ctx, base, sub_821B3560, allocation);
+        InvokeGuest(ctx, base, sub_821B3570, allocation);
         return;
       }
       destination += kOptionRecordSize;
     }
     if (!WriteJumpRow(base, destination, kSaveKey)) {
-      InvokeGuest(ctx, base, sub_821B3560, allocation);
+      InvokeGuest(ctx, base, sub_821B3570, allocation);
       return;
     }
     destination += kOptionRecordSize;
     if (!WriteJumpRow(base, destination, kBackKey)) {
-      InvokeGuest(ctx, base, sub_821B3560, allocation);
+      InvokeGuest(ctx, base, sub_821B3570, allocation);
       return;
     }
     destination += kOptionRecordSize;
@@ -1541,7 +1541,7 @@ void InstallDisplayExtension(PPCContext& ctx, uint8_t* base) {
     REXLOG_ERROR(
         "GTA IV native menu disabled: row layout ended at {:08X}, expected string pool {:08X}",
         destination, next.string_pool);
-    InvokeGuest(ctx, base, sub_821B3560, allocation);
+    InvokeGuest(ctx, base, sub_821B3570, allocation);
     return;
   }
   WriteStringPool(base, next, next.string_pool);
@@ -1565,7 +1565,7 @@ void SwitchDisplayPage(PPCContext& ctx, uint8_t* base, gta4::frontend_menu::poli
   } else {
     PublishPrimaryPage(base);
   }
-  InvokeGuest(ctx, base, __imp__sub_82256D08, g_display_menu.last_frontend_channel, kDisplayScreen,
+  InvokeGuest(ctx, base, __imp__sub_822690C8, g_display_menu.last_frontend_channel, kDisplayScreen,
               selected_row);
 }
 
@@ -1758,7 +1758,7 @@ bool SwitchPauseTab(PPCContext& parent, uint8_t* base, policy::PauseTabDirection
   if (policy::ShouldRestorePrimaryBeforeSwitch(g_display_menu.page, target, kDisplayScreen)) {
     PublishPrimaryPage(base);
   }
-  InvokeGuest(parent, base, __imp__sub_82256D08, g_last_frontend_channel, target, 0);
+  InvokeGuest(parent, base, __imp__sub_822690C8, g_last_frontend_channel, target, 0);
   if (rex::input::IsInputTraceEnabled()) {
     REXLOG_INFO(
         "input-e2e: seq={} stage=pause-tab result=switched direction={} channel={} "
@@ -1771,8 +1771,8 @@ bool SwitchPauseTab(PPCContext& parent, uint8_t* base, policy::PauseTabDirection
 
 }  // namespace gta4::frontend_menu
 
-extern "C" void sub_82241428(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82241428(ctx, base);
+extern "C" void sub_821D16F0(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_821D16F0(ctx, base);
   const int32_t retail_episode = ctx.r3.s32;
   const std::string policy = REXCVAR_GET(gta4_episode_startup_prompt);
 
@@ -1790,9 +1790,9 @@ extern "C" void sub_82241428(PPCContext& ctx, uint8_t* base) {
               retail_episode);
 }
 
-extern "C" void sub_82157F90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821486B0(PPCContext& ctx, uint8_t* base) {
   ReleaseDisplayExtension(ctx, base);
-  __imp__sub_82157F90(ctx, base);
+  __imp__sub_821486B0(ctx, base);
   TraceScreenRows(base, "stock-loaded", kAudioScreen);
   TraceScreenRows(base, "stock-loaded", kDisplayScreen);
   InstallDisplayExtension(ctx, base);
@@ -1800,7 +1800,7 @@ extern "C" void sub_82157F90(PPCContext& ctx, uint8_t* base) {
   TraceScreenRows(base, "extension-published", kDisplayScreen);
 }
 
-extern "C" void sub_8221FD88(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822520D0(PPCContext& ctx, uint8_t* base) {
   if (gta4::quicksave::ResolveText(ctx, base))
     return;
   const bool diagnostics = FrontendDiagnosticsEnabled();
@@ -1824,7 +1824,7 @@ extern "C" void sub_8221FD88(PPCContext& ctx, uint8_t* base) {
       return;
     }
   }
-  __imp__sub_8221FD88(ctx, base);
+  __imp__sub_822520D0(ctx, base);
   if (diagnostics && IsBodyTraceScreen(screen) && g_menu_trace_label_calls < kMenuTraceCallLimit) {
     ++g_menu_trace_label_calls;
     REXLOG_INFO(
@@ -1836,9 +1836,9 @@ extern "C" void sub_8221FD88(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_8223F9F0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821CFCB8(PPCContext& ctx, uint8_t* base) {
   // The stock storage dialog uses the same localized message for several
-  // failures. These are its original r3 case IDs, also set by sub_82240C18
+  // failures. These are its original r3 case IDs, also set by sub_821D0EE0
   // and the save-block serializer. Observe them without changing save flow.
   thread_local uint32_t previous_reason = std::numeric_limits<uint32_t>::max();
   const uint32_t reason = ctx.r3.u32;
@@ -1858,13 +1858,13 @@ extern "C" void sub_8223F9F0(PPCContext& ctx, uint8_t* base) {
                  reason, stage, ctx.r4.u32, ctx.lr);
   }
   previous_reason = reason;
-  __imp__sub_8223F9F0(ctx, base);
+  __imp__sub_821CFCB8(ctx, base);
   // The dialog is polled each frame. Log once until it closes, then allow a
   // later attempt to report the same failure again.
   if (ctx.r3.u32) previous_reason = std::numeric_limits<uint32_t>::max();
 }
 
-extern "C" void sub_82252A98(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82264E40(PPCContext& ctx, uint8_t* base) {
   const bool diagnostics = FrontendDiagnosticsEnabled();
   const uint32_t frontend_channel = ctx.r3.u32;
   const uint32_t screen = ctx.r4.u32;
@@ -1893,7 +1893,7 @@ extern "C" void sub_82252A98(PPCContext& ctx, uint8_t* base) {
       return;
     }
   }
-  __imp__sub_82252A98(ctx, base);
+  __imp__sub_82264E40(ctx, base);
   if (diagnostics && IsBodyTraceScreen(screen) && g_menu_trace_value_calls < kMenuTraceCallLimit) {
     ++g_menu_trace_value_calls;
     REXLOG_INFO(
@@ -1904,7 +1904,7 @@ extern "C" void sub_82252A98(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82255D00(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822680C0(PPCContext& ctx, uint8_t* base) {
   const uint32_t frontend_channel = ctx.r3.u32;
   g_last_frontend_channel = frontend_channel;
   const uint32_t screen = REX_LOAD_U32(kCurrentScreenAddress);
@@ -1931,7 +1931,7 @@ extern "C" void sub_82255D00(PPCContext& ctx, uint8_t* base) {
   }
   const uint32_t previous_page_screen = g_menu_trace_page_screen;
   g_menu_trace_page_screen = screen;
-  __imp__sub_82255D00(ctx, base);
+  __imp__sub_822680C0(ctx, base);
   g_menu_trace_page_screen = previous_page_screen;
   if (screen == kDisplayScreen && IsOwnedAdvancedPage(base)) {
     const FrontendWidgetState widget = ReadFrontendWidgetState(base, frontend_channel);
@@ -1946,7 +1946,7 @@ extern "C" void sub_82255D00(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_8229D360(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822B0490(PPCContext& ctx, uint8_t* base) {
   const uint32_t channel = ctx.r3.u32;
   const bool owns_advanced = IsDisplayScreen(base) && IsOwnedAdvancedPage(base);
   const FrontendWidgetState before =
@@ -1958,20 +1958,20 @@ extern "C" void sub_8229D360(PPCContext& ctx, uint8_t* base) {
         "channel={} caller={:08X} ui={:08X}",
         ++g_menu_trace_sequence, channel, ctx.lr, before.widget);
   }
-  __imp__sub_8229D360(ctx, base);
+  __imp__sub_822B0490(ctx, base);
   if (owns_advanced && IsDisplayScreen(base) && IsOwnedAdvancedPage(base)) {
     const FrontendWidgetState after = ReadFrontendWidgetState(base, channel);
     TraceOwnedScrollState("owned-scroll-input", channel, before, after);
   }
 }
 
-extern "C" void sub_8229D258(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822B0388(PPCContext& ctx, uint8_t* base) {
   const uint32_t channel = ctx.r3.u32;
   const uint32_t first_row_address = ctx.r4.u32;
   const uint32_t end_row_address = ctx.r5.u32;
   const uint32_t caller = ctx.lr;
   const bool owns_advanced = IsDisplayScreen(base) && IsOwnedAdvancedPage(base);
-  __imp__sub_8229D258(ctx, base);
+  __imp__sub_822B0388(ctx, base);
   if (!owns_advanced || !IsDisplayScreen(base) || !IsOwnedAdvancedPage(base) ||
       !IsGuestSpanValid(first_row_address, sizeof(uint32_t)) ||
       !IsGuestSpanValid(end_row_address, sizeof(uint32_t))) {
@@ -2001,7 +2001,7 @@ extern "C" void sub_8229D258(PPCContext& ctx, uint8_t* base) {
   TraceOwnedLayoutBounds(channel, caller, first_row, end_row, widget);
 }
 
-extern "C" void sub_8229D8A8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822B09D8(PPCContext& ctx, uint8_t* base) {
   const uint32_t channel = ctx.r3.u32;
   const uint32_t list_index = ctx.r4.u32;
   const bool owns_advanced = IsDisplayScreen(base) && IsOwnedAdvancedPage(base);
@@ -2014,14 +2014,14 @@ extern "C" void sub_8229D8A8(PPCContext& ctx, uint8_t* base) {
         "caller={:08X} list={} ui={:08X}",
         ++g_menu_trace_sequence, channel, ctx.lr, list_index, before.widget);
   }
-  GTA4_TouchCaptureFrontendDraw(ctx, base, __imp__sub_8229D8A8);
+  GTA4_TouchCaptureFrontendDraw(ctx, base, __imp__sub_822B09D8);
   if (owns_advanced && IsDisplayScreen(base) && IsOwnedAdvancedPage(base)) {
     const FrontendWidgetState after = ReadFrontendWidgetState(base, channel);
     TraceOwnedScrollState("owned-layout-draw", channel, before, after);
   }
 }
 
-extern "C" void sub_8229CD40(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822AFE40(PPCContext& ctx, uint8_t* base) {
   const bool trace_page = FrontendDiagnosticsEnabled() &&
                           g_menu_trace_page_screen != std::numeric_limits<uint32_t>::max();
   const uint32_t caller = ctx.lr;
@@ -2078,7 +2078,7 @@ extern "C" void sub_8229CD40(PPCContext& ctx, uint8_t* base) {
         TraceScreenName(g_menu_trace_page_screen), caller, frontend_ui, list_index, title,
         row_payload, count, kRetailListSlotCapacity, count > kRetailListSlotCapacity);
   }
-  __imp__sub_8229CD40(ctx, base);
+  __imp__sub_822AFE40(ctx, base);
   if (is_owned_display_list && IsOwnedAdvancedPage(base)) {
     const FrontendWidgetState widget = ReadFrontendWidgetState(base, frontend_ui);
     TraceOwnedScrollState("owned-row-materialization", frontend_ui, {}, widget);
@@ -2093,7 +2093,7 @@ extern "C" void sub_8229CD40(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82258FB0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8226B370(PPCContext& ctx, uint8_t* base) {
   if (gta4::input::ContextTouchEditorCapturesInput()) {
     // This routine polls list events, dispatches selection/adjustment and
     // rebuilds changed values. Frontend drawing runs outside this input path.
@@ -2104,12 +2104,12 @@ extern "C" void sub_82258FB0(PPCContext& ctx, uint8_t* base) {
   {
     ScopedAdjustment adjustment(frontend_channel,
                                 IsDisplayScreen(base) && IsOwnedAdvancedPage(base));
-    __imp__sub_82258FB0(ctx, base);
+    __imp__sub_8226B370(ctx, base);
   }
   if (g_display_menu.rebuild_pending) {
     g_display_menu.rebuild_pending = false;
     if (IsDisplayScreen(base) && IsOwnedAdvancedPage(base)) {
-      InvokeGuest(ctx, base, sub_82255D00, frontend_channel);
+      InvokeGuest(ctx, base, sub_822680C0, frontend_channel);
       if (FrontendDiagnosticsEnabled()) {
         REXLOG_INFO(
             "GTA4MenuTrace seq={} point=setting-rebuild channel={} page={} page-index={}",
@@ -2120,8 +2120,8 @@ extern "C" void sub_82258FB0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_8229C4F8(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_8229C4F8(ctx, base);
+extern "C" void sub_822AF5F8(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_822AF5F8(ctx, base);
   if (g_adjustment.active && ctx.lr == kAdjustmentDeltaReturnAddress) {
     g_adjustment.delta = ctx.r3.s32;
     if (FrontendDiagnosticsEnabled()) {
@@ -2132,7 +2132,7 @@ extern "C" void sub_8229C4F8(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82253370(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82265730(PPCContext& ctx, uint8_t* base) {
   if (g_adjustment.active) {
     const int32_t row_index = ctx.r3.s32;
     if (IsOwnedAdvancedPage(base) &&
@@ -2154,10 +2154,10 @@ extern "C" void sub_82253370(PPCContext& ctx, uint8_t* base) {
       return;
     }
   }
-  __imp__sub_82253370(ctx, base);
+  __imp__sub_82265730(ctx, base);
 }
 
-extern "C" void sub_82258388(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8226A748(PPCContext& ctx, uint8_t* base) {
   const uint32_t frontend_channel = ctx.r3.u32;
   const int32_t selected_row = ctx.r4.s32;
   if (IsDisplayScreen(base) && IsOwnedAdvancedPage(base) &&
@@ -2190,7 +2190,7 @@ extern "C" void sub_82258388(PPCContext& ctx, uint8_t* base) {
         ChangeSetting(*setting, 1);
         if (g_display_menu.rebuild_pending) {
           g_display_menu.rebuild_pending = false;
-          InvokeGuest(ctx, base, sub_82255D00, frontend_channel);
+          InvokeGuest(ctx, base, sub_822680C0, frontend_channel);
         }
       }
       if (FrontendDiagnosticsEnabled()) {
@@ -2241,18 +2241,18 @@ extern "C" void sub_82258388(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 1;
     return;
   }
-  GTA4_RunWithPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82258388);
+  GTA4_RunWithPrimaryPlayerInfoAlias(ctx, base, __imp__sub_8226A748);
 }
 
-extern "C" void sub_82256D08(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822690C8(PPCContext& ctx, uint8_t* base) {
   if (gta4::frontend_menu::policy::ShouldRestorePrimaryBeforeSwitch(g_display_menu.page, ctx.r4.u32,
                                                                     kDisplayScreen)) {
     PublishPrimaryPage(base);
   }
-  __imp__sub_82256D08(ctx, base);
+  __imp__sub_822690C8(ctx, base);
 }
 
-extern "C" void sub_82257450(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82269810(PPCContext& ctx, uint8_t* base) {
   if (IsDisplayScreen(base) && IsOwnedAdvancedPage(base)) {
     if (FrontendDiagnosticsEnabled()) {
       REXLOG_INFO("GTA4MenuTrace seq={} point=cancel action=back page-index={}",
@@ -2262,25 +2262,25 @@ extern "C" void sub_82257450(PPCContext& ctx, uint8_t* base) {
                       g_display_menu.advanced_entry_index);
     return;
   }
-  __imp__sub_82257450(ctx, base);
+  __imp__sub_82269810(ctx, base);
 }
 
-extern "C" void sub_8224F4D0(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_8224F4D0(ctx, base);
+extern "C" void sub_82261878(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_82261878(ctx, base);
 }
 
-extern "C" void sub_8224FEA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82262250(PPCContext& ctx, uint8_t* base) {
   if (g_display_menu.page == gta4::frontend_menu::policy::Page::kAdvanced) {
     PublishPrimaryPage(base);
   }
-  __imp__sub_8224FEA8(ctx, base);
+  __imp__sub_82262250(ctx, base);
 }
 
-extern "C" void sub_82258EC0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8226B280(PPCContext& ctx, uint8_t* base) {
   if (g_display_menu.page == gta4::frontend_menu::policy::Page::kAdvanced) {
     PublishPrimaryPage(base);
   }
-  __imp__sub_82258EC0(ctx, base);
+  __imp__sub_8226B280(ctx, base);
 }
 
 // The retail bar renderer reads our slider's position through the cvar bridge.

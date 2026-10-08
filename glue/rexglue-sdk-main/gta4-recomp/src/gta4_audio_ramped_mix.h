@@ -7,7 +7,7 @@
 
 namespace gta4::audio {
 
-// sub_82199BC8 accumulates a fixed 256-sample planar block with a gain ramp.
+// sub_82199BA0 accumulates a fixed 256-sample planar block with a gain ramp.
 // All guest vectors use the original reverse-byte lane convention. Separate
 // multiply/add and the four interleaved gain recurrences preserve rounding.
 // Caller sets the same floating-point mode as the generated implementation.

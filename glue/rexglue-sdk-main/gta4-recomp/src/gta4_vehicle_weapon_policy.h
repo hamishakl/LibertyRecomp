@@ -12,7 +12,7 @@ enum class VehicleWeaponCandidateRoute : uint8_t {
   kOriginalSlot,
 };
 
-// sub_823D5800's vehicle operations call sub_823D5358 at these two sites,
+// sub_823D5B88's vehicle operations call sub_823D56E0 at these two sites,
 // then apply the retail vehicle/weapon compatibility and ammunition checks.
 // Keep that validation in the generated function for both PC-only requests.
 struct VehicleWeaponCandidatePolicy {
@@ -26,7 +26,7 @@ struct VehicleWeaponCandidatePolicy {
   VehicleWeaponCandidateRoute Route(uint32_t candidate_manager,
                                     uint32_t caller) {
     if (!manager || manager != candidate_manager ||
-        (caller != 0x823D58E0 && caller != 0x823D5998)) {
+        (caller != 0x823D5C68 && caller != 0x823D5D20)) {
       return VehicleWeaponCandidateRoute::kRetail;
     }
     if (request == KeyboardWeaponRequest::kPrevious) {

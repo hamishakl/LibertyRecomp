@@ -4,13 +4,24 @@ project(gta4_recomp LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/sources.cmake")
-    message(FATAL_ERROR
-        "gta4-recomp generated sources are missing. Build rexglue and run "
-        "'rexglue codegen gta4_manifest.toml'.")
+# PAL fork: build from the PAL (base 7 + TU5) recompilation by default. The US tree in generated/
+# stays as the reference for tools/xex address matching. See docs/PAL-PORT.md.
+option(LIBERTY_RECOMP_PAL "Build from the PAL recompilation (generated_pal/)" ON)
+if(LIBERTY_RECOMP_PAL)
+    set(GTA4_GENERATED_DIR generated_pal)
+    set(GTA4_CODEGEN_MANIFEST gta4_pal_manifest.toml)
+else()
+    set(GTA4_GENERATED_DIR generated)
+    set(GTA4_CODEGEN_MANIFEST gta4_manifest.toml)
 endif()
 
-include(generated/sources.cmake)
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${GTA4_GENERATED_DIR}/sources.cmake")
+    message(FATAL_ERROR
+        "gta4-recomp generated sources are missing. Build rexglue and run "
+        "'rexglue codegen ${GTA4_CODEGEN_MANIFEST}'.")
+endif()
+
+include(${GTA4_GENERATED_DIR}/sources.cmake)
 
 if(APPLE AND LIBERTY_RECOMP_TARGET_PLATFORM STREQUAL "desktop")
     find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter)
@@ -152,7 +163,7 @@ if(APPLE AND LIBERTY_RECOMP_TARGET_PLATFORM STREQUAL "desktop")
     # The startup registrar is one very large straight-line function. Avoid
     # optimizer memory/swap spikes for that file only; all gameplay translation
     # units retain the release optimization level. Generated source is untouched.
-    set_property(SOURCE generated/gta4_register.cpp APPEND PROPERTY COMPILE_OPTIONS
+    set_property(SOURCE ${GTA4_GENERATED_DIR}/gta4_register.cpp APPEND PROPERTY COMPILE_OPTIONS
         "$<$<CONFIG:Release>:-O0>")
 
     set_source_files_properties(
@@ -165,7 +176,7 @@ if(APPLE AND LIBERTY_RECOMP_TARGET_PLATFORM STREQUAL "desktop")
 
     target_include_directories(LibertyRecomp PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated
+        ${CMAKE_CURRENT_SOURCE_DIR}/${GTA4_GENERATED_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/crypto
         ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/inja/third_party/include
@@ -309,7 +320,7 @@ else()
     add_library(gta4_recomp INTERFACE)
     target_include_directories(gta4_recomp INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated
+        ${CMAKE_CURRENT_SOURCE_DIR}/${GTA4_GENERATED_DIR}
     )
     set(GTA4_RECOMP_GENERATED_SOURCES ${GENERATED_SOURCES} PARENT_SCOPE)
 endif()
@@ -321,7 +332,7 @@ endif()
 if(TARGET rex::rexglue)
     add_custom_target(gta4_codegen
         COMMAND $<TARGET_FILE:rex::rexglue> codegen
-                ${CMAKE_CURRENT_SOURCE_DIR}/gta4_manifest.toml
+                ${CMAKE_CURRENT_SOURCE_DIR}/${GTA4_CODEGEN_MANIFEST}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Generating recompiled code for GTA IV"
         VERBATIM

@@ -52,4 +52,34 @@ small varying amounts. Every guest address the project hard-codes has to be rema
       37,318/38,060 functions mapped (37,156 exact), 37,255 data addresses, 151,885 return addresses.
       `tools/xex/hook_coverage.py`: of 2,280 guest addresses the hooks/config reference, **2,178 (95.5%) resolve**;
       102 unmapped (mostly .data/.bss globals not reached via `lis` pairs) — next: infer from neighbouring mapped data.
-- [ ] Phase 3 …
+- [x] **Phase 3** — sources + config remapped.
+  - Pipeline: `gta4_pal_raw_manifest.toml` (analysis-only reference) → `match_functions.py` →
+    `remap_sources.py` (+ `manual_map.json`) → `build_pal_config.py` → `rexglue codegen gta4_pal_manifest.toml`.
+  - App CMake option `LIBERTY_RECOMP_PAL` (default ON) builds `generated_pal/`.
+  - Hook sources: 4,140 references rewritten; **all 562 hook overrides and 635 `__imp__` calls exist in PAL code**.
+  - Hand-copied guest code (`*_guest.inc`) copies functions that are identical in PAL — remapped addresses are enough.
+- [x] **App builds and links against PAL** (`macos-release`, bundle verification passes).
+- [x] **Phase 4** — installer/inspector accept PAL: media `0x7CF4679F`, region `XEX_REGION_PAL`, base version 7,
+      base XXH3 `15674128280634689956`, RSA-signature SHA-1 = TU5 `digest_source` (`24bdc3d4…`),
+      TU5 target `0x507`, TU5 XEXP SHA-256 `602f1c58…`. The US pre-patched-v8 shortcut is inert.
+- [ ] Disc mirror complete → install → first boot
+
+### Known gaps (left as US values, see `tools/xex/manual_map.json` "unresolved")
+| US address | Used by | Impact |
+|---|---|---|
+| `0x82B307A0`, `0x82B307A4` | native renderer cloud double-buffer / postfx timecycle index, bulb trace | clouds/timecycle selection in `gta4-native`/`gta4-metal` may misbehave |
+| `0x82013C9C` | touch radar vtable | touch controls only — irrelevant on Mac |
+| `0x82055F8C`, `0x82055F7C` | MP proximity weight thresholds | multiplayer tuning only |
+
+### Review list — hooks on functions PAL's TU5 changed (similarity < 1.0)
+Pairing verified by similarity; the hook logic may still depend on changed internals.
+`82141F00`, `82145968`, `8214B640` (transition hooks), `8215CB10`, `821C1C78`, `82205C30`, `822343C0`,
+`8223F9F0`, `82253370`, `82257450`, `8229D8A8` (+ interior `8229E044`/`8229E200`/`8229E7C0`, touch HUD caller),
+`823A8F70`, `826DD580`, `82A3BE18` (0.886 — lowest). (US addresses; PAL targets via the resolver.)
+
+### Lessons
+- Inline jump tables mean instruction index ≠ address; track `loc_` labels.
+- Fuzzy function pairs can be confidently wrong (US `823710B8`: fuzzy said −0x4F78, truth +0xD870);
+  the local code-shift between exact anchors is the better arbiter.
+- Neighbour inference for data is unsafe (data is reordered); two such guesses pointed at unrelated floats.
+  Verify data guesses against the PAL image before trusting them.

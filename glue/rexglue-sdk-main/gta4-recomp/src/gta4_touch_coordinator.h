@@ -26,7 +26,7 @@ struct GTA4TouchExtension {
                                std::array<uint8_t, 256>& pressed) = nullptr;
   void (*on_controls_disabled)(PPCContext& context, uint8_t* base,
                                uint64_t epoch) = nullptr;
-  // control is the original sub_822B7DD0 r3 value. The callback runs after
+  // control is the original sub_822CA6B0 r3 value. The callback runs after
   // retail and keyboard/mouse action injection and must only merge values.
   void (*on_control_replay)(PPCContext& context, uint8_t* base, uint32_t control,
                             uint32_t caller, uint64_t epoch) = nullptr;

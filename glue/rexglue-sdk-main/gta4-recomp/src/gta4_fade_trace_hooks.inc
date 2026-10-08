@@ -1,7 +1,7 @@
 // Opt-in observation of the compiled retail fade path. Every hook invokes the
 // original generated implementation exactly once and retains its register result.
-// Evidence: generated .17 sub_8233C3F0 / sub_8233C2F8 / sub_8233BA30;
-// generated .19 sub_82369F08. Generated translation units are not modified.
+// Evidence: generated .17 sub_823469F8 / sub_82346900 / sub_82345FD8;
+// generated .19 sub_82369AA8. Generated translation units are not modified.
 namespace {
 struct FadeObservedState {
   uint32_t alpha = UINT32_MAX;
@@ -71,7 +71,7 @@ void ArmFadeTraceWindow(uint8_t* base, uint32_t object, std::string_view reason)
   FadeTraceLog("armed", fmt::format("run={} cycle={} frame={} object={:08X} reason={} frames={}",
       run, g_phone_arm_runs, GetNativeLightSubmittedFrame(base), object, reason, PhoneTraceConfig().frames));
   PhoneTraceLog("arm-state", fmt::format("run={} cycle={} phone-visible={} lineage={} allow-closed={} source=fade",
-      run, g_phone_arm_runs, LoadU8(base, 0x831D4DD4), PhoneTraceConfig().lineage, PhoneTraceConfig().allow_closed));
+      run, g_phone_arm_runs, LoadU8(base, 0x831D4C54), PhoneTraceConfig().lineage, PhoneTraceConfig().allow_closed));
 }
 
 void ObserveFadeAlpha(uint8_t* base, uint32_t object, uint32_t caller, uint32_t raw_alpha) {
@@ -128,7 +128,7 @@ void ObserveScreenFadeColor(uint8_t* base, uint32_t color) {
 
 void TraceFadeDcReady(uint8_t* base, uint32_t dc, uint32_t creator) {
   if (!FadeTraceEnabled() || !dc ||
-      LoadU32(base, dc) != 0x82009098 || LoadU32(base, dc + 8) != 0x82369F08) return;
+      LoadU32(base, dc) != 0x820091D8 || LoadU32(base, dc + 8) != 0x82369AA8) return;
   // Capture before publication: the generated finalize call can make the DC
   // visible to another thread. Identity is checked again at callback execution.
   const uint32_t color = LoadU32(base, dc + 12);
@@ -157,30 +157,30 @@ void TraceFadeDcReady(uint8_t* base, uint32_t dc, uint32_t creator) {
 }
 }  // namespace
 
-extern "C" void sub_8233BA30(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82345FD8(PPCContext& ctx, uint8_t* base) {
   const uint32_t object = ctx.r3.u32, caller = uint32_t(ctx.lr);
-  __imp__sub_8233BA30(ctx, base);
-  if (FadeTraceEnabled() && caller == 0x8233C310)
+  __imp__sub_82345FD8(ctx, base);
+  if (FadeTraceEnabled() && caller == 0x82346918)
     ObserveFadeAlpha(base, object, caller, ctx.r3.u32);
 }
 
-extern "C" void sub_8233C2F8(PPCContext& ctx, uint8_t* base) {
-  if (!FadeTraceEnabled()) { __imp__sub_8233C2F8(ctx, base); return; }
+extern "C" void sub_82346900(PPCContext& ctx, uint8_t* base) {
+  if (!FadeTraceEnabled()) { __imp__sub_82346900(ctx, base); return; }
   const uint32_t previous = g_fade_builder_object;
   g_fade_builder_object = ctx.r3.u32;
   const auto previous_kind = g_fade_builder_kind;
   g_fade_builder_kind = 1;
   ScopedPhoneTrace scope(PhoneTraceScope::kScreenFadeBuilder, base, ctx.r3.u32, uint32_t(ctx.lr));
-  __imp__sub_8233C2F8(ctx, base);
+  __imp__sub_82346900(ctx, base);
   g_fade_builder_object = previous;
   g_fade_builder_kind = previous_kind;
 }
 
-extern "C" void sub_8233C110(PPCContext& ctx, uint8_t* base) {
-  if (!FadeTraceEnabled()) { __imp__sub_8233C110(ctx, base); return; }
+extern "C" void sub_82346718(PPCContext& ctx, uint8_t* base) {
+  if (!FadeTraceEnabled()) { __imp__sub_82346718(ctx, base); return; }
   const uint32_t object = ctx.r3.u32, caller = uint32_t(ctx.lr);
   const uint32_t before_mode = LoadU32(base, object), before_flags = LoadU8(base, object + 32);
-  __imp__sub_8233C110(ctx, base);
+  __imp__sub_82346718(ctx, base);
   const uint32_t after_mode = LoadU32(base, object), after_flags = LoadU8(base, object + 32);
   // .17:26372-26428 can set mode to -1 and clear active bits without a final
   // zero-alpha draw dispatch. Observe that real retirement, not a guessed alpha.
@@ -196,8 +196,8 @@ extern "C" void sub_8233C110(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_8233C3F0(PPCContext& ctx, uint8_t* base) {
-  if (!FadeTraceEnabled()) { __imp__sub_8233C3F0(ctx, base); return; }
+extern "C" void sub_823469F8(PPCContext& ctx, uint8_t* base) {
+  if (!FadeTraceEnabled()) { __imp__sub_823469F8(ctx, base); return; }
   const uint32_t object = ctx.r3.u32, phase = ctx.r4.u8, caller = uint32_t(ctx.lr);
   const uint32_t mode = LoadU32(base, object), flags = LoadU8(base, object + 32);
   if (!phase && !mode) {
@@ -217,12 +217,12 @@ extern "C" void sub_8233C3F0(PPCContext& ctx, uint8_t* base) {
         PhoneCaptureActive() ? g_phone_run.load() : 0, GetNativeLightSubmittedFrame(base), object,
         caller, phase, mode, flags, previous, flags & 0x60));
   }
-  __imp__sub_8233C3F0(ctx, base);
+  __imp__sub_823469F8(ctx, base);
 }
 
-extern "C" void sub_82333800(PPCContext& ctx, uint8_t* base) {
-  if (!FadeTraceEnabled() || !ctx.r3.u32 || LoadU32(base, ctx.r3.u32 + 8) != 0x82369F08) {
-    __imp__sub_82333800(ctx, base);
+extern "C" void sub_82265030(PPCContext& ctx, uint8_t* base) {
+  if (!FadeTraceEnabled() || !ctx.r3.u32 || LoadU32(base, ctx.r3.u32 + 8) != 0x82369AA8) {
+    __imp__sub_82265030(ctx, base);
     return;
   }
   const uint32_t dc = ctx.r3.u32, token = LoadU32(base, dc + 4), color = LoadU32(base, dc + 12);
@@ -255,13 +255,13 @@ extern "C" void sub_82333800(PPCContext& ctx, uint8_t* base) {
         g_phone_run.load(), g_phone_context.event, GetNativeLightSubmittedFrame(base), dc, token,
         color, origin.creator != 0, stale, origin.object, origin.run, origin.event, origin.creator, origin.kind, origin.token));
   }
-  __imp__sub_82333800(ctx, base);
+  __imp__sub_82265030(ctx, base);
   g_fade_executing_dc = previous_dc;
   g_fade_executing_origin = previous_origin;
 }
 
-extern "C" void sub_82369F08(PPCContext& ctx, uint8_t* base) {
-  if (!FadeTraceEnabled()) { __imp__sub_82369F08(ctx, base); return; }
+extern "C" void sub_82369AA8(PPCContext& ctx, uint8_t* base) {
+  if (!FadeTraceEnabled()) { __imp__sub_82369AA8(ctx, base); return; }
   const uint32_t color = ctx.r3.u32, caller = uint32_t(ctx.lr);
   if (g_fade_builder_kind == 2) ObserveScreenFadeColor(base, color);
   ScopedPhoneTrace scope(PhoneTraceScope::kScreenColorDraw, base, color, caller);
@@ -269,16 +269,16 @@ extern "C" void sub_82369F08(PPCContext& ctx, uint8_t* base) {
       "run={} event={} frame={} caller={:08X} color={:08X} alpha={} direct-fade={} builder={:08X} "
       "dc={:08X} queued-fade={} fade-object={:08X} origin-run={} origin-event={} creator={:08X} kind={}",
       g_phone_run.load(), g_phone_context.event, GetNativeLightSubmittedFrame(base), caller,
-      color, color >> 24, caller == 0x8233C3DC, g_fade_builder_object,
+      color, color >> 24, caller == 0x823469E4, g_fade_builder_object,
       g_fade_executing_dc, g_fade_executing_origin.object != 0, g_fade_executing_origin.object,
       g_fade_executing_origin.run, g_fade_executing_origin.event, g_fade_executing_origin.creator, g_fade_executing_origin.kind));
-  __imp__sub_82369F08(ctx, base);
+  __imp__sub_82369AA8(ctx, base);
 }
 
 // The main screen fade is separate from the viewport-effect fade. Generated .9
-// sub_82252DE8 either emits the actual packed ARGB callback or emits no such draw.
-extern "C" void sub_82252DE8(PPCContext& ctx, uint8_t* base) {
-  if (!FadeTraceEnabled()) { __imp__sub_82252DE8(ctx, base); return; }
+// sub_822651A8 either emits the actual packed ARGB callback or emits no such draw.
+extern "C" void sub_822651A8(PPCContext& ctx, uint8_t* base) {
+  if (!FadeTraceEnabled()) { __imp__sub_822651A8(ctx, base); return; }
   const uint32_t object = ctx.r3.u32, caller = uint32_t(ctx.lr);
   const auto previous_object = g_fade_builder_object, previous_kind = g_fade_builder_kind;
   const auto previous_emissions = g_screen_fade_emissions;
@@ -297,7 +297,7 @@ extern "C" void sub_82252DE8(PPCContext& ctx, uint8_t* base) {
     }
   }
   ScopedPhoneTrace scope(PhoneTraceScope::kScreenFadeBuilder, base, object, caller);
-  __imp__sub_82252DE8(ctx, base);
+  __imp__sub_822651A8(ctx, base);
   const uint32_t emitted = g_screen_fade_emissions;
   const uint32_t active = LoadU8(base, object), mode = LoadU32(base, object + 20);
   if (was_drawing && !emitted) ArmFadeTraceWindow(base, object, "main-screen-fade-draw-stopped");

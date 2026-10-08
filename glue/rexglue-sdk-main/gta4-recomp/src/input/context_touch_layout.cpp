@@ -51,13 +51,13 @@ const char* ActionIconId(TouchAction action) {
 }
 
 const char* ScriptLabel(TouchScriptControl control) {
-  // Raw indices: sub_825D1308 and accepted PAD tokens in sub_821F2360.
+  // Raw indices: sub_825F8C38 and accepted PAD tokens in sub_82221590.
   constexpr std::array raw = {"LB", "LT", "RB", "RT", "UP", "DOWN", "LEFT", "RIGHT",
                               "START", "BACK", "X", "Y", "A", "B", "L3", "R3"};
   if (control.kind == TouchScriptQueryKind::kRawButton) {
     return control.action >= 4 && control.action - 4 < raw.size() ? raw[control.action - 4] : "ACTION";
   }
-  // Original input binding names, 0x82A935B0 (sub_821F2CB0); shortened for circles.
+  // Original input binding names, 0x82A94680 (sub_82221EE0); shortened for circles.
   constexpr std::array actions = {
       "CAMERA", "SPRINT", "JUMP", "ENTER", "ATTACK", "ATTACK", "AIM", "LOOK BACK",
       "NEXT WEAPON", "PREV WEAPON", "TARGET LEFT", "TARGET RIGHT", "MOVE LEFT", "MOVE RIGHT",

@@ -38,7 +38,7 @@ constexpr uint32_t kMaximumInviteMessageUnits = 128;
 constexpr uint32_t kGtaVoiceManagerOffset = 6456;
 constexpr uint32_t kMaximumVoicePacketBytes = 4096;
 constexpr uint32_t kMaximumVoicePacketsPerTick = 32;
-// Derived from the generated sub_826CB110 invite-item constructor by
+// Derived from the generated sub_826CABC0 invite-item constructor by
 // tools/audit_gta_invite_accept_contract.py.
 constexpr uint32_t kGtaInviteSessionInfoOffset = 4;
 constexpr uint32_t kGtaInviteSenderXuidOffset = 128;
@@ -245,7 +245,7 @@ void PumpReceivedVoice(PPCContext& parent_ctx, uint8_t* base,
       voice_ctx.r4.u64 = packet->source_xuid;
       voice_ctx.r5.u64 = guest_payload;
       voice_ctx.r6.u64 = guest_payload_size;
-      sub_82A26DF8(voice_ctx, base);
+      sub_82A269E8(voice_ctx, base);
       if (voice_ctx.r3.s32 < 0) {
         g_rejected_voice_packets.fetch_add(1, std::memory_order_relaxed);
       } else {
@@ -270,13 +270,13 @@ void PumpReceivedVoice(PPCContext& parent_ctx, uint8_t* base,
 
 }  // namespace
 
-extern "C" void sub_82575E20(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_825A7EC0(PPCContext& ctx, uint8_t* base) {
   const uint32_t invitation_index = ctx.r3.u32;
   PPCContext lookup_ctx = ctx;
-  __imp__sub_826CBE28(lookup_ctx, base);
+  __imp__sub_826CB8D8(lookup_ctx, base);
   const uint32_t invitation = lookup_ctx.r3.u32;
   if (!invitation) {
-    __imp__sub_82575E20(ctx, base);
+    __imp__sub_825A7EC0(ctx, base);
     return;
   }
 
@@ -289,7 +289,7 @@ extern "C" void sub_82575E20(PPCContext& ctx, uint8_t* base) {
   auto* live = kernel_state ? kernel_state->live_compatibility() : nullptr;
   auto* social = live ? live->social_service() : nullptr;
   if (!session_id || !sender_xuid || !social) {
-    __imp__sub_82575E20(ctx, base);
+    __imp__sub_825A7EC0(ctx, base);
     return;
   }
 
@@ -306,26 +306,26 @@ extern "C" void sub_82575E20(PPCContext& ctx, uint8_t* base) {
       base + invitation + kGtaInviteSessionInfoOffset);
   rex::system::xam::SessionRecordToGuestInfo(*accepted->session, *writable_session_info);
   ctx.r3.u64 = invitation_index;
-  __imp__sub_82575E20(ctx, base);
+  __imp__sub_825A7EC0(ctx, base);
   REXSYS_INFO(
       "GTA IV explicitly accepted invite index={} session={:016X}->{:016X} sender={:016X} "
       "result={}",
       invitation_index, session_id, accepted->session_id, sender_xuid, ctx.r3.u32);
 }
 
-extern "C" void sub_827D7FA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827D7D58(PPCContext& ctx, uint8_t* base) {
   const uint32_t multiplayer_manager = ctx.r3.u32;
-  __imp__sub_827D7FA8(ctx, base);
+  __imp__sub_827D7D58(ctx, base);
   auto* kernel_state = REX_KERNEL_STATE();
   SynchronizeVoicePolicy(kernel_state ? kernel_state->live_compatibility()
                                      : nullptr);
   PumpReceivedVoice(ctx, base, multiplayer_manager);
 }
 
-extern "C" void sub_827D7658(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827D7408(PPCContext& ctx, uint8_t* base) {
   const uint32_t payload_ptr = ctx.r5.u32;
   const uint32_t payload_size_ptr = ctx.r6.u32;
-  __imp__sub_827D7658(ctx, base);
+  __imp__sub_827D7408(ctx, base);
 
   auto* kernel_state = REX_KERNEL_STATE();
   auto* memory = kernel_state ? kernel_state->memory() : nullptr;
@@ -368,26 +368,26 @@ extern "C" void sub_827D7658(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82576060(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_825A8100(PPCContext& ctx, uint8_t* base) {
   const uint32_t peer_id = ctx.r3.u32;
   const bool muted = ctx.r4.u8 != 0;
-  __imp__sub_82576060(ctx, base);
+  __imp__sub_825A8100(ctx, base);
   SetVoiceManualMute(peer_id, muted);
 }
 
-extern "C" void sub_825760E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_825A8180(PPCContext& ctx, uint8_t* base) {
   const int32_t peer_id = ctx.r3.s32;
-  __imp__sub_825760E0(ctx, base);
+  __imp__sub_825A8180(ctx, base);
   SetVoiceFocus(peer_id);
 }
 
-extern "C" void sub_826FDFD0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FD9A0(PPCContext& ctx, uint8_t* base) {
   const bool enabled = ctx.r4.u8 != 0;
-  __imp__sub_826FDFD0(ctx, base);
+  __imp__sub_826FD9A0(ctx, base);
   SetVoiceTeamOnly(enabled);
 }
 
-extern "C" void sub_82A355E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82A351D0(PPCContext& ctx, uint8_t* base) {
   (void)base;
   const rex::X_RESULT result =
       SendInviteSnapshot(ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32);

@@ -9,7 +9,7 @@
 struct PPCContext;
 
 // Called within the existing primary-player alias scope on the consumer host.
-// This function invokes __imp__sub_824DC670 exactly once.
+// This function invokes __imp__sub_824DB050 exactly once.
 void GTA4_SonyObserveDamage(PPCContext& ctx, uint8_t* base);
 
 namespace gta4::sony {

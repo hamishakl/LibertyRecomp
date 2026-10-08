@@ -26,7 +26,7 @@ namespace {
 // All guest offsets and masks in this file are checked against generated PPC by
 // verify_motion_vehicle_sites.py. The bNotInAir mask is additionally
 // cross-checked against CVehicleWheel::m_nFlags in the public IV SDK.
-constexpr uint32_t kPrimaryReloadActionRecord = 0x82B2AD64;
+constexpr uint32_t kPrimaryReloadActionRecord = 0x82B2ABE4;
 
 constexpr uint32_t kAutomobileWheelsOffset = 3952;
 constexpr uint32_t kAutomobileWheelCountOffset = 3956;
@@ -48,7 +48,7 @@ std::atomic<uint64_t> g_motion_application_count = 0;
 uint32_t ResolvePlayerPad(const PPCContext& parent, uint8_t* base, uint32_t controller) {
   PPCContext nested = parent;
   nested.r3.u32 = controller;
-  __imp__sub_823CF688(nested, base);
+  __imp__sub_823CFA10(nested, base);
   return nested.r3.u32;
 }
 
@@ -145,10 +145,10 @@ void InvokeVehicleControl(PPCContext& ctx, uint8_t* base, PPCFunc* original,
 }  // namespace
 }  // namespace gta4
 
-extern "C" void sub_82163CE0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82163CB8(PPCContext& ctx, uint8_t* base) {
   const uint32_t action_record = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_82163CE0(ctx, base);
+  __imp__sub_82163CB8(ctx, base);
   gta4::input::MaybeForceDirectWeaponAction(ctx, base, action_record, caller);
   if (action_record != gta4::kPrimaryReloadActionRecord) {
     return;
@@ -163,18 +163,18 @@ extern "C" void sub_82163CE0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_822ABEE0(PPCContext& ctx, uint8_t* base) {
-  gta4::InvokeVehicleControl(ctx, base, __imp__sub_822ABEE0, gta4::VehicleMotionKind::kHelicopter);
+extern "C" void sub_822BBED0(PPCContext& ctx, uint8_t* base) {
+  gta4::InvokeVehicleControl(ctx, base, __imp__sub_822BBED0, gta4::VehicleMotionKind::kHelicopter);
 }
 
-extern "C" void sub_82643870(PPCContext& ctx, uint8_t* base) {
-  gta4::InvokeVehicleControl(ctx, base, __imp__sub_82643870, gta4::VehicleMotionKind::kAutomobile);
+extern "C" void sub_8263AAF0(PPCContext& ctx, uint8_t* base) {
+  gta4::InvokeVehicleControl(ctx, base, __imp__sub_8263AAF0, gta4::VehicleMotionKind::kAutomobile);
 }
 
-extern "C" void sub_82647DD0(PPCContext& ctx, uint8_t* base) {
-  gta4::InvokeVehicleControl(ctx, base, __imp__sub_82647DD0, gta4::VehicleMotionKind::kBike);
+extern "C" void sub_8258AE70(PPCContext& ctx, uint8_t* base) {
+  gta4::InvokeVehicleControl(ctx, base, __imp__sub_8258AE70, gta4::VehicleMotionKind::kBike);
 }
 
-extern "C" void sub_82664450(PPCContext& ctx, uint8_t* base) {
-  gta4::InvokeVehicleControl(ctx, base, __imp__sub_82664450, gta4::VehicleMotionKind::kBoat);
+extern "C" void sub_82666400(PPCContext& ctx, uint8_t* base) {
+  gta4::InvokeVehicleControl(ctx, base, __imp__sub_82666400, gta4::VehicleMotionKind::kBoat);
 }

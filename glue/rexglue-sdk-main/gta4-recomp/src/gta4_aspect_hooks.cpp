@@ -103,12 +103,12 @@ void TraceLoadingMask(const UiContext& layout, const Rect& source, const char* k
       mapped.right, mapped.bottom, layout.transform.sx, layout.transform.sy, layout.transform.ox,
       layout.transform.oy);
 }
-constexpr uint32_t kCurrentViewport = 0x831C2200;
-constexpr uint32_t kStartupViewport = 0x831C21F4;
-constexpr uint32_t kFontStateIndex = 0x82A935A4;
-constexpr uint32_t kFontStates = 0x82B9A118;
+constexpr uint32_t kCurrentViewport = 0x831C2080;
+constexpr uint32_t kStartupViewport = 0x831C2074;
+constexpr uint32_t kFontStateIndex = 0x82A94674;
+constexpr uint32_t kFontStates = 0x82BDCBA8;
 // The exact address of the HUD object table is generated below from its PPC lis/addi.
-constexpr uint32_t kHudTable = 0x82B39990;
+constexpr uint32_t kHudTable = 0x82B39810;
 
 uint32_t Owner(uint8_t* base, uint32_t viewport) {
   if (viewport < 16 || !Span(base, viewport - 16, 16))
@@ -241,7 +241,7 @@ UiContext HudContext(PPCContext& ctx, uint8_t* base) {
 }
 void DrawHud(PPCContext& ctx, uint8_t* base, GuestFunction original) {
   const Scope scope(HudContext(ctx, base));
-  if (original == __imp__sub_821C5148)
+  if (original == __imp__sub_821C4F88)
     gta4::input::DrawTouchWeaponHudSprite(ctx, base, original);
   else
     original(ctx, base);
@@ -310,7 +310,7 @@ UiContext MenuBodyUi(uint8_t* base) {
     return ui_context;
   double divider_y = kDefaultMenuDividerY;
   // Retail frontend style pointer; entry zero is TOP_position_of_top_line.
-  constexpr uint32_t kFrontendStylePointer = 0x82BF9D98;
+  constexpr uint32_t kFrontendStylePointer = 0x82C30868;
   if (Span(base, kFrontendStylePointer, sizeof(uint32_t))) {
     const uint32_t style = Read(base, kFrontendStylePointer);
     if (Span(base, style, sizeof(float)))
@@ -402,7 +402,7 @@ void PrepareViewport(PPCContext& ctx, uint8_t* base) {
   if (!screen && !phone)
     return;
   PPCContext query = ctx;
-  __imp__sub_821ED2F0(query, base);
+  __imp__sub_8221C520(query, base);
   const auto screen_aspect = screen ? CameraAspect(base, viewport) : std::optional<double>{};
   const double aspect = screen_aspect ? *screen_aspect : query.f1.f64;
   const double authored = Float(base, viewport + 696);
@@ -422,7 +422,7 @@ void PrepareViewport(PPCContext& ctx, uint8_t* base) {
     // Derived owners can be assigned after the base constructor. At first bind,
     // rebuild both the framing and the shape, not just their aspect quotient.
     PPCContext call = ctx;
-    sub_828BDAD8(call, base);
+    sub_828BD270(call, base);
   }
 }
 
@@ -450,8 +450,8 @@ void DrawQuad(PPCContext& ctx, uint8_t* base, GuestFunction original, bool textu
     bounds.top = std::min(bounds.top, y);
     bounds.bottom = std::max(bounds.bottom, y);
   }
-  const bool solid = !textured && Span(base, 0x831C2910, 4) && Span(base, 0x831C2D48, 4) &&
-                     Read(base, 0x831C2910) == Read(base, 0x831C2D48);
+  const bool solid = !textured && Span(base, 0x831C2790, 4) && Span(base, 0x831C2BC8, 4) &&
+                     Read(base, 0x831C2790) == Read(base, 0x831C2BC8);
   if (solid)
     layout.transform = CoveringBackground(layout.transform, bounds);
   const EmitScope emit({layout.transform, !layout.transform.identity()});
@@ -470,8 +470,8 @@ void DrawRadarSection(PPCContext& ctx, uint8_t* base, GuestFunction original) {
   original(ctx, base);
 }
 void DrawWindow(PPCContext& ctx, uint8_t* base, GuestFunction original) {
-  // Generated sub_821F6E38 forwards normalized measured bounds unchanged to
-  // sub_8224D1E0. Its tessellator preserves those units through sub_828C2290.
+  // Generated sub_82226068 forwards normalized measured bounds unchanged to
+  // sub_8225F588. Its tessellator preserves those units through sub_828C1A28.
   const auto layout = CurrentUi(base);
   const EmitScope emit({layout.transform, layout.active && !layout.transform.identity()});
   original(ctx, base);
@@ -480,7 +480,7 @@ FrontendLayoutScope::FrontendLayoutScope(PPCContext& ctx, uint8_t* base) {
   const auto layout = CurrentUi(base);
   if (!layout.active || layout.transform.sx >= 1 || ctx.r3.u32 > 2)
     return;
-  constexpr uint32_t table = 0x82CC7BD0;
+  constexpr uint32_t table = 0x82CD056C;
   if (!Span(base, table + ctx.r3.u32 * 4, 4))
     return;
   const uint32_t widget = Read(base, table + ctx.r3.u32 * 4);
@@ -513,13 +513,13 @@ FrontendLayoutScope::~FrontendLayoutScope() {
 }  // namespace gta4::aspect
 
 // Only new strong hooks live here; existing hooks call the shared adapters above.
-extern "C" void sub_821ED2F0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8221C520(PPCContext& ctx, uint8_t* base) {
   const uint32_t viewport = ctx.r3.u32;
-  __imp__sub_821ED2F0(ctx, base);
+  __imp__sub_8221C520(ctx, base);
   if (const auto aspect = gta4::aspect::CameraAspect(base, viewport))
     ctx.f1.f64 = *aspect;
 }
-extern "C" void sub_828BDAD8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_828BD270(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   const uint32_t viewport = ctx.r3.u32;
   const auto aspect = CameraAspect(base, viewport);
@@ -543,13 +543,13 @@ extern "C" void sub_828BDAD8(PPCContext& ctx, uint8_t* base) {
           "resolved-fov={}",
           viewport, Owner(base, viewport), *aspect, original, resolved);
   }
-  __imp__sub_828BDAD8(ctx, base);
+  __imp__sub_828BD270(ctx, base);
   // Matrices, cached tangents and frustum remain resolved; the input FOV stays authored.
   if (changed)
     Write(base, viewport + 696, authored);
   phone_projection_build = previous_phone;
 }
-extern "C" void sub_828BD1D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_828BC968(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   const uint32_t viewport = ctx.r3.u32;
   if (viewport && phone_projection_build == viewport && Span(base, viewport + 448, 64, true)) {
@@ -560,9 +560,9 @@ extern "C" void sub_828BD1D8(PPCContext& ctx, uint8_t* base) {
     for (size_t i = 0; i < matrix.size(); ++i)
       Float(base, viewport + 448 + uint32_t(i) * 4, matrix[i]);
   }
-  __imp__sub_828BD1D8(ctx, base);
+  __imp__sub_828BC968(ctx, base);
 }
-extern "C" void sub_828C2290(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_828C1A28(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   if (emission.active && !baked_font_depth) {
     const auto point = emission.transform.Map(Point{ctx.f1.f64, ctx.f2.f64});
@@ -579,20 +579,20 @@ extern "C" void sub_828C2290(PPCContext& ctx, uint8_t* base) {
           0.0, 1.0);
     }
   }
-  __imp__sub_828C2290(ctx, base);
+  __imp__sub_828C1A28(ctx, base);
 }
-extern "C" void sub_82143C88(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82143CB8(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   // Only the actual textured loading layer, not the player's full-output fade quads.
   const auto state = Output();
-  if (!state.ready || ctx.lr != 0x821440C0) {
-    __imp__sub_82143C88(ctx, base);
+  if (!state.ready || ctx.lr != 0x821440F0) {
+    __imp__sub_82143CB8(ctx, base);
     return;
   }
   const Transform transform = Layout(state.output).Pixels(state.render);
   const Rect quad = transform.Map(Rect{ctx.f1.f64, ctx.f2.f64, ctx.f3.f64, ctx.f4.f64});
   if (!(quad.right > quad.left && quad.bottom > quad.top)) {
-    __imp__sub_82143C88(ctx, base);
+    __imp__sub_82143CB8(ctx, base);
     return;
   }
   const Rect clip =
@@ -601,17 +601,17 @@ extern "C" void sub_82143C88(PPCContext& ctx, uint8_t* base) {
   if (Trace())
     REXLOG_INFO("gta4-aspect: fixed-art rect={},{},{},{}", clip.left, clip.top, clip.right,
                 clip.bottom);
-  __imp__sub_82143C88(ctx, base);
+  __imp__sub_82143CB8(ctx, base);
 }
-extern "C" void sub_8227F458(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82293938(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   auto layout = CurrentUi(base);
   if (!layout.active || emission.active || baked_font_depth) {
-    __imp__sub_8227F458(ctx, base);
+    __imp__sub_82293938(ctx, base);
     return;
   }
   if (!layout.render.valid()) {
-    __imp__sub_8227F458(ctx, base);
+    __imp__sub_82293938(ctx, base);
     return;
   }
   const Rect bounds{ctx.f1.f64 / layout.render.width, ctx.f2.f64 / layout.render.height,
@@ -631,29 +631,29 @@ extern "C" void sub_8227F458(PPCContext& ctx, uint8_t* base) {
   }
   TraceLoadingMask(layout, {ctx.f1.f64, ctx.f2.f64, ctx.f3.f64, ctx.f4.f64}, "solid-mask");
   const EmitScope emit({layout.transform.Pixels(layout.render), !layout.transform.identity()});
-  __imp__sub_8227F458(ctx, base);
+  __imp__sub_82293938(ctx, base);
 }
-extern "C" void sub_821F6680(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822258B0(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   if (append_depth) {
     // Shadow/outline recursive emissions already have a mapped origin; scale their
     // original offsets once without remapping the origin or font state again.
     ctx.f1.f64 = append_origin.x + (ctx.f1.f64 - append_origin.x) * append_transform.sx;
     ctx.f2.f64 = append_origin.y + (ctx.f2.f64 - append_origin.y) * append_transform.sy;
-    __imp__sub_821F6680(ctx, base);
+    __imp__sub_822258B0(ctx, base);
     return;
   }
   const auto layout = CurrentUi(base);
   const uint32_t font = layout.active ? FontState(ctx, base) : 0;
   if (!font || layout.transform.identity()) {
-    __imp__sub_821F6680(ctx, base);
+    __imp__sub_822258B0(ctx, base);
     return;
   }
   std::array<uint32_t, kFontScaledOffsets.size()> saved;
   for (size_t i = 0; i < saved.size(); ++i) {
     saved[i] = Read(base, font + kFontScaledOffsets[i]);
     if (!std::isfinite(std::bit_cast<float>(saved[i]))) {
-      __imp__sub_821F6680(ctx, base);
+      __imp__sub_822258B0(ctx, base);
       return;
     }
   }
@@ -672,16 +672,16 @@ extern "C" void sub_821F6680(PPCContext& ctx, uint8_t* base) {
     Float(base, font + kFontScaledOffsets[i],
           std::bit_cast<float>(saved[i]) * FontScale(kFontScaledOffsets[i], layout.transform));
   ++append_depth;
-  __imp__sub_821F6680(ctx, base);
+  __imp__sub_822258B0(ctx, base);
   --append_depth;
   for (size_t i = 0; i < saved.size(); ++i)
     Write(base, font + kFontScaledOffsets[i], saved[i]);
 }
-extern "C" void sub_821F5788(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822249B8(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::NoFontTransform baked;
-  __imp__sub_821F5788(ctx, base);
+  __imp__sub_822249B8(ctx, base);
 }
-extern "C" void sub_821C4B90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821C49D0(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   std::string name;
   const uint32_t address = ctx.r3.u32;
@@ -691,7 +691,7 @@ extern "C" void sub_821C4B90(PPCContext& ctx, uint8_t* base) {
     if (end)
       name.assign(text, end);
   }
-  __imp__sub_821C4B90(ctx, base);
+  __imp__sub_821C49D0(ctx, base);
   if (!name.empty() && ctx.r3.u32 < 256) {
     std::lock_guard lock(hud_mutex);
     hud_anchors[ctx.r3.u32] = NameAnchor(name);
@@ -701,32 +701,32 @@ extern "C" void sub_821C4B90(PPCContext& ctx, uint8_t* base) {
   extern "C" void address(PPCContext& ctx, uint8_t* base) { \
     gta4::aspect::DrawHud(ctx, base, __imp__##address);     \
   }
-ASPECT_HUD_HOOK(sub_821C4CD8)
-ASPECT_HUD_HOOK(sub_821C5148)
-ASPECT_HUD_HOOK(sub_821C5480)
-ASPECT_HUD_HOOK(sub_821C5660)
-ASPECT_HUD_HOOK(sub_821C58E0)
+ASPECT_HUD_HOOK(sub_821C4B18)
+ASPECT_HUD_HOOK(sub_821C4F88)
+ASPECT_HUD_HOOK(sub_821C52C0)
+ASPECT_HUD_HOOK(sub_821C54A0)
+ASPECT_HUD_HOOK(sub_821C5720)
 #undef ASPECT_HUD_HOOK
 #define ASPECT_DC_HOOK(address)                             \
   extern "C" void address(PPCContext& ctx, uint8_t* base) { \
     const gta4::aspect::DcScope scope(ctx, base);           \
     __imp__##address(ctx, base);                            \
   }
-ASPECT_DC_HOOK(sub_821BCF80)
-ASPECT_DC_HOOK(sub_821BCFA0)
-ASPECT_DC_HOOK(sub_821BD018)
-ASPECT_DC_HOOK(sub_821BD138)
-ASPECT_DC_HOOK(sub_821BD528)
+ASPECT_DC_HOOK(sub_821BCDF8)
+ASPECT_DC_HOOK(sub_821BCE18)
+ASPECT_DC_HOOK(sub_821BCE90)
+ASPECT_DC_HOOK(sub_821BCFB0)
+ASPECT_DC_HOOK(sub_821BD3A0)
 #undef ASPECT_DC_HOOK
-extern "C" void sub_821BD218(PPCContext& ctx, uint8_t* base) {
-  gta4::aspect::DrawRadarSection(ctx, base, __imp__sub_821BD218);
+extern "C" void sub_821BD090(PPCContext& ctx, uint8_t* base) {
+  gta4::aspect::DrawRadarSection(ctx, base, __imp__sub_821BD090);
 }
-extern "C" void sub_821BD238(PPCContext& ctx, uint8_t* base) {
-  gta4::aspect::DrawRadarSection(ctx, base, __imp__sub_821BD238);
+extern "C" void sub_821BD0B0(PPCContext& ctx, uint8_t* base) {
+  gta4::aspect::DrawRadarSection(ctx, base, __imp__sub_821BD0B0);
 }
-extern "C" void sub_822551E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822675A0(PPCContext& ctx, uint8_t* base) {
   // This is the menu slider pass, not the footer. The retail compositor
-  // sub_82255CC8 draws row labels through sub_8229F0F8, then calls this routine
+  // sub_82268088 draws row labels through sub_822B2228, then calls this routine
   // to walk type-101 items and emit their border, track and value fill. Both
   // phases must use the same divider-anchored body coordinates, including
   // immediate draw calls and queued text.
@@ -734,47 +734,47 @@ extern "C" void sub_822551E0(PPCContext& ctx, uint8_t* base) {
   gta4::frontend_menu::DrawSliders(ctx, base);
 }
 
-extern "C" void sub_828BF708(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_828BF708(ctx, base);
+extern "C" void sub_828BEEA0(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_828BEEA0(ctx, base);
   if (gta4::aspect::Output().ready)
     ctx.r3.u64 = 1;
 }
-extern "C" void sub_821F7208(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82226438(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::Scope scope(gta4::aspect::TextUi(ctx, base));
-  __imp__sub_821F7208(ctx, base);
+  __imp__sub_82226438(ctx, base);
 }
 
-// Both pixel-space textured-rectangle adapters meet here: sub_8227F5B8
-// supplies default UVs; sub_8227F608 supplies explicit UVs (generated .10).
+// Both pixel-space textured-rectangle adapters meet here: sub_82293A98
+// supplies default UVs; sub_82293AE8 supplies explicit UVs (generated .10).
 // Transform their vertex positions once at the common emitter. UVs, colors,
 // blend state and animation inputs stay under the original game's control.
-extern "C" void sub_8227F2E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822937C8(PPCContext& ctx, uint8_t* base) {
   using namespace gta4::aspect;
   const auto layout = CurrentUi(base);
   if (layout.active && layout.render.valid() && !emission.active && !baked_font_depth)
     TraceLoadingMask(layout, {ctx.f1.f64, ctx.f2.f64, ctx.f3.f64, ctx.f4.f64}, "textured-mask");
   const EmitScope emit({layout.transform.Pixels(layout.render),
                         layout.active && layout.render.valid() && !layout.transform.identity()});
-  __imp__sub_8227F2E8(ctx, base);
+  __imp__sub_822937C8(ctx, base);
 }
 
-extern "C" void sub_821B5C90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821B5C78(PPCContext& ctx, uint8_t* base) {
   // The retail loading label is a composition, not just font glyphs. Generated
   // .4:821B61E0 submits HUD text, then 821B64B0 / 821B652C / 821B6604 draw
   // the translucent solid masks and moving textured strip. Nested HUD text,
   // queued commands and immediate pixel rectangles must use this same anchor.
   const gta4::aspect::Scope layout_scope(gta4::aspect::UiRole::kLoadingLabel);
-  __imp__sub_821B5C90(ctx, base);
+  __imp__sub_821B5C78(ctx, base);
 }
-extern "C" void sub_82255CC8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82268088(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::Scope scope(gta4::aspect::MenuBodyUi(base));
-  __imp__sub_82255CC8(ctx, base);
+  __imp__sub_82268088(ctx, base);
 }
 
-// The frontend appends this command inline, bypassing sub_82146790. Capture the
+// The frontend appends this command inline, bypassing sub_82146780. Capture the
 // component at construction as well; StableDcToken survives size publication.
-extern "C" void sub_821BF598(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821BF418(PPCContext& ctx, uint8_t* base) {
   const uint32_t dc = ctx.r3.u32;
-  __imp__sub_821BF598(ctx, base);
+  __imp__sub_821BF418(ctx, base);
   gta4::aspect::FinalizeDc(base, dc);
 }

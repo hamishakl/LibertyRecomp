@@ -19,17 +19,17 @@ namespace {
 
 // All guest layout constants below were derived by
 // /tmp/derive_audio_trace_constants.py from the generated implementations.
-constexpr uint32_t kSourceVtable = 0x820BE570;
+constexpr uint32_t kSourceVtable = 0x820BE4D0;
 constexpr uint32_t kAllocatorHeaderSize = 0x1C;
 constexpr uint32_t kOuterSourceSlotOffset = 0x13C;
-constexpr uint32_t kAudioEnginePointerGlobal = 0x831D53EC;
+constexpr uint32_t kAudioEnginePointerGlobal = 0x831D526C;
 constexpr uint32_t kAudioEngineListSentinelOffset = 0x50;
 constexpr uint32_t kAudioEngineListNodeOffsetField = 0x58;
-constexpr uint32_t kPublishIndexTable = 0x831C8BB0;
-constexpr uint32_t kWorkerPoolRootGlobal = 0x831C8EC0;
+constexpr uint32_t kPublishIndexTable = 0x831C8A30;
+constexpr uint32_t kWorkerPoolRootGlobal = 0x831C8D40;
 constexpr uint32_t kWorkerPoolCountOffset = 0x28;
-constexpr uint32_t kTitlePrimaryAllocatorGlobal = 0x831C8F94;
-constexpr uint32_t kTitleSecondaryAllocatorGlobal = 0x831C8F90;
+constexpr uint32_t kTitlePrimaryAllocatorGlobal = 0x831C8E14;
+constexpr uint32_t kTitleSecondaryAllocatorGlobal = 0x831C8E10;
 constexpr uint32_t kScriptRegistrationOffset = 0x39C0;
 constexpr uint32_t kScriptRegistrationStride = 0x8;
 constexpr uint32_t kScriptRegistrationCount = 0x14;
@@ -46,7 +46,7 @@ constexpr uint32_t kCrFrameSecondOffset = 0x24;
 constexpr uint32_t kInternalSelectorOffset = 0xE7;
 constexpr uint32_t kInternalSelectedRecordStride = 0x20;
 constexpr uint32_t kInternalSelectedRecordFlagOffset = 0x5F;
-constexpr uint32_t kPartyStopCallSite = 0x8262AF34;
+constexpr uint32_t kPartyStopCallSite = 0x8257557C;
 constexpr uint64_t kGuestAddressSpaceSize = 0x100000000ULL;
 constexpr size_t kMaximumTrackedAllocators = 1024;
 constexpr size_t kMaximumPartyStopEntries = 16;
@@ -583,25 +583,25 @@ void TraceCrFrameArray(uint8_t* base, uint32_t caller, uint32_t frame, uint32_t 
       },
       [](LifetimeRecord& candidate) { candidate.flags |= kPhysicalReuseSeen; });
   if (record) {
-    LogRecord("crframe-array-reuse", 0x82444A30, caller, base, *record, frame, begin, end, capacity,
+    LogRecord("crframe-array-reuse", 0x82445018, caller, base, *record, frame, begin, end, capacity,
               data_source, array_index);
   }
 }
 
 }  // namespace
 
-extern "C" void sub_8219A350(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8219A368(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8219A350(ctx, base);
+    __imp__sub_8219A368(ctx, base);
     return;
   }
   const uint32_t caller = ctx.lr;
   const uint32_t allocation_flags = ctx.r3.u32;
   const uint32_t requested_size = ctx.r4.u32;
   const uint32_t output_pointer = ctx.r5.u32;
-  __imp__sub_8219A350(ctx, base);
+  __imp__sub_8219A368(ctx, base);
   if (ctx.r3.s32 < 0 || !IsGuestRange(output_pointer, sizeof(uint32_t)))
     return;
   const uint32_t allocator = REX_LOAD_U32(output_pointer);
@@ -609,38 +609,38 @@ extern "C" void sub_8219A350(PPCContext& ctx, uint8_t* base) {
     return;
   const uint32_t backing = REX_LOAD_U32(allocator + 24);
   const auto record = RegisterAllocator(allocator, requested_size, backing);
-  LogRecord("allocator-create", 0x8219A350, caller, base, record, allocation_flags, output_pointer);
+  LogRecord("allocator-create", 0x8219A368, caller, base, record, allocation_flags, output_pointer);
 }
 
-extern "C" void sub_8219A5C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8219A5E0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8219A5C8(ctx, base);
+    __imp__sub_8219A5E0(ctx, base);
     return;
   }
   const uint32_t allocator = ctx.r3.u32;
   const uint32_t requested_size = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
   const auto record = FindByAllocator(allocator);
-  __imp__sub_8219A5C8(ctx, base);
+  __imp__sub_8219A5E0(ctx, base);
   if (record) {
-    LogRecord("allocator-linear-alloc", 0x8219A5C8, caller, base, *record, requested_size,
+    LogRecord("allocator-linear-alloc", 0x8219A5E0, caller, base, *record, requested_size,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_82192BC8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82192B88(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82192BC8(ctx, base);
+    __imp__sub_82192B88(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
   const uint32_t allocator = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_82192BC8(ctx, base);
+  __imp__sub_82192B88(ctx, base);
   auto record = UpdateRecord(
       [allocator](const LifetimeRecord& candidate) { return candidate.allocator == allocator; },
       [source](LifetimeRecord& candidate) {
@@ -656,16 +656,16 @@ extern "C" void sub_82192BC8(PPCContext& ctx, uint8_t* base) {
           [](LifetimeRecord& candidate) { candidate.flags |= kSourceLinked; });
     }
     if (record)
-      LogRecord("source-ctor-exit", 0x82192BC8, caller, *record, after, source,
+      LogRecord("source-ctor-exit", 0x82192B88, caller, *record, after, source,
                 link_proven ? 1 : 0);
   }
 }
 
-extern "C" void sub_82192E40(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82192E00(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82192E40(ctx, base);
+    __imp__sub_82192E00(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
@@ -673,59 +673,59 @@ extern "C" void sub_82192E40(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller = ctx.lr;
   const auto record = FindBySource(source);
   if (record) {
-    LogRecord("source-initialize-enter", 0x82192E40, caller, base, *record, configuration);
+    LogRecord("source-initialize-enter", 0x82192E00, caller, base, *record, configuration);
   }
-  __imp__sub_82192E40(ctx, base);
+  __imp__sub_82192E00(ctx, base);
   if (record) {
-    LogRecord("source-initialize-exit", 0x82192E40, caller, base, *record, configuration,
+    LogRecord("source-initialize-exit", 0x82192E00, caller, base, *record, configuration,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_821929C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82192988(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_821929C8(ctx, base);
+    __imp__sub_82192988(ctx, base);
     return;
   }
   const uint32_t configuration = ctx.r3.u32;
   const uint32_t flags = ctx.r4.u32;
   const uint32_t output_slot = ctx.r5.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_821929C8(ctx, base);
+  __imp__sub_82192988(ctx, base);
   if (ctx.r3.s32 < 0 || !IsGuestRange(output_slot, sizeof(uint32_t)))
     return;
   const uint32_t source = REX_LOAD_U32(output_slot);
   const auto record = FindBySource(source);
   if (record) {
-    LogRecord("source-acquire-published", 0x821929C8, caller, base, *record, configuration, flags,
+    LogRecord("source-acquire-published", 0x82192988, caller, base, *record, configuration, flags,
               output_slot, source, ctx.r3.u32);
   }
 }
 
-extern "C" void sub_829335B0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218FB08(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_829335B0(ctx, base);
+    __imp__sub_8218FB08(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
   const auto record = FindBySource(source);
   const GuestSnapshot before = record ? CaptureSnapshot(base, *record) : GuestSnapshot{};
-  __imp__sub_829335B0(ctx, base);
+  __imp__sub_8218FB08(ctx, base);
   if (record) {
-    LogRecord("source-addref", 0x829335B0, caller, *record, before, before.source_ref, ctx.r3.u32);
+    LogRecord("source-addref", 0x8218FB08, caller, *record, before, before.source_ref, ctx.r3.u32);
   }
 }
 
-extern "C" void sub_82192460(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218FB20(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82192460(ctx, base);
+    __imp__sub_8218FB20(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
@@ -733,20 +733,20 @@ extern "C" void sub_82192460(PPCContext& ctx, uint8_t* base) {
   const auto record = FindBySource(source);
   const GuestSnapshot before = record ? CaptureSnapshot(base, *record) : GuestSnapshot{};
   if (record) {
-    LogRecord("source-release-enter", 0x82192460, caller, *record, before, before.source_ref, 0);
+    LogRecord("source-release-enter", 0x8218FB20, caller, *record, before, before.source_ref, 0);
   }
-  __imp__sub_82192460(ctx, base);
+  __imp__sub_8218FB20(ctx, base);
   if (record && before.source_ref > 1) {
-    LogRecord("source-release-exit", 0x82192460, caller, base, *record, before.source_ref,
+    LogRecord("source-release-exit", 0x8218FB20, caller, base, *record, before.source_ref,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_8218FF28(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218FF30(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8218FF28(ctx, base);
+    __imp__sub_8218FF30(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
@@ -755,20 +755,20 @@ extern "C" void sub_8218FF28(PPCContext& ctx, uint8_t* base) {
       UpdateRecord([source](const LifetimeRecord& candidate) { return candidate.source == source; },
                    [](LifetimeRecord& candidate) { candidate.flags |= kFinalReleaseEntered; });
   if (record) {
-    LogRecord("source-final-enter", 0x8218FF28, caller, base, *record);
+    LogRecord("source-final-enter", 0x8218FF30, caller, base, *record);
   }
-  __imp__sub_8218FF28(ctx, base);
+  __imp__sub_8218FF30(ctx, base);
   if (record) {
-    LogRecord("source-final-exit", 0x8218FF28, caller, *record, GuestSnapshot{}, source,
+    LogRecord("source-final-exit", 0x8218FF30, caller, *record, GuestSnapshot{}, source,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_82192CF0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82192CB0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82192CF0(ctx, base);
+    __imp__sub_82192CB0(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
@@ -778,9 +778,9 @@ extern "C" void sub_82192CF0(PPCContext& ctx, uint8_t* base) {
                    [](LifetimeRecord& candidate) { candidate.flags |= kSourceDestructorEntered; });
   const GuestSnapshot before = record ? CaptureSnapshot(base, *record) : GuestSnapshot{};
   if (record) {
-    LogRecord("source-dtor-enter", 0x82192CF0, caller, *record, before);
+    LogRecord("source-dtor-enter", 0x82192CB0, caller, *record, before);
   }
-  __imp__sub_82192CF0(ctx, base);
+  __imp__sub_82192CB0(ctx, base);
   const GuestSnapshot after = record ? CaptureSnapshot(base, *record) : GuestSnapshot{};
   const bool unlink_proven = record && SourceUnlinkIsProven(base, before, after);
   if (unlink_proven) {
@@ -789,34 +789,34 @@ extern "C" void sub_82192CF0(PPCContext& ctx, uint8_t* base) {
         [](LifetimeRecord& candidate) { candidate.flags &= ~kSourceLinked; });
   }
   if (record) {
-    LogRecord("source-dtor-exit", 0x82192CF0, caller, *record, after, source,
+    LogRecord("source-dtor-exit", 0x82192CB0, caller, *record, after, source,
               unlink_proven ? 1 : 0);
   }
 }
 
-extern "C" void sub_8219FE60(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821943F8(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8219FE60(ctx, base);
+    __imp__sub_821943F8(ctx, base);
     return;
   }
   const uint32_t allocator = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
   const auto record = FindByAllocator(allocator);
   const GuestSnapshot before = record ? CaptureSnapshot(base, *record) : GuestSnapshot{};
-  __imp__sub_8219FE60(ctx, base);
+  __imp__sub_821943F8(ctx, base);
   if (record) {
-    LogRecord("allocator-addref", 0x8219FE60, caller, base, *record, before.allocator_ref,
+    LogRecord("allocator-addref", 0x821943F8, caller, base, *record, before.allocator_ref,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_82194438(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8219A310(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82194438(ctx, base);
+    __imp__sub_8219A310(ctx, base);
     return;
   }
   const uint32_t allocator = ctx.r3.u32;
@@ -824,21 +824,21 @@ extern "C" void sub_82194438(PPCContext& ctx, uint8_t* base) {
   const auto record = FindByAllocator(allocator);
   const GuestSnapshot before = record ? CaptureSnapshot(base, *record) : GuestSnapshot{};
   if (record) {
-    LogRecord("allocator-release-enter", 0x82194438, caller, *record, before, before.allocator_ref,
+    LogRecord("allocator-release-enter", 0x8219A310, caller, *record, before, before.allocator_ref,
               0);
   }
-  __imp__sub_82194438(ctx, base);
+  __imp__sub_8219A310(ctx, base);
   if (record && before.allocator_ref > 1) {
-    LogRecord("allocator-release-exit", 0x82194438, caller, base, *record, before.allocator_ref,
+    LogRecord("allocator-release-exit", 0x8219A310, caller, base, *record, before.allocator_ref,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_8219A4B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8219A4D0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8219A4B8(ctx, base);
+    __imp__sub_8219A4D0(ctx, base);
     return;
   }
   const uint32_t allocator = ctx.r3.u32;
@@ -847,19 +847,19 @@ extern "C" void sub_8219A4B8(PPCContext& ctx, uint8_t* base) {
       [allocator](const LifetimeRecord& candidate) { return candidate.allocator == allocator; },
       [](LifetimeRecord& candidate) { candidate.flags |= kAllocatorDestructorEntered; });
   if (record) {
-    LogRecord("allocator-dtor-enter", 0x8219A4B8, caller, base, *record, ctx.r4.u32, 0);
+    LogRecord("allocator-dtor-enter", 0x8219A4D0, caller, base, *record, ctx.r4.u32, 0);
   }
-  __imp__sub_8219A4B8(ctx, base);
+  __imp__sub_8219A4D0(ctx, base);
   if (record) {
-    LogRecord("allocator-dtor-exit", 0x8219A4B8, caller, *record, GuestSnapshot{}, allocator, 0);
+    LogRecord("allocator-dtor-exit", 0x8219A4D0, caller, *record, GuestSnapshot{}, allocator, 0);
   }
 }
 
-extern "C" void sub_8219A6F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8219A710(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8219A6F8(ctx, base);
+    __imp__sub_8219A710(ctx, base);
     return;
   }
   const uint32_t aggregate_interface = ctx.r3.u32;
@@ -872,113 +872,113 @@ extern "C" void sub_8219A6F8(PPCContext& ctx, uint8_t* base) {
   if (CheckedGuestAdd(aggregate_interface, sizeof(uint64_t), sizeof(uint32_t), &tag_address))
     allocation_tag = REX_LOAD_U32(tag_address);
   if (record) {
-    LogRecord("aggregate-dtor-enter", 0x8219A6F8, caller, base, *record, aggregate_interface,
+    LogRecord("aggregate-dtor-enter", 0x8219A710, caller, base, *record, aggregate_interface,
               allocation_tag);
   }
-  __imp__sub_8219A6F8(ctx, base);
+  __imp__sub_8219A710(ctx, base);
   if (!record)
     return;
   auto returned = UpdateRecord(
       [allocator](const LifetimeRecord& candidate) { return candidate.allocator == allocator; },
       [](LifetimeRecord& candidate) { candidate.flags |= kAggregateDestructorReturned; });
   if (returned) {
-    LogRecord("aggregate-dtor-return", 0x8219A6F8, caller, *returned, GuestSnapshot{},
+    LogRecord("aggregate-dtor-return", 0x8219A710, caller, *returned, GuestSnapshot{},
               aggregate_interface, allocation_tag);
   }
 }
 
-extern "C" void sub_821B3608(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821B3618(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_821B3608(ctx, base);
+    __imp__sub_821B3618(ctx, base);
     return;
   }
   const uint32_t requested_size = ctx.r3.u32;
   const uint32_t flags = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_821B3608(ctx, base);
-  LogHeapReuse("aggregate-alloc-reuse", 0x821B3608, caller, base, ctx.r3.u32, requested_size);
+  __imp__sub_821B3618(ctx, base);
+  LogHeapReuse("aggregate-alloc-reuse", 0x821B3618, caller, base, ctx.r3.u32, requested_size);
   (void)flags;
 }
 
-extern "C" void sub_821B3510(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821B3520(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_821B3510(ctx, base);
+    __imp__sub_821B3520(ctx, base);
     return;
   }
   const uint32_t requested_size = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_821B3510(ctx, base);
-  LogHeapReuse("default-alloc-reuse", 0x821B3510, caller, base, ctx.r3.u32, requested_size);
+  __imp__sub_821B3520(ctx, base);
+  LogHeapReuse("default-alloc-reuse", 0x821B3520, caller, base, ctx.r3.u32, requested_size);
 }
 
-extern "C" void sub_821B3538(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821B3548(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_821B3538(ctx, base);
+    __imp__sub_821B3548(ctx, base);
     return;
   }
   const uint32_t requested_size = ctx.r3.u32;
   const uint32_t alignment = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_821B3538(ctx, base);
-  LogHeapReuse("default-aligned-alloc-reuse", 0x821B3538, caller, base, ctx.r3.u32, requested_size);
+  __imp__sub_821B3548(ctx, base);
+  LogHeapReuse("default-aligned-alloc-reuse", 0x821B3548, caller, base, ctx.r3.u32, requested_size);
   (void)alignment;
 }
 
-extern "C" void sub_8291F2C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8291EB78(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8291F2C8(ctx, base);
+    __imp__sub_8291EB78(ctx, base);
     return;
   }
   const uint32_t requested_size = ctx.r3.u32;
   const uint32_t flags = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_8291F2C8(ctx, base);
-  LogHeapReuse("title-heap-alloc-reuse", 0x8291F2C8, caller, base, ctx.r3.u32, requested_size);
+  __imp__sub_8291EB78(ctx, base);
+  LogHeapReuse("title-heap-alloc-reuse", 0x8291EB78, caller, base, ctx.r3.u32, requested_size);
   (void)flags;
 }
 
-extern "C" void sub_821B3700(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821B3710(PPCContext& ctx, uint8_t* base) {
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_821B3700(ctx, base);
+    __imp__sub_821B3710(ctx, base);
     return;
   }
   const uint32_t allocation = ctx.r3.u32;
   const uint32_t flags = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
   const auto record =
-      NoteHeapFreeAttempt("aggregate-free-attempt", 0x821B3700, caller, base, allocation, flags);
-  __imp__sub_821B3700(ctx, base);
+      NoteHeapFreeAttempt("aggregate-free-attempt", 0x821B3710, caller, base, allocation, flags);
+  __imp__sub_821B3710(ctx, base);
   if (record)
-    NoteHeapFreeReturn("aggregate-free-return", 0x821B3700, caller, *record, allocation, flags);
+    NoteHeapFreeReturn("aggregate-free-return", 0x821B3710, caller, *record, allocation, flags);
 }
 
-extern "C" void sub_821B3560(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821B3570(PPCContext& ctx, uint8_t* base) {
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_821B3560(ctx, base);
+    __imp__sub_821B3570(ctx, base);
     return;
   }
   const uint32_t allocation = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
   const auto record =
-      NoteHeapFreeAttempt("default-free-attempt", 0x821B3560, caller, base, allocation, 0);
-  __imp__sub_821B3560(ctx, base);
+      NoteHeapFreeAttempt("default-free-attempt", 0x821B3570, caller, base, allocation, 0);
+  __imp__sub_821B3570(ctx, base);
   if (record)
-    NoteHeapFreeReturn("default-free-return", 0x821B3560, caller, *record, allocation, 0);
+    NoteHeapFreeReturn("default-free-return", 0x821B3570, caller, *record, allocation, 0);
 }
 
-extern "C" void sub_8291F330(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8291EBE0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8291F330(ctx, base);
+    __imp__sub_8291EBE0(ctx, base);
     return;
   }
   const uint32_t allocation = ctx.r3.u32;
@@ -989,45 +989,45 @@ extern "C" void sub_8291F330(PPCContext& ctx, uint8_t* base) {
   const uint32_t secondary = IsGuestRange(kTitleSecondaryAllocatorGlobal, sizeof(uint32_t))
                                  ? REX_LOAD_U32(kTitleSecondaryAllocatorGlobal)
                                  : 0;
-  NoteHeapFreeAttempt("title-free-attempt", 0x8291F330, caller, base, allocation, 0, primary,
+  NoteHeapFreeAttempt("title-free-attempt", 0x8291EBE0, caller, base, allocation, 0, primary,
                       secondary);
-  __imp__sub_8291F330(ctx, base);
+  __imp__sub_8291EBE0(ctx, base);
 }
 
-extern "C" void sub_8218F700(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218F6E8(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8218F700(ctx, base);
+    __imp__sub_8218F6E8(ctx, base);
     return;
   }
   const uint32_t output_slot = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_8218F700(ctx, base);
+  __imp__sub_8218F6E8(ctx, base);
   if (ctx.r3.s32 < 0 || !IsGuestRange(output_slot, sizeof(uint32_t)))
     return;
   const uint32_t source = REX_LOAD_U32(output_slot);
   auto record = FindBySource(source);
   if (record) {
-    LogRecord("outer-source-published", 0x8218F700, caller, base, *record, output_slot, source);
+    LogRecord("outer-source-published", 0x8218F6E8, caller, base, *record, output_slot, source);
   }
 }
 
-extern "C" void sub_8292FAB8(PPCContext& ctx, uint8_t* base) {
-  // This initializer publishes outer+316 through sub_8218F700 and then
+extern "C" void sub_8292F320(PPCContext& ctx, uint8_t* base) {
+  // This initializer publishes outer+316 through sub_8218F6E8 and then
   // immediately reloads and uses the published source. It must participate in
-  // the same domain as cleanup and every consumer; locking sub_8218F700 alone
+  // the same domain as cleanup and every consumer; locking sub_8218F6E8 alone
   // would still leave the post-publication use exposed to concurrent cleanup.
-  AudVoiceSourcePublicationLock publication_lock(0x8292FAB8);
-  __imp__sub_8292FAB8(ctx, base);
+  AudVoiceSourcePublicationLock publication_lock(0x8292F320);
+  __imp__sub_8292F320(ctx, base);
 }
 
-extern "C" void sub_8292F0E8(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x8292F0E8);
+extern "C" void sub_8292E950(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292E950);
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8292F0E8(ctx, base);
+    __imp__sub_8292E950(ctx, base);
     return;
   }
   const uint32_t outer = ctx.r3.u32;
@@ -1038,42 +1038,42 @@ extern "C" void sub_8292F0E8(PPCContext& ctx, uint8_t* base) {
   const uint32_t source = source_slot_valid ? REX_LOAD_U32(source_slot) : 0;
   const auto record = FindBySource(source);
   if (record) {
-    LogRecord("outer-cleanup-enter", 0x8292F0E8, caller, base, *record, outer, source);
+    LogRecord("outer-cleanup-enter", 0x8292E950, caller, base, *record, outer, source);
   }
-  __imp__sub_8292F0E8(ctx, base);
+  __imp__sub_8292E950(ctx, base);
   if (record) {
     const uint32_t current_source = source_slot_valid ? REX_LOAD_U32(source_slot) : 0;
-    LogRecord("outer-cleanup-exit", 0x8292F0E8, caller, *record, GuestSnapshot{}, outer,
+    LogRecord("outer-cleanup-exit", 0x8292E950, caller, *record, GuestSnapshot{}, outer,
               current_source);
   }
 }
 
-extern "C" void sub_8218EDB8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218EDA0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8218EDB8(ctx, base);
+    __imp__sub_8218EDA0(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
   const auto record = FindBySource(source);
   if (record) {
-    LogRecord("locked-release-enter", 0x8218EDB8, caller, base, *record, source, 0);
+    LogRecord("locked-release-enter", 0x8218EDA0, caller, base, *record, source, 0);
   }
-  __imp__sub_8218EDB8(ctx, base);
+  __imp__sub_8218EDA0(ctx, base);
   if (record) {
-    LogRecord("locked-release-exit", 0x8218EDB8, caller, *record, GuestSnapshot{}, source,
+    LogRecord("locked-release-exit", 0x8218EDA0, caller, *record, GuestSnapshot{}, source,
               ctx.r3.u32);
   }
 }
 
-extern "C" void sub_829304A0(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x829304A0);
+extern "C" void sub_8292FD08(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292FD08);
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_829304A0(ctx, base);
+    __imp__sub_8292FD08(ctx, base);
     return;
   }
   const uint32_t outer = ctx.r3.u32;
@@ -1082,76 +1082,76 @@ extern "C" void sub_829304A0(PPCContext& ctx, uint8_t* base) {
   const bool source_slot_valid =
       CheckedGuestAdd(outer, kOuterSourceSlotOffset, sizeof(uint32_t), &source_slot);
   const uint32_t source = source_slot_valid ? REX_LOAD_U32(source_slot) : 0;
-  LogMethodAnomaly("outer-update-stale-slot", 0x829304A0, caller, base, source);
-  __imp__sub_829304A0(ctx, base);
+  LogMethodAnomaly("outer-update-stale-slot", 0x8292FD08, caller, base, source);
+  __imp__sub_8292FD08(ctx, base);
 }
 
-extern "C" void sub_8292F130(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x8292F130);
-  __imp__sub_8292F130(ctx, base);
+extern "C" void sub_8292E998(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292E998);
+  __imp__sub_8292E998(ctx, base);
 }
 
-extern "C" void sub_8292F250(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x8292F250);
-  __imp__sub_8292F250(ctx, base);
+extern "C" void sub_8292EAB8(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292EAB8);
+  __imp__sub_8292EAB8(ctx, base);
 }
 
-extern "C" void sub_8292F2C0(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x8292F2C0);
-  __imp__sub_8292F2C0(ctx, base);
+extern "C" void sub_8292EB28(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292EB28);
+  __imp__sub_8292EB28(ctx, base);
 }
 
-extern "C" void sub_8292FDE0(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x8292FDE0);
-  __imp__sub_8292FDE0(ctx, base);
+extern "C" void sub_8292F648(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292F648);
+  __imp__sub_8292F648(ctx, base);
 }
 
-extern "C" void sub_8292FFD0(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x8292FFD0);
-  __imp__sub_8292FFD0(ctx, base);
+extern "C" void sub_8292F838(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292F838);
+  __imp__sub_8292F838(ctx, base);
 }
 
-extern "C" void sub_82930078(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x82930078);
-  __imp__sub_82930078(ctx, base);
+extern "C" void sub_8292F8E0(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292F8E0);
+  __imp__sub_8292F8E0(ctx, base);
 }
 
-extern "C" void sub_829302A8(PPCContext& ctx, uint8_t* base) {
-  AudVoiceSourcePublicationLock publication_lock(0x829302A8);
-  __imp__sub_829302A8(ctx, base);
+extern "C" void sub_8292FB10(PPCContext& ctx, uint8_t* base) {
+  AudVoiceSourcePublicationLock publication_lock(0x8292FB10);
+  __imp__sub_8292FB10(ctx, base);
 }
 
-extern "C" void sub_8218EE20(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218EE08(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8218EE20(ctx, base);
+    __imp__sub_8218EE08(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
-  LogMethodAnomaly("source-method32-stale", 0x8218EE20, caller, base, source);
-  __imp__sub_8218EE20(ctx, base);
+  LogMethodAnomaly("source-method32-stale", 0x8218EE08, caller, base, source);
+  __imp__sub_8218EE08(ctx, base);
 }
 
-extern "C" void sub_8218F0B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8218F0A0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8218F0B8(ctx, base);
+    __imp__sub_8218F0A0(ctx, base);
     return;
   }
   const uint32_t source = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
-  LogMethodAnomaly("source-method60-stale", 0x8218F0B8, caller, base, source);
-  __imp__sub_8218F0B8(ctx, base);
+  LogMethodAnomaly("source-method60-stale", 0x8218F0A0, caller, base, source);
+  __imp__sub_8218F0A0(ctx, base);
 }
 
-extern "C" void sub_8262AE58(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_825754A0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8262AE58(ctx, base);
+    __imp__sub_825754A0(ctx, base);
     return;
   }
   const uint32_t manager = ctx.r3.u32;
@@ -1202,15 +1202,15 @@ extern "C" void sub_8262AE58(PPCContext& ctx, uint8_t* base) {
     }
   }
 
-  LogCheckpoint("party-stop-enter", 0x8262AE58, caller, manager, script_id, script_index, total,
+  LogCheckpoint("party-stop-enter", 0x825754A0, caller, manager, script_id, script_index, total,
                 static_cast<uint32_t>(captured), static_cast<uint32_t>(epoch));
   for (size_t index = 0; index < captured; ++index) {
     const auto& snapshot = entries[index];
-    LogCheckpoint("party-stop-entry-before", 0x8262AE58, caller, snapshot.entry, snapshot.token,
+    LogCheckpoint("party-stop-entry-before", 0x825754A0, caller, snapshot.entry, snapshot.token,
                   snapshot.sound, snapshot.owner, snapshot.flag, static_cast<uint32_t>(index));
   }
 
-  __imp__sub_8262AE58(ctx, base);
+  __imp__sub_825754A0(ctx, base);
 
   for (size_t index = 0; index < captured; ++index) {
     const auto& snapshot = entries[index];
@@ -1221,19 +1221,19 @@ extern "C" void sub_8262AE58(PPCContext& ctx, uint8_t* base) {
                 IsGuestRange(snapshot.entry - sizeof(uint32_t), sizeof(uint32_t))
             ? REX_LOAD_U32(snapshot.entry - sizeof(uint32_t))
             : 0;
-    LogCheckpoint("party-stop-entry-after", 0x8262AE58, caller, snapshot.entry, current_token,
+    LogCheckpoint("party-stop-entry-after", 0x825754A0, caller, snapshot.entry, current_token,
                   REX_LOAD_U32(snapshot.entry), REX_LOAD_U32(snapshot.entry + sizeof(uint32_t)),
                   REX_LOAD_U8(snapshot.entry + sizeof(uint64_t)), static_cast<uint32_t>(index));
   }
-  LogCheckpoint("party-stop-exit", 0x8262AE58, caller, manager, script_id, script_index, total,
+  LogCheckpoint("party-stop-exit", 0x825754A0, caller, manager, script_id, script_index, total,
                 static_cast<uint32_t>(captured), static_cast<uint32_t>(epoch));
 }
 
-extern "C" void sub_829093B0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82908D90(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_829093B0(ctx, base);
+    __imp__sub_82908D90(ctx, base);
     return;
   }
   const uint32_t sound = ctx.r3.u32;
@@ -1241,15 +1241,15 @@ extern "C" void sub_829093B0(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller = ctx.lr;
   const bool trace_party_stop = caller == kPartyStopCallSite;
   if (trace_party_stop && IsGuestRange(sound, kSoundFacadeTargetOffset + sizeof(uint32_t))) {
-    LogCheckpoint("party-sound-stop-enter", 0x829093B0, caller, sound, stop_mode,
+    LogCheckpoint("party-sound-stop-enter", 0x82908D90, caller, sound, stop_mode,
                   REX_LOAD_U8(sound + kSoundFacadeHandleOffset),
                   REX_LOAD_U8(sound + kSoundFacadePartitionOffset),
                   REX_LOAD_U32(sound + kSoundFacadeTargetOffset),
                   static_cast<uint32_t>(g_party_transition_epoch.load(std::memory_order_acquire)));
   }
-  __imp__sub_829093B0(ctx, base);
+  __imp__sub_82908D90(ctx, base);
   if (trace_party_stop && IsGuestRange(sound, kSoundFacadeTargetOffset + sizeof(uint32_t))) {
-    LogCheckpoint("party-sound-stop-exit", 0x829093B0, caller, sound, stop_mode,
+    LogCheckpoint("party-sound-stop-exit", 0x82908D90, caller, sound, stop_mode,
                   REX_LOAD_U8(sound + kSoundFacadeHandleOffset),
                   REX_LOAD_U8(sound + kSoundFacadePartitionOffset),
                   REX_LOAD_U32(sound + kSoundFacadeTargetOffset),
@@ -1257,88 +1257,88 @@ extern "C" void sub_829093B0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82910118(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8290FAF8(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82910118(ctx, base);
+    __imp__sub_8290FAF8(ctx, base);
     return;
   }
   const uint32_t internal = ctx.r3.u32;
   const uint32_t bit = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
   if (caller != kPartyStopCallSite) {
-    __imp__sub_82910118(ctx, base);
+    __imp__sub_8290FAF8(ctx, base);
     return;
   }
   const InternalPublishSnapshot before = CaptureInternalPublish(base, internal);
-  LogCheckpoint("party-publish-before", 0x82910118, caller, before.internal, before.selector,
+  LogCheckpoint("party-publish-before", 0x8290FAF8, caller, before.internal, before.selector,
                 before.selected_index, before.selected_record, before.selected_flag, bit);
-  __imp__sub_82910118(ctx, base);
+  __imp__sub_8290FAF8(ctx, base);
   const InternalPublishSnapshot after = CaptureInternalPublish(base, internal);
-  LogCheckpoint("party-publish-after", 0x82910118, caller, after.internal, after.selector,
+  LogCheckpoint("party-publish-after", 0x8290FAF8, caller, after.internal, after.selector,
                 after.selected_index, after.selected_record, after.selected_flag, bit);
 }
 
-extern "C" void sub_8290FD90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8290F770(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8290FD90(ctx, base);
+    __imp__sub_8290F770(ctx, base);
     return;
   }
   const uint32_t manager = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
   const uint64_t epoch = ClaimPartyEpoch(&g_last_publish_epoch);
   if (!epoch) {
-    __imp__sub_8290FD90(ctx, base);
+    __imp__sub_8290F770(ctx, base);
     return;
   }
   const PublishWindowSnapshot before = CapturePublishWindow(base, manager);
-  LogCheckpoint("party-publish-window-before", 0x8290FD90, caller, before.manager, before.selector,
+  LogCheckpoint("party-publish-window-before", 0x8290F770, caller, before.manager, before.selector,
                 before.producer_index, before.consumer_index, before.producer_record,
                 before.consumer_record);
-  __imp__sub_8290FD90(ctx, base);
+  __imp__sub_8290F770(ctx, base);
   const PublishWindowSnapshot after = CapturePublishWindow(base, manager);
-  LogCheckpoint("party-publish-window-after", 0x8290FD90, caller, after.manager, after.selector,
+  LogCheckpoint("party-publish-window-after", 0x8290F770, caller, after.manager, after.selector,
                 after.producer_index, after.consumer_index, after.producer_record,
                 after.consumer_record);
 }
 
-extern "C" void sub_8291DF00(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8291D7B0(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_8291DF00(ctx, base);
+    __imp__sub_8291D7B0(ctx, base);
     return;
   }
   const uint32_t output = ctx.r3.u32;
   const uint32_t caller = ctx.lr;
   const uint64_t epoch = ClaimPartyEpoch(&g_last_worker_epoch);
   if (!epoch) {
-    __imp__sub_8291DF00(ctx, base);
+    __imp__sub_8291D7B0(ctx, base);
     return;
   }
   const WorkerPoolSnapshot before = CaptureWorkerPool(base, output);
-  LogCheckpoint("party-worker-before", 0x8291DF00, caller, before.output, before.root, before.table,
+  LogCheckpoint("party-worker-before", 0x8291D7B0, caller, before.output, before.root, before.table,
                 before.count, static_cast<uint32_t>(epoch), 0);
-  __imp__sub_8291DF00(ctx, base);
+  __imp__sub_8291D7B0(ctx, base);
   const WorkerPoolSnapshot after = CaptureWorkerPool(base, output);
-  LogCheckpoint("party-worker-after", 0x8291DF00, caller, after.output, after.root, after.table,
+  LogCheckpoint("party-worker-after", 0x8291D7B0, caller, after.output, after.root, after.table,
                 after.count, static_cast<uint32_t>(epoch), ctx.r3.u32);
 }
 
-extern "C" void sub_82444A30(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82445018(PPCContext& ctx, uint8_t* base) {
   // Disabled diagnostics must not scan records or read guest snapshots.
   // The source-publication lock above, when present, remains unconditional.
   if (!IsAudioLifetimeTraceLoggingEnabled()) {
-    __imp__sub_82444A30(ctx, base);
+    __imp__sub_82445018(ctx, base);
     return;
   }
   const uint32_t first_frame = ctx.r3.u32;
   const uint32_t data_source = ctx.r4.u32;
   const uint32_t caller = ctx.lr;
-  __imp__sub_82444A30(ctx, base);
+  __imp__sub_82445018(ctx, base);
   TraceCrFrameArray(base, caller, first_frame, data_source, 0);
   uint32_t second_frame = 0;
   if (CheckedGuestAdd(first_frame, kCrFrameSecondOffset, kCrFrameCapacityOffset + sizeof(uint32_t),

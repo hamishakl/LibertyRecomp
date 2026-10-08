@@ -9,12 +9,12 @@
 
 namespace {
 
-// Layout and limits are taken from the generated sub_82143DC8 animator and
-// sub_82145968 loading-screen definition parser.
-constexpr uint32_t kCumulativeElapsedGlobal = 0x831D5338;
-constexpr uint32_t kFrameDeltaGlobal = 0x831D533C;
-constexpr uint32_t kCurrentScreenGlobal = 0x831D5340;
-constexpr uint32_t kDefinitionsBase = 0x831D5498;
+// Layout and limits are taken from the generated sub_82143DF8 animator and
+// sub_82145998 loading-screen definition parser.
+constexpr uint32_t kCumulativeElapsedGlobal = 0x831D51B8;
+constexpr uint32_t kFrameDeltaGlobal = 0x831D51BC;
+constexpr uint32_t kCurrentScreenGlobal = 0x831D51C0;
+constexpr uint32_t kDefinitionsBase = 0x831D5318;
 constexpr uint32_t kScreenStride = 400;
 constexpr uint32_t kLayerCountOffset = 4;
 constexpr uint32_t kLayerStride = 96;
@@ -43,17 +43,17 @@ void StoreGuestFloat(uint8_t* base, uint32_t address, float value) {
 
 }  // namespace
 
-extern "C" void sub_82143DC8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82143DF8(PPCContext& ctx, uint8_t* base) {
   const uint32_t screen = REX_LOAD_U32(kCurrentScreenGlobal);
   if (screen >= kScreenCount) {
-    __imp__sub_82143DC8(ctx, base);
+    __imp__sub_82143DF8(ctx, base);
     return;
   }
 
   const uint32_t screen_base = kDefinitionsBase + screen * kScreenStride;
   const uint32_t layer_count = REX_LOAD_U32(screen_base + kLayerCountOffset);
   if (layer_count > kLayersPerScreen) {
-    __imp__sub_82143DC8(ctx, base);
+    __imp__sub_82143DF8(ctx, base);
     return;
   }
 
@@ -73,7 +73,7 @@ extern "C" void sub_82143DC8(PPCContext& ctx, uint8_t* base) {
     }
   }
 
-  __imp__sub_82143DC8(ctx, base);
+  __imp__sub_82143DF8(ctx, base);
 
   if (!advance_animation) {
     // The sentinels keep the original routine on both non-trigger branches,

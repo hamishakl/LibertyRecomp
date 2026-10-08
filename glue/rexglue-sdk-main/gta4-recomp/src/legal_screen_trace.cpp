@@ -20,13 +20,13 @@ REXCVAR_DEFINE_BOOL(gta4_trace_legal_screen, true, "GTA IV/Diagnostics",
 namespace {
 
 // Retail control flow and string xrefs:
-//   sub_82144800 -> LEGAL_360 / LEGAL_360_US
-//   sub_82144800 -> sub_821F6E38 (HUD text submission)
-constexpr uint32_t kLegalTextBuffer = 0x831E4DE0;
-constexpr uint32_t kLegalSequenceGlobal = 0x831D5344;
-constexpr uint32_t kLegalModeGlobal = 0x831D5349;
-constexpr uint32_t kLegalReadyGlobal = 0x831D534B;
-constexpr uint32_t kGlobalDevice = 0x831C22A4;
+//   sub_82144830 -> LEGAL_360 / LEGAL_360_US
+//   sub_82144830 -> sub_82226068 (HUD text submission)
+constexpr uint32_t kLegalTextBuffer = 0x831E4C60;
+constexpr uint32_t kLegalSequenceGlobal = 0x831D51C4;
+constexpr uint32_t kLegalModeGlobal = 0x831D51C9;
+constexpr uint32_t kLegalReadyGlobal = 0x831D51CB;
+constexpr uint32_t kGlobalDevice = 0x831C2124;
 constexpr uint32_t kSubmittedFrameOffset = 16544;
 constexpr uint32_t kRenderTargetBase = 3108;
 constexpr size_t kMaximumLegalTextBytes = 4096;
@@ -76,11 +76,11 @@ uint32_t CurrentFrame(uint8_t* base, uint32_t device) {
 
 }  // namespace
 
-extern "C" void sub_82144800(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82144830(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::Scope artwork_scope(gta4::aspect::UiRole::kFixed);
   if (!rex::diagnostics::IsEnabled(rex::diagnostics::Category::kLegal) ||
       !REXCVAR_GET(gta4_trace_legal_screen)) {
-    __imp__sub_82144800(ctx, base);
+    __imp__sub_82144830(ctx, base);
     return;
   }
 
@@ -100,7 +100,7 @@ extern "C" void sub_82144800(PPCContext& ctx, uint8_t* base) {
       "rt0={:08X} sequence={} mode={} ready={}",
       call, frame, ctx.lr, device, render_target, sequence, mode, ready);
 
-  __imp__sub_82144800(ctx, base);
+  __imp__sub_82144830(ctx, base);
 
   --g_legal_trace_depth;
   const GuestTextFingerprint text = FingerprintGuestText(base, kLegalTextBuffer);
@@ -112,7 +112,7 @@ extern "C" void sub_82144800(PPCContext& ctx, uint8_t* base) {
       g_legal_text_submits);
 }
 
-extern "C" void sub_821F6E38(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82226068(PPCContext& ctx, uint8_t* base) {
   const gta4::aspect::Scope layout_scope(gta4::aspect::TextUi(ctx, base));
   GTA4_TouchObserveHudSubmit(ctx, base);
   GTA4_FontSelectionTraceText(ctx, base);
@@ -128,5 +128,5 @@ extern "C" void sub_821F6E38(PPCContext& ctx, uint8_t* base) {
         CurrentFrame(base, device), g_legal_text_submits, ctx.r5.u32, text.length,
         text.hash, ctx.f1.f64, ctx.f2.f64, ctx.r6.u32, ctx.r7.u32);
   }
-  GTA4_HelpTraceTextSubmit(ctx, base, __imp__sub_821F6E38);
+  GTA4_HelpTraceTextSubmit(ctx, base, __imp__sub_82226068);
 }

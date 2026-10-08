@@ -22,17 +22,17 @@ namespace gta4::input {
 namespace {
 constexpr uint32_t kRadarRenderPhaseVtable = 0x82013C9C;
 constexpr uint32_t kViewportCopyVtable = 0x82001150;
-constexpr uint32_t kCurrentRenderPhase = 0x82FEFDE4;
-constexpr uint32_t kCurrentViewport = 0x831C2200;
-constexpr uint32_t kRadarMapMode = 0x82BFA144;
-constexpr uint32_t kTouchLoadingActive = 0x831D5335;
-constexpr uint32_t kTouchCutsceneState = 0x82B977F0;
-constexpr uint32_t kTouchCutscenePreparing = 0x82B977FC;
+constexpr uint32_t kCurrentRenderPhase = 0x82FEFC74;
+constexpr uint32_t kCurrentViewport = 0x831C2080;
+constexpr uint32_t kRadarMapMode = 0x82C30C14;
+constexpr uint32_t kTouchLoadingActive = 0x831D51B5;
+constexpr uint32_t kTouchCutsceneState = 0x82BDA278;
+constexpr uint32_t kTouchCutscenePreparing = 0x82BDA284;
 constexpr uint32_t kPhaseViewportOffset = 176;
 constexpr uint32_t kCopiedViewportOffset = 16;
 constexpr uint32_t kViewportCopySize = 1040;
-// sub_82155680 supplies this live HUD_RADAR rectangle to its camera setter.
-constexpr uint32_t kAuthoredRadarRect = 0x82AA0A88;
+// sub_82148190 supplies this live HUD_RADAR rectangle to its camera setter.
+constexpr uint32_t kAuthoredRadarRect = 0x82AA0BD0;
 constexpr size_t kMaximumRadarViewportCopies = 32768;
 
 bool RadarSpan(uint8_t* base, uint32_t address, size_t size, bool write = false) {
@@ -55,10 +55,10 @@ uint32_t RadarRead(uint8_t* base, uint32_t address) {
 }
 
 void ObserveTouchPresentationBlock(uint8_t* base) {
-  // sub_821F4150 runs before normal frames, loading slides, and the loading
+  // sub_82223380 runs before normal frames, loading slides, and the loading
   // callback draw path. Publish host state here even if input polling stops.
-  // State/preparation match sub_821E3788 / sub_821EC8C8; loading matches
-  // sub_82144188. A false sample cannot revive the previous gameplay poll.
+  // State/preparation match sub_82211578 / sub_8221BAF8; loading matches
+  // sub_821441B8. A false sample cannot revive the previous gameplay poll.
   if (!RadarSpan(base, kTouchLoadingActive, sizeof(uint8_t)) ||
       !RadarSpan(base, kTouchCutsceneState, sizeof(uint32_t)) ||
       !RadarSpan(base, kTouchCutscenePreparing, sizeof(uint32_t)) ||
@@ -76,12 +76,12 @@ void RadarFloat(uint8_t* base, uint32_t address, double value) {
   std::memcpy(rex::memory::GuestPtr(base, address), &bits, sizeof(bits));
 }
 
-// sub_82163270 stores the runtime HUD_WEAPON_ICON index at config+1008.
-// sub_821C62C0 admits widgets by their layer byte before sub_821C5148 draws.
-constexpr uint32_t kWeaponHudIndex = 0x82B39E88;
-constexpr uint32_t kWeaponHudTable = 0x82B39990;
-constexpr uint32_t kWeaponHudCount = 0x82B39A90;
-constexpr uint32_t kActiveHudCamera = 0x82BEFA54;
+// sub_82163248 stores the runtime HUD_WEAPON_ICON index at config+1008.
+// sub_821C6100 admits widgets by their layer byte before sub_821C4F88 draws.
+constexpr uint32_t kWeaponHudIndex = 0x82B39D08;
+constexpr uint32_t kWeaponHudTable = 0x82B39810;
+constexpr uint32_t kWeaponHudCount = 0x82B39910;
+constexpr uint32_t kActiveHudCamera = 0x82B8E444;
 constexpr uint32_t kMaximumHudWidgets = 64;
 
 struct WeaponHudPass {
@@ -296,7 +296,7 @@ void CopyTouchRadarViewport(PPCContext& context, uint8_t* base) {
     std::lock_guard lock(radar_viewport_mutex);
     radar_viewport_copies.erase(command);
   }
-  __imp__sub_821BC948(context, base);
+  __imp__sub_821BC7C8(context, base);
   if (!radar_phase || !RadarSpan(base, command, kViewportCopySize, true) ||
       RadarRead(base, command) != kViewportCopyVtable) return;
 
@@ -306,8 +306,8 @@ void CopyTouchRadarViewport(PPCContext& context, uint8_t* base) {
       *rex::memory::GuestPtr(base, kRadarMapMode) == 0 && !facts.frontend && !facts.map;
   const uint32_t viewport = command + kCopiedViewportOffset;
   if (pass.gameplay) {
-    // Generated sub_82155680 assigns the HUD_RADAR rectangle to its camera.
-    // sub_8239C9B8 retains that rectangle in phase+176; sub_821BC948 copies
+    // Generated sub_82148190 assigns the HUD_RADAR rectangle to its camera.
+    // sub_8236C750 retains that rectangle in phase+176; sub_821BC7C8 copies
     // it into this command. Layer vertices are local 0..1, including masks.
     const auto authored = RadarViewportRect(base, viewport, 664);
     rex::input::TouchPresentationState presentation;
@@ -345,7 +345,7 @@ void CopyTouchRadarViewport(PPCContext& context, uint8_t* base) {
           call.f4.f64 = displayed.bottom - displayed.top;
           call.f5.f64 = RadarFloat(base, viewport + 680);
           call.f6.f64 = RadarFloat(base, viewport + 684);
-          __imp__sub_828BE5A0(call, base);
+          __imp__sub_828BDD38(call, base);
         }
         pass.bounds = RadarViewportRect(base, viewport, 640);
       }
@@ -405,18 +405,18 @@ bool TouchRadarLocalViewport(uint8_t* base) noexcept {
 }
 }  // namespace gta4::input
 
-extern "C" void sub_821C31A8(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821C2FE8(PPCContext& context, uint8_t* base) {
   const uint32_t caller = uint32_t(context.lr);
   const uint32_t position = context.r4.u32, wrap = context.r6.u32;
-  __imp__sub_821C31A8(context, base);
+  __imp__sub_821C2FE8(context, base);
   using namespace gta4::input;
-  // In compiled sub_82223CF8 this is after retail aspect conversion, before
+  // In compiled sub_821DF9D0 this is after retail aspect conversion, before
   // font setup, measurement, the optional icon, and either background path.
   // Edit only this draw's stack locals. HUD definitions and other text retain
   // their original coordinates; deferred commands own the resulting geometry.
-  if (caller == 0x8222438C) {
+  if (caller == 0x821E0064) {
     PlaceTouchHelp(context, base, position, wrap);
-  } else if (caller == 0x822244B4 && help_wrap.stack == context.r1.u32 &&
+  } else if (caller == 0x821E018C && help_wrap.stack == context.r1.u32 &&
              help_wrap.wrap && RadarSpan(base, context.r1.u32, 208) &&
              RadarSpan(base, help_wrap.wrap, 8, true)) {
     // The separate help icon adds both its width and left padding to the
@@ -429,82 +429,82 @@ extern "C" void sub_821C31A8(PPCContext& context, uint8_t* base) {
   }
 }
 
-extern "C" void sub_821C62C0(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821C6100(PPCContext& context, uint8_t* base) {
   const gta4::input::WeaponHudPassScope pass(context, base);
-  __imp__sub_821C62C0(context, base);
+  __imp__sub_821C6100(context, base);
 }
 
-extern "C" void sub_821BEF30(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821BEDB0(PPCContext& context, uint8_t* base) {
   const uint32_t position = context.r4.u32, size = context.r5.u32;
   const uint32_t texture = context.r6.u32, color = context.r7.u32;
   const bool weapon_sprite = context.r9.u32 == 2;
-  __imp__sub_821BEF30(context, base);
+  __imp__sub_821BEDB0(context, base);
   // The admitted sprite path submits this command immediately after its
   // constructor. Allocation failure never reaches this boundary.
   if (weapon_sprite)
     gta4::input::ObserveWeaponHudRectangle(base, position, size, texture, color);
 }
 
-extern "C" void sub_821C3930(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821C3770(PPCContext& context, uint8_t* base) {
   const uint32_t position = context.r3.u32, size = context.r4.u32;
   const uint32_t texture = context.r5.u32, color = context.r6.u32;
-  __imp__sub_821C3930(context, base);
+  __imp__sub_821C3770(context, base);
   gta4::input::ObserveWeaponHudRectangle(base, position, size, texture, color);
 }
 
 #if defined(GTA4_TOUCH_LEGACY_HOST)
-extern "C" void sub_821C5148(PPCContext& context, uint8_t* base) {
-  gta4::input::DrawTouchWeaponHudSprite(context, base, __imp__sub_821C5148);
+extern "C" void sub_821C4F88(PPCContext& context, uint8_t* base) {
+  gta4::input::DrawTouchWeaponHudSprite(context, base, __imp__sub_821C4F88);
 }
 #endif
 
-extern "C" void sub_821F4150(PPCContext& context, uint8_t* base) {
+extern "C" void sub_82223380(PPCContext& context, uint8_t* base) {
   gta4::input::ObserveTouchPresentationBlock(base);
-  __imp__sub_821F4150(context, base);
+  __imp__sub_82223380(context, base);
 }
 
-extern "C" void sub_821EC3F0(PPCContext& context, uint8_t* base) {
+extern "C" void sub_8221B620(PPCContext& context, uint8_t* base) {
   // START_CUTSCENE_NOW / INIT_CUTSCENE enter here before either native
   // cutscene state word becomes nonzero. Keep reentrant polls suppressed.
   const gta4::input::ContextTouchGameplayTransition transition;
-  __imp__sub_821EC3F0(context, base);
+  __imp__sub_8221B620(context, base);
 }
 
 #if defined(GTA4_TOUCH_LEGACY_HOST)
-extern "C" void sub_82145420(PPCContext& context, uint8_t* base) {
+extern "C" void sub_82145450(PPCContext& context, uint8_t* base) {
   // The modern host composes this guard with its existing intro hook.
   const gta4::input::ContextTouchGameplayTransition transition;
-  __imp__sub_82145420(context, base);
+  __imp__sub_82145450(context, base);
 }
 #endif
 
-extern "C" void sub_821BC948(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821BC7C8(PPCContext& context, uint8_t* base) {
   gta4::input::CopyTouchRadarViewport(context, base);
 }
 
 // These parser boundaries are shared by both applications. Only tokens
 // resolved inside a submitted help draw are retained by the observer.
-extern "C" void sub_821F2360(PPCContext& context, uint8_t* base) {
-  gta4::input::ResolveTouchHelpToken(context, base, __imp__sub_821F2360);
+extern "C" void sub_82221590(PPCContext& context, uint8_t* base) {
+  gta4::input::ResolveTouchHelpToken(context, base, __imp__sub_82221590);
 }
 
-extern "C" void sub_822B7C00(PPCContext& context, uint8_t* base) {
-  gta4::input::ResolveTouchHelpBinding(context, base, __imp__sub_822B7C00);
+extern "C" void sub_822CA4E0(PPCContext& context, uint8_t* base) {
+  gta4::input::ResolveTouchHelpBinding(context, base, __imp__sub_822CA4E0);
 }
 
 // The desktop legacy app has a single Sony poll/replay owner. Embedded
 // legacy apps use the identical touch boundaries without that owner.
 #if defined(GTA4_TOUCH_STANDALONE_POLL_OWNER)
-extern "C" void sub_828CCD60(PPCContext& context, uint8_t* base) {
+extern "C" void sub_828D0D00(PPCContext& context, uint8_t* base) {
   const uint64_t epoch = GTA4_TouchCurrentEpoch() + 1;
   GTA4_TouchConsumePoll(context, base, epoch);
-  __imp__sub_828CCD60(context, base);
+  __imp__sub_828D0D00(context, base);
 }
 
-extern "C" void sub_822B7DD0(PPCContext& context, uint8_t* base) {
+extern "C" void sub_822CA6B0(PPCContext& context, uint8_t* base) {
   const uint32_t control = context.r3.u32;
   const uint32_t caller = static_cast<uint32_t>(context.lr);
-  __imp__sub_822B7DD0(context, base);
+  __imp__sub_822CA6B0(context, base);
   GTA4_TouchObserveControlReplay(context, base, control, caller, GTA4_TouchCurrentEpoch());
 }
 #endif
@@ -512,21 +512,21 @@ extern "C" void sub_822B7DD0(PPCContext& context, uint8_t* base) {
 // Modern wrappers compose with their existing keyboard, Sony and diagnostic
 // hooks. Legacy has no such translation units and owns these wrappers here.
 #if defined(GTA4_TOUCH_LEGACY_HOST)
-extern "C" void sub_8229D8A8(PPCContext& context, uint8_t* base) {
-  GTA4_TouchCaptureFrontendDraw(context, base, __imp__sub_8229D8A8);
+extern "C" void sub_822B09D8(PPCContext& context, uint8_t* base) {
+  GTA4_TouchCaptureFrontendDraw(context, base, __imp__sub_822B09D8);
 }
 
-extern "C" void sub_82223CF8(PPCContext& context, uint8_t* base) {
+extern "C" void sub_821DF9D0(PPCContext& context, uint8_t* base) {
   gta4::input::BeginTouchHelpDraw(base, context.r3.u32);
   struct Scope { ~Scope() { gta4::input::EndTouchHelpDraw(); } } scope;
-  __imp__sub_82223CF8(context, base);
+  __imp__sub_821DF9D0(context, base);
 }
 
-extern "C" void sub_821F6E38(PPCContext& context, uint8_t* base) {
+extern "C" void sub_82226068(PPCContext& context, uint8_t* base) {
   GTA4_TouchObserveHudSubmit(context, base);
   gta4::input::ObserveTouchHelpText(base, context.r5.u32);
   struct Scope { ~Scope() { gta4::input::EndTouchHelpText(); } } scope;
-  __imp__sub_821F6E38(context, base);
+  __imp__sub_82226068(context, base);
 }
 
 namespace {
@@ -544,32 +544,32 @@ void ScriptQuery(PPCContext& context, uint8_t* base,
 }
 }
 
-extern "C" void sub_825D1AF8(PPCContext& context, uint8_t* base) {
+extern "C" void sub_825F9428(PPCContext& context, uint8_t* base) {
   ScriptQuery(context, base, gta4::input::TouchScriptQueryKind::kRawButton,
-               __imp__sub_825D1AF8);
+               __imp__sub_825F9428);
 }
-extern "C" void sub_825D1B40(PPCContext& context, uint8_t* base) {
+extern "C" void sub_825F9470(PPCContext& context, uint8_t* base) {
   ScriptQuery(context, base, gta4::input::TouchScriptQueryKind::kRawButtonPressed,
-               __imp__sub_825D1B40);
+               __imp__sub_825F9470);
 }
-extern "C" void sub_825D1B88(PPCContext& context, uint8_t* base) {
+extern "C" void sub_825F94B8(PPCContext& context, uint8_t* base) {
   ScriptQuery(context, base, gta4::input::TouchScriptQueryKind::kControlHeld,
-               __imp__sub_825D1B88);
+               __imp__sub_825F94B8);
 }
-extern "C" void sub_825D1BD0(PPCContext& context, uint8_t* base) {
+extern "C" void sub_825F9500(PPCContext& context, uint8_t* base) {
   ScriptQuery(context, base, gta4::input::TouchScriptQueryKind::kControlPressed,
-               __imp__sub_825D1BD0);
+               __imp__sub_825F9500);
 }
-extern "C" void sub_825D1C18(PPCContext& context, uint8_t* base) {
+extern "C" void sub_825F9548(PPCContext& context, uint8_t* base) {
   ScriptQuery(context, base, gta4::input::TouchScriptQueryKind::kControlAnalog,
-               __imp__sub_825D1C18);
+               __imp__sub_825F9548);
 }
-extern "C" void sub_825D20A0(PPCContext& context, uint8_t* base) {
+extern "C" void sub_825F99E0(PPCContext& context, uint8_t* base) {
   const uint32_t call_context = context.r3.u32;
   const uint32_t thread = gta4::input::ReadTouchScriptThread(base);
   const auto parachute = gta4::input::ReadTouchParachuteState(base);
   const auto facts = gta4::input::GetTouchContextSnapshot();
-  __imp__sub_825D20A0(context, base);
+  __imp__sub_825F99E0(context, base);
   if (parachute) gta4::input::ObserveTouchParachuteState(*parachute, facts.epoch, thread);
   gta4::input::MergeTouchScriptAnalogueStickResults(base, call_context, facts.epoch,
                                                     thread, facts.generation);

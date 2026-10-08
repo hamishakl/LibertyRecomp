@@ -17,8 +17,8 @@
 namespace gta4::lzx {
 namespace {
 
-// All offsets and limits below come directly from generated sub_82A21BF0,
-// sub_82A21680, sub_82A21F70, and the block parser in sub_82A21700.
+// All offsets and limits below come directly from generated sub_82A217E0,
+// sub_82A21270, sub_82A21B60, and the block parser in sub_82A212F0.
 constexpr uint32_t kEmbeddedDecoderOffset = 0x14;
 constexpr uint32_t kInputBeginOffset = 0x2B04;
 constexpr uint32_t kInputEndOffset = 0x2B08;
@@ -116,13 +116,13 @@ void ResetDecoder(PPCContext& ctx, uint8_t* base) {
   const auto entry =
       IsGuestRange(decoder_address, kDecoderSpan) ? FindEntry(decoder_address) : nullptr;
   if (!entry) {
-    __imp__sub_82A21BA8(ctx, base);
+    __imp__sub_82A21798(ctx, base);
     return;
   }
   // Reset the guest counters and native dictionary under the same stream lock
   // used by decoding. Neither half of a reset may be observed independently.
   std::lock_guard lock(entry->mutex);
-  __imp__sub_82A21BA8(ctx, base);
+  __imp__sub_82A21798(ctx, base);
   entry->failed = !entry->decoder->Reset();
 }
 
@@ -166,7 +166,7 @@ struct DecodeArguments {
 
 DecodeArguments ReadArguments(const PPCContext& ctx) {
   // r8 redundantly carries the output size at the generated call site, but
-  // retail sub_82A21BF0 never reads it. Deliberately ignoring r8 is required
+  // retail sub_82A217E0 never reads it. Deliberately ignoring r8 is required
   // for ABI fidelity; r4 is the sole decode-size argument.
   return {
       ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r9.u32,
@@ -239,15 +239,15 @@ void DecodeFrame(PPCContext& ctx, uint8_t* base, const DecodeArguments& args) {
 }  // namespace
 }  // namespace gta4::lzx
 
-REX_HOOK_RAW(sub_82A21BF0) {
+REX_HOOK_RAW(sub_82A217E0) {
   gta4::lzx::DecodeFrame(ctx, base, gta4::lzx::ReadArguments(ctx));
 }
 
-REX_HOOK_RAW(sub_82A21BA8) {
+REX_HOOK_RAW(sub_82A21798) {
   gta4::lzx::ResetDecoder(ctx, base);
 }
 
-REX_HOOK_RAW(sub_82A21F70) {
+REX_HOOK_RAW(sub_82A21B60) {
   gta4::lzx::LogBackendOnce();
   const uint32_t outer = ctx.r3.u32;
   const uint64_t embedded = static_cast<uint64_t>(outer) + ctx.r6.u32;
@@ -257,13 +257,13 @@ REX_HOOK_RAW(sub_82A21F70) {
     // Do not let an old dictionary or failed-stream marker cross that boundary.
     gta4::lzx::RemoveEntry(static_cast<uint32_t>(embedded));
   }
-  __imp__sub_82A21F70(ctx, base);
+  __imp__sub_82A21B60(ctx, base);
 }
 
-REX_HOOK_RAW(sub_82A15060) {
+REX_HOOK_RAW(sub_82A14C60) {
   const uint32_t outer_object = ctx.r3.u32;
   if (gta4::lzx::IsGuestRange(outer_object, gta4::lzx::kEmbeddedDecoderOffset + sizeof(uint32_t))) {
     gta4::lzx::RemoveEntry(outer_object + gta4::lzx::kEmbeddedDecoderOffset);
   }
-  __imp__sub_82A15060(ctx, base);
+  __imp__sub_82A14C60(ctx, base);
 }

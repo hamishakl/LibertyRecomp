@@ -6,11 +6,11 @@
 
 namespace gta4::presentation::policy {
 
-// Generated sub_82145968 parser / sub_82144188 player contract. No installed
+// Generated sub_82145998 parser / sub_821441B8 player contract. No installed
 // loading-screen file is edited. The final marker is loading art, not a menu.
 inline constexpr uint32_t kColdStartCaller = 0x82140048;
-inline constexpr uint32_t kParserCaller = 0x82145558;
-inline constexpr uint32_t kCompositeCaller = 0x822D0C48;
+inline constexpr uint32_t kParserCaller = 0x82145588;
+inline constexpr uint32_t kCompositeCaller = 0x822E33D0;
 inline constexpr uint32_t kScreenStride = 400;
 inline constexpr uint32_t kMaxScreens = 14;
 inline constexpr uint32_t kMaxLayers = 4;

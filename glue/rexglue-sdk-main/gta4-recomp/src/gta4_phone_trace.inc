@@ -31,7 +31,7 @@ PhoneGuestState CapturePhoneGuestState(uint8_t* base, uint32_t device) {
   s.words[13] = LoadU32(base, device + 11848);
   for (uint32_t i = 0; i < 4; ++i) s.words[14 + i] = LoadU32(base, device + 12668 + i * sizeof(uint32_t));
   s.words[18] = LoadU32(base, kCurrentViewportGlobal);
-  s.words[19] = LoadU32(base, 0x831D4DD0);
+  s.words[19] = LoadU32(base, 0x831D4C50);
   s.fixed_hash = XXH3_64bits(GuestPointer(base, device + kReplayFixedStateOffset), kReplayFixedStateSize);
   s.constants_hash = XXH3_64bits(GuestPointer(base, device + kReplayShaderConstantsOffset), kReplayShaderConstantsSize);
   s.fetch_hash = XXH3_64bits(GuestPointer(base, device + kReplayFetchStateOffset), kReplayFetchStateSize);
@@ -42,7 +42,7 @@ PhoneGuestState CapturePhoneGuestState(uint8_t* base, uint32_t device) {
 
 void MaybeArmPhoneTrace(uint8_t* base) {
   if (!PhoneTraceConfig().enabled || !IsNativeMode() || PhoneCaptureActive()) return;
-  if (!PhoneTraceConfig().allow_closed && !LoadU8(base, 0x831D4DD4)) return;
+  if (!PhoneTraceConfig().allow_closed && !LoadU8(base, 0x831D4C54)) return;
   std::lock_guard lock(g_phone_arm_mutex);
   if (PhoneCaptureActive() || g_phone_arm_runs >= 8) return;
   if (!PhoneTraceConfig().arm_file.empty()) {
@@ -61,11 +61,11 @@ void MaybeArmPhoneTrace(uint8_t* base) {
   g_phone_run.store(run, std::memory_order_relaxed);
   g_phone_frames_remaining.store(PhoneTraceConfig().frames, std::memory_order_release);
   PhoneTraceLog("arm-state", fmt::format("run={} cycle={} phone-visible={} lineage={} allow-closed={}",
-      run, g_phone_arm_runs, LoadU8(base, 0x831D4DD4), PhoneTraceConfig().lineage, PhoneTraceConfig().allow_closed));
+      run, g_phone_arm_runs, LoadU8(base, 0x831D4C54), PhoneTraceConfig().lineage, PhoneTraceConfig().allow_closed));
   PhoneTraceLog("armed", fmt::format("run={} frames={} command-limit={} readbacks={} probe-first={} probe-count={} phone-target-id={} phone-wrapper={:08X}",
       run, PhoneTraceConfig().frames, PhoneTraceConfig().command_limit, PhoneTraceConfig().readbacks,
       PhoneTraceConfig().probe_first, PhoneTraceConfig().probe_count,
-      LoadU32(base, 0x831D4DDC), LoadU32(base, 0x831D4DD0)));
+      LoadU32(base, 0x831D4C5C), LoadU32(base, 0x831D4C50)));
 }
 
 PhoneTraceContext NewPhoneContext(uint32_t device) {
@@ -77,7 +77,7 @@ PhoneTraceContext NewPhoneContext(uint32_t device) {
   if (base && device) {
     c.guest_frame = LoadU32(base, device + kSubmittedFrameOffset);
     c.technique = LoadU32(base, kActiveDeferredTechniqueGlobal);
-    c.pass = LoadU32(base, 0x831C3DDC);
+    c.pass = LoadU32(base, 0x831C3C5C);
     c.applied = CapturePhoneGuestState(base, device);
   }
   return c;

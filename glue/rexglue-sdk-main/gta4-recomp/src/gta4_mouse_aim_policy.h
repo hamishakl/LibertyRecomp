@@ -6,7 +6,7 @@
 
 namespace gta4::input {
 
-// The retail fire-type name table at 0x82A99508 starts with MELEE (0),
+// The retail fire-type name table at 0x82A99600 starts with MELEE (0),
 // INSTANT_HIT (1), DELAYED_HIT (2), PROJECTILE (3), AREA_EFFECT (4).
 constexpr bool MouseFreeAimWeapon(uint32_t fire_type) {
   return fire_type >= 1 && fire_type <= 4;
@@ -76,7 +76,7 @@ inline double ConstrainMousePitch(double angle, double displacement,
 }
 
 inline double WrapMouseYaw(double displacement) {
-  // sub_82369828 wraps only one revolution. Keep a large mouse flick within
+  // sub_823693C8 wraps only one revolution. Keep a large mouse flick within
   // that contract without discarding its final orientation.
   return std::isfinite(displacement)
       ? std::remainder(displacement, 6.283185307179586) : 0;

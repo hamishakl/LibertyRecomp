@@ -36,19 +36,22 @@ namespace {
 using namespace rex::literals;
 
 constexpr uint32_t kGta4TitleId = 0x545407F2;
-constexpr uint32_t kGta4UsaMediaId = 0x6AC07221;
-constexpr uint32_t kRequiredRegion = rex::XEX_REGION_NTSCU;
-// Derived from the pinned v8 XEXP delta descriptor's source_version_value.
-constexpr uint32_t kRequiredBaseVersion = 0x00000005;
+// PAL fork: the supported disc is the PAL retail release (base version 7) + Title Update 5.
+// See docs/PAL-PORT.md and tools/xex/README.md for how these were measured.
+constexpr uint32_t kGta4UsaMediaId = 0x7CF4679F;  // PAL retail (name kept to limit churn)
+constexpr uint32_t kRequiredRegion = rex::XEX_REGION_PAL;
+// Derived from the PAL TU5 XEXP delta descriptor's source_version_value.
+constexpr uint32_t kRequiredBaseVersion = 0x00000007;
 // Full-file XXH3-64 recorded by the official Liberty installer for the GTA IV
 // USA retail 1.00 default.xex. This complements the XEXP signature digest:
 // retaining a valid header/signature is not sufficient if the XEX body changed.
-constexpr uint64_t kRequiredBaseXexXxh3 = 2823947441600373906ULL;
+constexpr uint64_t kRequiredBaseXexXxh3 = 15674128280634689956ULL;  // PAL retail default.xex
 // SHA-1 of the 0x100-byte RSA signature required by the pinned v8 XEXP's
 // digest_source. Derived from the payload, not from a patched executable.
+// PAL: equals the TU5 XEXP digest_source.
 constexpr std::array<uint8_t, 20> kRequiredRsaSignatureSha1 = {
-    0x19, 0x2B, 0x3F, 0x56, 0x7C, 0x59, 0x36, 0x0C, 0x6C, 0xE2,
-    0x11, 0x82, 0x0D, 0x77, 0x6F, 0x6B, 0x25, 0x25, 0x1A, 0x89,
+    0x24, 0xBD, 0xC3, 0xD4, 0xD6, 0xB1, 0x87, 0x0E, 0x15, 0x61,
+    0x37, 0x80, 0xE4, 0x3E, 0x8F, 0x7D, 0xA1, 0x8A, 0x87, 0xB9,
 };
 constexpr size_t kMaximumMetadataFileSize = 64_MiB;
 constexpr size_t kMaximumTreeEntries = 500000;
@@ -463,12 +466,12 @@ GameSourceInspection ClassifyGameSourceMetadata(const GameSourceMetadata& metada
   } else if (metadata.media_id != kGta4UsaMediaId) {
     result.status = GameSourceStatus::kWrongMediaId;
     result.rejection_reason =
-        fmt::format("Media ID {:08X} is not the supported USA retail media ({:08X}).",
+        fmt::format("Media ID {:08X} is not the supported PAL retail media ({:08X}).",
                     metadata.media_id, kGta4UsaMediaId);
   } else if (metadata.region != kRequiredRegion) {
     result.status = GameSourceStatus::kWrongRegion;
     result.rejection_reason = fmt::format(
-        "The source is {}; exact USA region flags ({:08X}) are required. Region-free and "
+        "The source is {}; exact PAL region flags ({:08X}) are required. Region-free and "
         "multi-region images are unsupported.",
         FormatXexRegion(metadata.region), kRequiredRegion);
   } else if (metadata.xex_version != kRequiredBaseVersion ||
@@ -481,7 +484,7 @@ GameSourceInspection ClassifyGameSourceMetadata(const GameSourceMetadata& metada
   } else if (metadata.rsa_signature_sha1 != kRequiredRsaSignatureSha1) {
     result.status = GameSourceStatus::kWrongSignature;
     result.rejection_reason =
-        "The XEX RSA signature does not match the retail 1.00 source required by the v8 patch.";
+        "The XEX RSA signature does not match the PAL retail source required by Title Update 5.";
   } else {
     result.status = GameSourceStatus::kSupported;
     result.release_label = "Retail 1.00";
@@ -500,7 +503,7 @@ GameSourceInspection InspectGameXex(std::span<const uint8_t> bytes) {
     result.status = GameSourceStatus::kWrongExecutable;
     result.release_label.clear();
     result.rejection_reason =
-        "The complete default.xex does not match GTA IV USA retail 1.00.";
+        "The complete default.xex does not match GTA IV PAL retail (base version 7).";
   }
   return result;
 }

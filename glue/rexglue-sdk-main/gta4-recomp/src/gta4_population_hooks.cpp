@@ -31,11 +31,11 @@ namespace {
 
 // These are the canonical population multiplier globals written by the
 // generated setters and consumed by GTA IV's ambient vehicle/ped generators.
-constexpr uint32_t kRandomCarDensity = 0x82AA1888;
-constexpr uint32_t kParkedCarDensity = 0x82AA188C;
-constexpr uint32_t kPedDensity = 0x82AA2940;
-constexpr uint32_t kScenarioPedDensityCurrent = 0x82AA2944;
-constexpr uint32_t kScenarioPedDensityNext = 0x82AA2948;
+constexpr uint32_t kRandomCarDensity = 0x82AA17C8;
+constexpr uint32_t kParkedCarDensity = 0x82AA17CC;
+constexpr uint32_t kPedDensity = 0x82AA2880;
+constexpr uint32_t kScenarioPedDensityCurrent = 0x82AA2884;
+constexpr uint32_t kScenarioPedDensityNext = 0x82AA2888;
 
 float LoadGuestFloat(uint8_t* base, uint32_t address) {
   return std::bit_cast<float>(REX_LOAD_U32(address));
@@ -94,46 +94,46 @@ void ScaleScenarioPeds(uint8_t* base, std::string_view source) {
 }  // namespace
 
 // Script/native handler: set both random and parked vehicle multipliers.
-extern "C" void sub_82598EB0(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82598EB0(ctx, base);
-  ScaleTraffic(base, "sub_82598EB0");
-  ScaleParkedCars(base, "sub_82598EB0");
+extern "C" void sub_825C0898(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_825C0898(ctx, base);
+  ScaleTraffic(base, "sub_825C0898");
+  ScaleParkedCars(base, "sub_825C0898");
 }
 
 // Script/native handler: set the random vehicle multiplier.
-extern "C" void sub_82598ED0(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82598ED0(ctx, base);
-  ScaleTraffic(base, "sub_82598ED0");
+extern "C" void sub_825C08B8(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_825C08B8(ctx, base);
+  ScaleTraffic(base, "sub_825C08B8");
 }
 
 // Script/native handler: set the parked vehicle multiplier.
-extern "C" void sub_82598EE8(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82598EE8(ctx, base);
-  ScaleParkedCars(base, "sub_82598EE8");
+extern "C" void sub_825C08D0(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_825C08D0(ctx, base);
+  ScaleParkedCars(base, "sub_825C08D0");
 }
 
 // Canonical lower-level ambient pedestrian multiplier setter.
-extern "C" void sub_823F2AB0(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_823F2AB0(ctx, base);
-  ScalePeds(base, "sub_823F2AB0");
+extern "C" void sub_823F2A28(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_823F2A28(ctx, base);
+  ScalePeds(base, "sub_823F2A28");
 }
 
 // Canonical lower-level current/next scenario pedestrian multiplier setter.
-extern "C" void sub_823F2AC0(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_823F2AC0(ctx, base);
-  ScaleScenarioPeds(base, "sub_823F2AC0");
+extern "C" void sub_823F2A38(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_823F2A38(ctx, base);
+  ScaleScenarioPeds(base, "sub_823F2A38");
 }
 
 // Vehicle population startup reset writes the globals directly.
-extern "C" void sub_823A5330(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_823A5330(ctx, base);
-  ScaleTraffic(base, "sub_823A5330");
-  ScaleParkedCars(base, "sub_823A5330");
+extern "C" void sub_823A51E8(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_823A51E8(ctx, base);
+  ScaleTraffic(base, "sub_823A51E8");
+  ScaleParkedCars(base, "sub_823A51E8");
 }
 
 // Pedestrian population startup reset writes all three globals directly.
-extern "C" void sub_823F4860(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_823F4860(ctx, base);
-  ScalePeds(base, "sub_823F4860");
-  ScaleScenarioPeds(base, "sub_823F4860");
+extern "C" void sub_823F47C8(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_823F47C8(ctx, base);
+  ScalePeds(base, "sub_823F47C8");
+  ScaleScenarioPeds(base, "sub_823F47C8");
 }

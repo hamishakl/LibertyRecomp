@@ -44,10 +44,13 @@ namespace {
 using namespace rex::literals;
 
 constexpr uint32_t kGta4TitleId = 0x545407F2;
-constexpr uint32_t kRequiredTargetVersion = 0x00000805;
-constexpr uint64_t kRequiredBaseXexXxh3 = 2823947441600373906ULL;
+// PAL fork: PAL retail base (version 7) + Title Update 5 (0.0.5.7). See docs/PAL-PORT.md.
+constexpr uint32_t kRequiredTargetVersion = 0x00000507;
+constexpr uint64_t kRequiredBaseXexXxh3 = 15674128280634689956ULL;
 constexpr std::string_view kRequiredPatchSha256 =
-    "480aee5e2b42707791e7571bb8407c5bb3f6c7534f07f9beb426db4cfc648fd3";
+    "602f1c585619ba57775d826cba3df751176d8a0911794b3643159e42315172c3";
+// US-only shortcut (a pre-patched v8 default.xex). No PAL equivalent is distributed; it can never
+// match a 0x507 base, so this path is inert in the PAL fork.
 constexpr std::string_view kEmbeddedTargetXexSha256 =
     "8268fdc91f83c4288e1db8319a109e622865497d1405d9f4ca98f46830d1ff21";
 constexpr size_t kMaximumMetadataFileSize = 64_MiB;
@@ -335,7 +338,7 @@ bool ValidatePatch(const XexInfo& base, const XexInfo& patch, std::span<const ui
     return false;
   }
   if (patch.delta_target_version != kRequiredTargetVersion) {
-    error = "This build requires the GTA IV v8 (0.0.8.5) title update.";
+    error = "This build requires GTA IV PAL Title Update 5 (0.0.5.7).";
     return false;
   }
   if (patch.delta_source_version != base.version) {
@@ -343,7 +346,7 @@ bool ValidatePatch(const XexInfo& base, const XexInfo& patch, std::span<const ui
     return false;
   }
   if (HashBytes(patch_bytes) != kRequiredPatchSha256) {
-    error = "The selected XEXP is not the supported GTA IV v8 patch.";
+    error = "The selected XEXP is not the supported GTA IV PAL Title Update 5.";
     return false;
   }
 
@@ -867,7 +870,7 @@ bool ValidateInstalledPair(const std::filesystem::path& game_root, std::string& 
   }
 
   if (XXH3_64bits(base_bytes.data(), base_bytes.size()) != kRequiredBaseXexXxh3) {
-    reason = "default.xex does not match GTA IV USA retail 1.00.";
+    reason = "default.xex does not match GTA IV PAL retail (base version 7).";
     return false;
   }
 
@@ -955,7 +958,7 @@ Result Install(const Selection& selection, const std::filesystem::path& install_
 
   std::optional<PreparedUpdate> update;
   if (game && selection.update_source.empty()) {
-    result.error = "The supported retail 1.00 source requires the GTA IV v8 title update.";
+    result.error = "The supported PAL retail source requires GTA IV Title Update 5.";
     return result;
   }
   if (game) {

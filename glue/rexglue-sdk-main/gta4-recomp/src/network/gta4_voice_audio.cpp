@@ -30,7 +30,7 @@ constexpr int kVoiceChannelCount = 1;
 constexpr uint32_t kCodecAllocationBytes = 192;
 constexpr uint32_t kCodecAllocationAlignment = 32;
 constexpr uint32_t kCodecOutputOffset = 64;
-constexpr uint32_t kCodecStateSeedAddress = 0x820AB908;
+constexpr uint32_t kCodecStateSeedAddress = 0x820AB868;
 constexpr uint32_t kCodecStateBytes = 54;
 constexpr uint8_t kCodecNibbleMask = 0x0F;
 constexpr auto kLifecycleRetryInterval = std::chrono::seconds(1);
@@ -606,7 +606,7 @@ class Gta4VoiceSampleCodecState final : public rex::system::xam::IVoiceSampleCod
     allocation_ = memory_->SystemHeapAlloc(kCodecAllocationBytes, kCodecAllocationAlignment);
     if (allocation_) {
       std::memset(base_ + allocation_, 0, kCodecAllocationBytes);
-      // sub_82A29D08 initializes every retail voice codec state by copying
+      // sub_82A298F8 initializes every retail voice codec state by copying
       // this exact 54-byte title seed. A zero state produces a different
       // compressed stream and cannot interoperate with GTA's own talkers.
       std::memcpy(base_ + allocation_, base_ + kCodecStateSeedAddress, kCodecStateBytes);
@@ -649,7 +649,7 @@ class Gta4VoiceSampleCodecState final : public rex::system::xam::IVoiceSampleCod
     ctx.r4.u64 = input;
     ctx.r5.u64 = allocation_ + kCodecOutputOffset;
     ctx.r6.u64 = allocation_;
-    sub_82A2BBD8(ctx, base_);
+    sub_82A2B7C8(ctx, base_);
     output = __builtin_bswap16(
         *reinterpret_cast<volatile uint16_t*>(base_ + allocation_ + kCodecOutputOffset));
     return true;

@@ -1,5 +1,5 @@
 // Asset offsets: grmShader parameters +20/count +28/types +36/names +52;
-// grcTexture name +20. Generated .65 sub_828C6620 receives material/model/ordinal.
+// grcTexture name +20. Generated .65 sub_828C5E30 receives material/model/ordinal.
 thread_local FireTraceContext g_fire_context;
 thread_local uint8_t* g_fire_base = nullptr;
 thread_local uint64_t g_fire_submissions = 0;

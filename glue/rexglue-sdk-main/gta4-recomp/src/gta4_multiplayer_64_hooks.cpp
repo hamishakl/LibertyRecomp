@@ -111,10 +111,10 @@ std::once_flag g_player_info_table_warning;
 std::once_flag g_ownership_warning;
 
 constexpr uint8_t kTemporaryAliasPeerId = 0;
-constexpr uint32_t kVoiceEnumerationReturnAddress = 0x82700668;
-constexpr uint32_t kReassignmentNegotiationReturnAddress = 0x82786EC8;
-constexpr uint32_t kReassignmentResetNegotiationReturnAddress = 0x827870FC;
-constexpr uint32_t kReassignmentConfirmationReturnAddress = 0x82787204;
+constexpr uint32_t kVoiceEnumerationReturnAddress = 0x827000B8;
+constexpr uint32_t kReassignmentNegotiationReturnAddress = 0x82788770;
+constexpr uint32_t kReassignmentResetNegotiationReturnAddress = 0x827889A4;
+constexpr uint32_t kReassignmentConfirmationReturnAddress = 0x82788AAC;
 
 struct ExtendedAddContext {
   bool active = false;
@@ -270,7 +270,7 @@ struct ObjectManagerPeerAliasContext {
 
 thread_local ObjectManagerPeerAliasContext g_object_peer_alias;
 
-// sub_826EDFE0 has a fixed sixteen-entry candidate scratch array, but consumes
+// sub_826EA9E0 has a fixed sixteen-entry candidate scratch array, but consumes
 // only the first eligible peer as the recovery source. When no retail peer is
 // eligible, expose one extended peer through an otherwise-ineligible retail
 // lookup slot. Unlike the general object-manager alias, this context remaps
@@ -348,7 +348,7 @@ struct PeerUniquenessValue {
   uint32_t guest_player_info = 0;
 };
 
-// sub_826FFCB0 assigns a small player-visible value while avoiding collisions
+// sub_826FF700 assigns a small player-visible value while avoiding collisions
 // with connected peers. Its two uniqueness scans read the embedded sixteen
 // pointers directly. The hooks below preserve that control flow and expose
 // high-peer identity/value matches at the exact accessor calls made by the
@@ -714,7 +714,7 @@ uint64_t PeerRecordIdentity(const PPCContext& input_ctx, uint8_t* base, uint32_t
   }
   PPCContext identity_ctx = input_ctx;
   identity_ctx.r3.u64 = guest_peer;
-  __imp__sub_827087E8(identity_ctx, base);
+  __imp__sub_827081B8(identity_ctx, base);
   return identity_ctx.r3.u64;
 }
 
@@ -724,7 +724,7 @@ uint32_t PeerRecordPlayerInfo(const PPCContext& input_ctx, uint8_t* base, uint32
   }
   PPCContext player_info_ctx = input_ctx;
   player_info_ctx.r3.u64 = guest_peer;
-  __imp__sub_827087D8(player_info_ctx, base);
+  __imp__sub_827081A8(player_info_ctx, base);
   return player_info_ctx.r3.u32;
 }
 
@@ -803,12 +803,12 @@ uint32_t EnsureDispatchMessage(PPCContext& ctx, uint8_t* base, uint32_t guest_ne
   initialize_ctx.r5.u64 = 0;
   initialize_ctx.r6.u64 = 0;
   initialize_ctx.r7.u64 = 0;
-  sub_82707140(initialize_ctx, base);
+  sub_82704030(initialize_ctx, base);
   initialize_ctx = ctx;
   initialize_ctx.r3.u64 = *guest_queue;
   initialize_ctx.r4.u64 = *guest_payload;
   initialize_ctx.r5.u64 = mp64::kDispatchMessagePayloadCapacity;
-  sub_82853400(initialize_ctx, base);
+  sub_82852E08(initialize_ctx, base);
   return guest_message;
 }
 
@@ -829,12 +829,12 @@ void ResetDispatchMessage(PPCContext& ctx, uint8_t* base, uint32_t guest_network
   initialize_ctx.r5.u64 = 0;
   initialize_ctx.r6.u64 = 0;
   initialize_ctx.r7.u64 = 0;
-  sub_82707140(initialize_ctx, base);
+  sub_82704030(initialize_ctx, base);
   initialize_ctx = ctx;
   initialize_ctx.r3.u64 = *guest_queue;
   initialize_ctx.r4.u64 = *guest_payload;
   initialize_ctx.r5.u64 = mp64::kDispatchMessagePayloadCapacity;
-  sub_82853400(initialize_ctx, base);
+  sub_82852E08(initialize_ctx, base);
 }
 
 void DestroyDispatchMessages(uint32_t guest_network_manager) {
@@ -1135,10 +1135,10 @@ mp64::EventPeerBuffers EnsureEventPeerBuffers(PPCContext& ctx, uint8_t* base,
   }
   PPCContext constructor_ctx = ctx;
   constructor_ctx.r3.u64 = buffers.guest_outbound;
-  __imp__sub_82794088(constructor_ctx, base);
+  __imp__sub_82791758(constructor_ctx, base);
   constructor_ctx = ctx;
   constructor_ctx.r3.u64 = buffers.guest_inbound;
-  __imp__sub_827941F0(constructor_ctx, base);
+  __imp__sub_827918C0(constructor_ctx, base);
   if (!g_event_peer_buffers.Set(guest_event_manager, peer_id, buffers)) {
     runtime->memory()->SystemHeapFree(buffers.guest_outbound);
     runtime->memory()->SystemHeapFree(buffers.guest_inbound);
@@ -1158,13 +1158,13 @@ void ReleaseEventPeerBuffers(PPCContext& ctx, uint8_t* base, uint32_t guest_even
     if (buffers[peer_id].guest_outbound != 0) {
       PPCContext reset_ctx = ctx;
       reset_ctx.r3.u64 = buffers[peer_id].guest_outbound;
-      __imp__sub_82793FC8(reset_ctx, base);
+      __imp__sub_82791698(reset_ctx, base);
       runtime->memory()->SystemHeapFree(buffers[peer_id].guest_outbound);
     }
     if (buffers[peer_id].guest_inbound != 0) {
       PPCContext reset_ctx = ctx;
       reset_ctx.r3.u64 = buffers[peer_id].guest_inbound;
-      __imp__sub_82794008(reset_ctx, base);
+      __imp__sub_827916D8(reset_ctx, base);
       runtime->memory()->SystemHeapFree(buffers[peer_id].guest_inbound);
     }
   }
@@ -1181,13 +1181,13 @@ void ReleaseEventPeerBuffers(PPCContext& ctx, uint8_t* base, uint32_t guest_even
   if (buffers.guest_outbound != 0) {
     PPCContext reset_ctx = ctx;
     reset_ctx.r3.u64 = buffers.guest_outbound;
-    __imp__sub_82793FC8(reset_ctx, base);
+    __imp__sub_82791698(reset_ctx, base);
     runtime->memory()->SystemHeapFree(buffers.guest_outbound);
   }
   if (buffers.guest_inbound != 0) {
     PPCContext reset_ctx = ctx;
     reset_ctx.r3.u64 = buffers.guest_inbound;
-    __imp__sub_82794008(reset_ctx, base);
+    __imp__sub_827916D8(reset_ctx, base);
     runtime->memory()->SystemHeapFree(buffers.guest_inbound);
   }
 }
@@ -1268,7 +1268,7 @@ void ClearObjectPeerQueue(PPCContext& ctx, uint8_t* base, uint32_t guest_queue) 
     PPCContext clear_ctx = ctx;
     clear_ctx.r3.u64 = guest_queue;
     clear_ctx.r4.u64 = guest_node;
-    __imp__sub_826EC350(clear_ctx, base);
+    __imp__sub_829EF418(clear_ctx, base);
   }
 }
 
@@ -1307,18 +1307,18 @@ mp64::ObjectManagerPeerBuffers EnsureObjectPeerBuffers(PPCContext& ctx, uint8_t*
   std::memset(base + buffers.guest_message, 0, mp64::kObjectPeerMessageSize);
   PPCContext constructor_ctx = ctx;
   constructor_ctx.r3.u64 = buffers.guest_message + mp64::kObjectPeerMessageQueueOffset;
-  __imp__sub_828534E0(constructor_ctx, base);
+  __imp__sub_82852EE8(constructor_ctx, base);
   constructor_ctx = ctx;
   constructor_ctx.r3.u64 = buffers.guest_message + mp64::kObjectPeerMessageQueueOffset;
   constructor_ctx.r4.u64 = buffers.guest_message + mp64::kObjectPeerMessagePayloadOffset;
   constructor_ctx.r5.u64 = mp64::kObjectPeerMessagePayloadCapacity;
-  __imp__sub_82853400(constructor_ctx, base);
+  __imp__sub_82852E08(constructor_ctx, base);
   constructor_ctx = ctx;
   constructor_ctx.r3.u64 = buffers.guest_sync_ack;
-  __imp__sub_82795618(constructor_ctx, base);
+  __imp__sub_827943F8(constructor_ctx, base);
   constructor_ctx = ctx;
   constructor_ctx.r3.u64 = buffers.guest_reliable;
-  __imp__sub_82795348(constructor_ctx, base);
+  __imp__sub_82794128(constructor_ctx, base);
   std::memset(base + buffers.guest_queue, 0, mp64::kObjectPeerQueueSize);
   if (!g_object_peer_buffers.Set(guest_object_manager, peer_id, buffers)) {
     runtime->memory()->SystemHeapFree(buffers.guest_message);
@@ -1340,19 +1340,19 @@ void FreeObjectPeerBuffers(PPCContext& ctx, uint8_t* base, mp64::ObjectManagerPe
     reset_ctx.r3.u64 = buffers.guest_message + mp64::kObjectPeerMessageQueueOffset;
     reset_ctx.r4.u64 = buffers.guest_message + mp64::kObjectPeerMessagePayloadOffset;
     reset_ctx.r5.u64 = mp64::kObjectPeerMessagePayloadCapacity;
-    __imp__sub_82853400(reset_ctx, base);
+    __imp__sub_82852E08(reset_ctx, base);
     runtime->memory()->SystemHeapFree(buffers.guest_message);
   }
   if (buffers.guest_sync_ack != 0) {
     PPCContext reset_ctx = ctx;
     reset_ctx.r3.u64 = buffers.guest_sync_ack;
-    __imp__sub_82795298(reset_ctx, base);
+    __imp__sub_82794078(reset_ctx, base);
     runtime->memory()->SystemHeapFree(buffers.guest_sync_ack);
   }
   if (buffers.guest_reliable != 0) {
     PPCContext reset_ctx = ctx;
     reset_ctx.r3.u64 = buffers.guest_reliable;
-    __imp__sub_82795438(reset_ctx, base);
+    __imp__sub_82794218(reset_ctx, base);
     runtime->memory()->SystemHeapFree(buffers.guest_reliable);
   }
   if (buffers.guest_queue != 0) {
@@ -1411,7 +1411,7 @@ uint16_t NetworkObjectId(const PPCContext& ctx, uint8_t* base, uint32_t guest_ob
   }
   PPCContext id_ctx = ctx;
   id_ctx.r3.u64 = guest_object;
-  sub_82701F50(id_ctx, base);
+  sub_82705490(id_ctx, base);
   return id_ctx.r3.u16;
 }
 
@@ -1421,7 +1421,7 @@ uint8_t NetworkObjectOwner(const PPCContext& ctx, uint8_t* base, uint32_t guest_
   }
   PPCContext owner_ctx = ctx;
   owner_ctx.r3.u64 = guest_object;
-  __imp__sub_82701F58(owner_ctx, base);
+  __imp__sub_82705498(owner_ctx, base);
   return owner_ctx.r3.u8;
 }
 
@@ -1436,7 +1436,7 @@ std::optional<uint8_t> ObjectManagerLocalPeerId(const PPCContext& ctx, uint8_t* 
   }
   PPCContext local_ctx = ctx;
   local_ctx.r3.u64 = guest_peer_manager;
-  __imp__sub_826FDD68(local_ctx, base);
+  __imp__sub_826FD738(local_ctx, base);
   return PeerRecordId(base, local_ctx.r3.u32);
 }
 
@@ -1462,13 +1462,13 @@ bool IsObjectRecoveryPeerEligible(const PPCContext& input_ctx, uint8_t* base,
   }
   PPCContext predicate_ctx = input_ctx;
   predicate_ctx.r3.u64 = guest_peer;
-  sub_82708620(predicate_ctx, base);
+  sub_827054E0(predicate_ctx, base);
   if (predicate_ctx.r3.u8 == 0) {
     return false;
   }
   predicate_ctx = input_ctx;
   predicate_ctx.r3.u64 = guest_peer;
-  sub_82708770(predicate_ctx, base);
+  sub_82708140(predicate_ctx, base);
   if (predicate_ctx.r3.u8 != 0) {
     return false;
   }
@@ -1476,7 +1476,7 @@ bool IsObjectRecoveryPeerEligible(const PPCContext& input_ctx, uint8_t* base,
   predicate_ctx.r3.u64 = guest_object_manager;
   predicate_ctx.r4.u64 = peer_id;
   predicate_ctx.r5.u64 = 0;
-  sub_826E8308(predicate_ctx, base);
+  sub_826E4E58(predicate_ctx, base);
   return predicate_ctx.r3.u8 != 0;
 }
 
@@ -1615,7 +1615,7 @@ void InjectExtendedProximityWeights(PPCContext& ctx, uint8_t* base) {
 
   PPCContext local_ctx = ctx;
   local_ctx.r3.u64 = 0;
-  sub_82238C28(local_ctx, base);
+  sub_82252EB0(local_ctx, base);
   const uint32_t guest_local_player = local_ctx.r3.u32;
   const auto local_transform_address =
       mp64::CheckedGuestPointerAddress(guest_local_player,
@@ -1663,13 +1663,13 @@ void InjectExtendedProximityWeights(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    sub_82708620(predicate_ctx, base);
+    sub_827054E0(predicate_ctx, base);
     if (predicate_ctx.r3.u8 == 0) {
       continue;
     }
     predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    sub_82708770(predicate_ctx, base);
+    sub_82708140(predicate_ctx, base);
     if (predicate_ctx.r3.u8 != 0) {
       continue;
     }
@@ -1957,27 +1957,27 @@ bool CallNetworkObjectVirtual(PPCContext& ctx, uint8_t* base, uint32_t guest_obj
 bool IsPeerInEventScope(PPCContext& ctx, uint8_t* base, uint32_t guest_event, uint32_t guest_peer) {
   PPCContext nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_peer;
-  sub_82708620(nested_ctx, base);
+  sub_827054E0(nested_ctx, base);
   if (nested_ctx.r3.u8 == 0) {
     return false;
   }
   nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_peer;
-  sub_82708770(nested_ctx, base);
+  sub_82708140(nested_ctx, base);
   if (nested_ctx.r3.u8 != 0) {
     return false;
   }
   nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_peer;
-  sub_82A58008(nested_ctx, base);
+  sub_82A57BF8(nested_ctx, base);
   nested_ctx.r3.u64 = nested_ctx.r3.u32;
-  sub_826C4FA0(nested_ctx, base);
+  sub_826C2188(nested_ctx, base);
   if (nested_ctx.r3.u8 == 0) {
     return false;
   }
   nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_peer;
-  sub_82191F00(nested_ctx, base);
+  sub_82191F08(nested_ctx, base);
   if (nested_ctx.r3.u32 != mp64::kEventEligiblePeerType) {
     return false;
   }
@@ -2175,7 +2175,7 @@ void RemoveInjectedFreePeer(PPCContext& parent_ctx, uint8_t* base, uint32_t gues
   PPCContext nested_ctx = parent_ctx;
   nested_ctx.r3.u64 = *list;
   nested_ctx.r4.u64 = guest_peer;
-  __imp__sub_826FEFB0(nested_ctx, base);
+  __imp__sub_826FEA00(nested_ctx, base);
 }
 
 void ResetAndFreeExtendedPeer(PPCContext& parent_ctx, uint8_t* base, uint32_t guest_peer) {
@@ -2184,7 +2184,7 @@ void ResetAndFreeExtendedPeer(PPCContext& parent_ctx, uint8_t* base, uint32_t gu
   }
   PPCContext nested_ctx = parent_ctx;
   nested_ctx.r3.u64 = guest_peer;
-  __imp__sub_827085A8(nested_ctx, base);
+  __imp__sub_82707FA0(nested_ctx, base);
   if (rex::Runtime* runtime = rex::Runtime::instance()) {
     runtime->memory()->SystemHeapFree(guest_peer);
   }
@@ -2253,7 +2253,7 @@ int32_t FindSessionParticipant(PPCContext& parent_ctx, uint8_t* base,
     PPCContext compare_ctx = parent_ctx;
     compare_ctx.r3.u64 = guest_identity;
     compare_ctx.r4.u64 = *record;
-    __imp__sub_829DB628(compare_ctx, base);
+    __imp__sub_829DB120(compare_ctx, base);
     if (compare_ctx.r3.u8 != 0) {
       return static_cast<int32_t>(index);
     }
@@ -2266,12 +2266,12 @@ std::optional<uint8_t> ParticipantPeerId(PPCContext& parent_ctx, uint8_t* base,
   if (guest_participant == 0) return std::nullopt;
   PPCContext identity_ctx = parent_ctx;
   identity_ctx.r3.u64 = guest_participant;
-  __imp__sub_829DBAA8(identity_ctx, base);
+  __imp__sub_825042F8(identity_ctx, base);
   if (identity_ctx.r3.u32 == 0) return std::nullopt;
   PPCContext lookup_ctx = parent_ctx;
   lookup_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
   lookup_ctx.r4.u64 = identity_ctx.r3.u32;
-  sub_826FE908(lookup_ctx, base);
+  sub_826FE358(lookup_ctx, base);
   return PeerRecordId(base, lookup_ctx.r3.u32);
 }
 
@@ -2336,7 +2336,7 @@ void DestroySessionCommand(PPCContext& parent_ctx, uint8_t* base, uint32_t guest
   PPCContext destroy_ctx = parent_ctx;
   destroy_ctx.r3.u64 = guest_command;
   destroy_ctx.r4.u64 = REX_LOAD_U32(mp64::kSessionCommandAllocatorAddress);
-  __imp__sub_829F58B8(destroy_ctx, base);
+  __imp__sub_827C9D58(destroy_ctx, base);
 }
 
 void ReleaseParticipantCommandSidecar(uint32_t guest_command) {
@@ -2366,7 +2366,7 @@ void FailSessionCommandCallback(PPCContext& parent_ctx, uint8_t* base, uint32_t 
   PPCContext callback_ctx = parent_ctx;
   callback_ctx.r3.u64 = guest_callback;
   callback_ctx.r4.u64 = 2;
-  __imp__sub_8284E5C0(callback_ctx, base);
+  __imp__sub_82852A08(callback_ctx, base);
   const auto result_address = mp64::CheckedGuestAddress(guest_callback, 4);
   if (result_address) {
     REX_STORE_U32(*result_address, std::numeric_limits<uint32_t>::max());
@@ -2381,13 +2381,13 @@ void CompleteSnapshotCallback(PPCContext& parent_ctx, uint8_t* base, uint32_t gu
   PPCContext callback_ctx = parent_ctx;
   callback_ctx.r3.u64 = guest_callback;
   callback_ctx.r4.u64 = 1;
-  __imp__sub_8284E5C0(callback_ctx, base);
+  __imp__sub_82852A08(callback_ctx, base);
   REX_STORE_U32(guest_callback + 4, 0);
   callback_ctx = parent_ctx;
   callback_ctx.r3.u64 = guest_callback;
   callback_ctx.r4.u64 = success ? 3 : 2;
   callback_ctx.r5.u64 = 1;
-  __imp__sub_8284E5E0(callback_ctx, base);
+  __imp__sub_82852A28(callback_ctx, base);
   REX_STORE_U32(guest_callback + 4, success ? 0 : std::numeric_limits<uint32_t>::max());
 }
 
@@ -2451,7 +2451,7 @@ bool RunLeavePlatformBatch(PPCContext& parent_ctx, uint8_t* base, uint32_t guest
   PPCContext leave_ctx = parent_ctx;
   leave_ctx.r3.u64 = guest_session;
   leave_ctx.r4.u64 = guest_proxy;
-  __imp__sub_829F7428(leave_ctx, base);
+  __imp__sub_829F7080(leave_ctx, base);
   const bool success = leave_ctx.r3.u8 != 0;
   runtime->memory()->SystemHeapFree(guest_proxy);
   return success;
@@ -2516,7 +2516,7 @@ bool RunJoinPlatformBatch(PPCContext& parent_ctx, uint8_t* base, uint32_t guest_
   PPCContext join_ctx = parent_ctx;
   join_ctx.r3.u64 = guest_session;
   join_ctx.r4.u64 = guest_proxy;
-  __imp__sub_829F7208(join_ctx, base);
+  __imp__sub_829F6E60(join_ctx, base);
   const bool success = join_ctx.r3.u8 != 0;
   runtime->memory()->SystemHeapFree(guest_records);
   runtime->memory()->SystemHeapFree(guest_proxy);
@@ -2642,11 +2642,11 @@ uint32_t EnsureReassignmentTransport(PPCContext& ctx, uint8_t* base, uint32_t gu
   std::memset(base + guest_transport, 0, mp64::kReassignmentTransportStateSize);
   PPCContext construct_ctx = ctx;
   construct_ctx.r3.u64 = guest_transport;
-  __imp__sub_829F0E10(construct_ctx, base);
+  __imp__sub_829F0A70(construct_ctx, base);
   if (!g_reassignments.SetTransport(guest_manager, owner_id, recipient_id, guest_transport)) {
     PPCContext destroy_ctx = ctx;
     destroy_ctx.r3.u64 = guest_transport;
-    __imp__sub_829F0920(destroy_ctx, base);
+    __imp__sub_829F0580(destroy_ctx, base);
     runtime->memory()->SystemHeapFree(guest_transport);
     return 0;
   }
@@ -2870,13 +2870,13 @@ void PopulateExtendedNegotiationMask(PPCContext& ctx, uint8_t* base, uint32_t gu
   for (const auto [recipient_id, guest_peer] : CollectExtendedPeers()) {
     PPCContext predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    __imp__sub_82708770(predicate_ctx, base);
+    __imp__sub_82708140(predicate_ctx, base);
     if (predicate_ctx.r3.u8 != 0) {
       continue;
     }
     predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    __imp__sub_82701F88(predicate_ctx, base);
+    __imp__sub_82708020(predicate_ctx, base);
     if (predicate_ctx.r3.u8 != owner_id) {
       state.involved.Set(recipient_id);
       state.confirmed.Set(recipient_id);
@@ -2907,26 +2907,26 @@ void PopulateExtendedConfirmationMask(PPCContext& ctx, uint8_t* base, uint32_t g
     }
     PPCContext predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    __imp__sub_82708620(predicate_ctx, base);
+    __imp__sub_827054E0(predicate_ctx, base);
     if (predicate_ctx.r3.u8 == 0) {
       continue;
     }
     predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    __imp__sub_82708770(predicate_ctx, base);
+    __imp__sub_82708140(predicate_ctx, base);
     if (predicate_ctx.r3.u8 != 0) {
       continue;
     }
     predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    __imp__sub_82701F88(predicate_ctx, base);
+    __imp__sub_82708020(predicate_ctx, base);
     if (predicate_ctx.r3.u8 == owner_id) {
       continue;
     }
     predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    __imp__sub_82A58008(predicate_ctx, base);
-    __imp__sub_826C4FA0(predicate_ctx, base);
+    __imp__sub_82A57BF8(predicate_ctx, base);
+    __imp__sub_826C2188(predicate_ctx, base);
     if (predicate_ctx.r3.u8 != 0) {
       state.confirmed.Set(recipient_id);
     }
@@ -2954,7 +2954,7 @@ void ResetExtendedReassignmentState(PPCContext& ctx, uint8_t* base, uint32_t gue
     if (guest_transport != 0) {
       PPCContext reset_ctx = ctx;
       reset_ctx.r3.u64 = guest_transport;
-      __imp__sub_829F04F8(reset_ctx, base);
+      __imp__sub_829F0158(reset_ctx, base);
     }
   }
   g_reassignments.Set(guest_manager, owner_id, state);
@@ -2988,14 +2988,14 @@ std::optional<uint8_t> ParseReassignmentConfirmationOwner(PPCContext& ctx, uint8
   parse_ctx.r3.u64 = scratch;
   parse_ctx.r4.u64 = *allocator;
   parse_ctx.r5.u64 = 1002;
-  __imp__sub_82795560(parse_ctx, base);
+  __imp__sub_82794340(parse_ctx, base);
   parse_ctx = ctx;
   parse_ctx.r3.u64 = scratch;
   parse_ctx.r4.u64 = REX_LOAD_U32(*parser);
   parse_ctx.r5.u64 = REX_LOAD_U32(*packet_data);
   parse_ctx.r6.u64 = REX_LOAD_U32(*packet_size);
   parse_ctx.r7.u64 = 0;
-  __imp__sub_82783F98(parse_ctx, base);
+  __imp__sub_82785840(parse_ctx, base);
   const std::optional<uint8_t> owner =
       parse_ctx.r3.u8 != 0 ? std::optional<uint8_t>{REX_LOAD_U8(scratch)} : std::nullopt;
   runtime->memory()->SystemHeapFree(scratch);
@@ -3025,14 +3025,14 @@ std::optional<uint8_t> ParseReassignmentStatusOwner(PPCContext& ctx, uint8_t* ba
   std::memset(base + scratch, 0, mp64::kReassignmentMessageScratchSize);
   PPCContext parse_ctx = ctx;
   parse_ctx.r3.u64 = scratch;
-  __imp__sub_827955F0(parse_ctx, base);
+  __imp__sub_827943D0(parse_ctx, base);
   parse_ctx = ctx;
   parse_ctx.r3.u64 = scratch;
   parse_ctx.r4.u64 = REX_LOAD_U32(*parser);
   parse_ctx.r5.u64 = REX_LOAD_U32(*packet_data);
   parse_ctx.r6.u64 = REX_LOAD_U32(*packet_size);
   parse_ctx.r7.u64 = 0;
-  __imp__sub_827842D8(parse_ctx, base);
+  __imp__sub_82785B80(parse_ctx, base);
   const std::optional<uint8_t> owner =
       parse_ctx.r3.u8 != 0 ? std::optional<uint8_t>{REX_LOAD_U8(scratch)} : std::nullopt;
   runtime->memory()->SystemHeapFree(scratch);
@@ -3051,7 +3051,7 @@ void DestroyReassignmentSidecars(PPCContext& ctx, uint8_t* base, uint32_t guest_
         PPCContext clear_ctx = ctx;
         clear_ctx.r3.u64 = guest_manager;
         clear_ctx.r4.u64 = alias_id;
-        sub_82784C48(clear_ctx, base);
+        sub_827864F0(clear_ctx, base);
       }
     });
   }
@@ -3064,7 +3064,7 @@ void DestroyReassignmentSidecars(PPCContext& ctx, uint8_t* base, uint32_t guest_
         }
         PPCContext destroy_ctx = ctx;
         destroy_ctx.r3.u64 = guest_transport;
-        __imp__sub_829F0920(destroy_ctx, base);
+        __imp__sub_829F0580(destroy_ctx, base);
         runtime->memory()->SystemHeapFree(guest_transport);
       }
     }
@@ -3097,7 +3097,7 @@ void NotifyExtendedReassignmentEntry(PPCContext& ctx, uint8_t* base, uint32_t gu
     PPCContext endpoint_ctx = ctx;
     endpoint_ctx.r3.u64 = guest_object;
     endpoint_ctx.r4.u64 = recipient_id;
-    sub_82702DE8(endpoint_ctx, base);
+    sub_82706320(endpoint_ctx, base);
     if (endpoint_ctx.r3.u32 == 0) {
       endpoint_ctx = ctx;
       endpoint_ctx.r3.u64 = guest_object;
@@ -3118,7 +3118,7 @@ void NotifyExtendedReassignmentEntry(PPCContext& ctx, uint8_t* base, uint32_t gu
     send_ctx.r4.u64 = recipient_id;
     send_ctx.r5.u64 = REX_LOAD_U32(guest_command);
     send_ctx.r6.u64 = 1;
-    sub_82703160(send_ctx, base);
+    sub_82706698(send_ctx, base);
   }
   runtime->memory()->SystemHeapFree(guest_command);
 }
@@ -3169,154 +3169,154 @@ void GTA4_RunWithPrimaryPlayerInfoAlias(PPCContext& ctx, uint8_t* base,
     RunPrimaryPlayerInfoAlias(ctx, base, __imp__##function);          \
   }
 
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82140698)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82142F90)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82149DF0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82151B40)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8215CB10)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82168D58)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8216CF98)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8216D148)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82297F40)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8229F9C0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822A86A0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822F7AC8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822FAC88)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823082C0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82340A78)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82340B88)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82341190)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82341D58)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823435C8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82343A00)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82344368)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82353038)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8238C090)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8238E338)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82391A10)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82391E38)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823922C8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823923B0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82392C00)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82392D90)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823A8F70)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823B0B18)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823C0768)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823CE3A8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823E97D8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823ECD08)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823EEEA0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82423078)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82463BA8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82467700)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82469FD8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B41E8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B4258)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B42B8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B4380)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B4768)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_824C85B0)
-extern "C" void sub_824DC670(PPCContext& ctx, uint8_t* base) {
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82140600)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82142FC0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82156730)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82151018)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8215CAE8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82168C20)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8216CE60)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8216D010)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822ACFD8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822AF1D0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822B8690)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82305050)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82308210)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8232AAB8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234B080)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234B190)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234B798)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234C360)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234DBD0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234E008)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8234E970)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821E2ED0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8236FB00)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82371DA8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82375480)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823758A8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82375D38)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82375E20)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82376670)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82376800)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823A8E28)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823B09D0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823C0620)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823CE730)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823E9BB8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823ED140)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_823EF2D8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82437818)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82469340)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8246CE98)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82457778)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B41F8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B4268)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B42C8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B4390)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821B4778)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_824C4660)
+extern "C" void sub_824DB050(PPCContext& ctx, uint8_t* base) {
   RunPrimaryPlayerInfoAlias(ctx, base, GTA4_SonyObserveDamage);
 }
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_824FF330)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82500C08)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82500F10)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82515FE0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8252A508)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82544FD0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82545528)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82575740)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825757D0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8258E080)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825B3B08)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825B5910)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825B5D60)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821C1C78)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D08A8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825D1A38)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825D24C8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825FE730)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82615278)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8263C3D0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82671780)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82680278)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C4CA8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C4E58)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C5328)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C7980)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C97E8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CA5C0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CD660)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CDEB8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CEE80)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D0010)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D0138)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DBCE8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DBFB0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DC168)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DCBF0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DCE68)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DD2C0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DD580)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DE3C8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826DEAB8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826E1F88)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826E9300)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826FF198)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_827004A0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82777710)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82203CD8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82204C70)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82205C30)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822094F8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82212758)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8221E790)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8222B7D8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8222BB58)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82238BD0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82238C28)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822398C8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822447B8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82244E48)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82245428)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82245620)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246028)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822461F0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822462D0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822463B0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822464D0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822465B0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246690)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246770)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246850)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246930)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246A10)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246AF0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246BD0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246CB0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246D90)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82246E70)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247298)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247378)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247458)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247538)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822476C8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247858)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247938)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247A48)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82247BE0)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225CF80)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225CFB8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225CFF8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225D050)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225D0B8)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225D108)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225D168)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225EF58)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225F480)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225F738)
-GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225FBD0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_824FF1D0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82500AA8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82500DB0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8251A4C0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825A1AE8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8256C4E0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8256CA38)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825A77E0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825A7870)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82555C28)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825DB520)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825DD328)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825DD778)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821C1AB8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82206390)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825F9368)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_825F9E08)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826242C0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82643BA8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82586AB8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82671A80)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8267FD48)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C1E90)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C2040)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C2510)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C4CE8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C6A78)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826C77B8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CD110)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CD968)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CE930)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CFAC0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826CFBE8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D21E0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D24A8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D2660)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D30E8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D3360)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D37B8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D3A78)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D4930)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D5020)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826D84E8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826E5E50)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826FEBE8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_826FFEF0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_827773E8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8222E270)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8222F208)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82205108)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82245398)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8223ADD0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82250AD8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8224CDB0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8224D130)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82252E58)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82252EB0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82253B50)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82256BF8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82257288)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82257868)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82257A60)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258468)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258630)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258710)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822587F0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258910)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822589F0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258AD0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258BB0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258C90)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258D70)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258E50)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82258F30)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259010)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822590F0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822591D0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822592B0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822596D8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_822597B8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259898)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259978)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259B08)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259C98)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259D78)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_82259E88)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225A020)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D59F0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D5A28)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D5A68)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D5AC0)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D5B28)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D5B78)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D5BD8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D7A18)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D7F40)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D81F8)
+GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_821D8640)
 
 #undef GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK
 
@@ -3324,10 +3324,10 @@ GTA4_PRIMARY_PLAYER_INFO_ALIAS_HOOK(sub_8225FBD0)
 // retail player-info table directly. Observe the exact call sites while the
 // original runs, then replay only those loop bodies for high player IDs. This
 // avoids rerunning any of the function's unrelated world-transition work.
-extern "C" void sub_822D7188(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_822EDD80(PPCContext& ctx, uint8_t* base) {
   const PlayerTransitionLoopContext saved_transition = g_player_transition_loop;
   g_player_transition_loop = {.active = true};
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_822D7188);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_822EDD80);
   const PPCContext result_ctx = ctx;
   const bool reset_loop_seen = g_player_transition_loop.reset_loop_seen;
   const bool force_loop_seen = g_player_transition_loop.force_loop_seen;
@@ -3344,7 +3344,7 @@ extern "C" void sub_822D7188(PPCContext& ctx, uint8_t* base) {
       PPCContext reset_ctx = result_ctx;
       reset_ctx.r3.u64 = guest_player_info;
       reset_ctx.r4.u64 = 0;
-      sub_82238988(reset_ctx, base);
+      sub_82252C10(reset_ctx, base);
     }
   }
 
@@ -3386,7 +3386,7 @@ extern "C" void sub_822D7188(PPCContext& ctx, uint8_t* base) {
       PPCContext force_ctx = result_ctx;
       force_ctx.r3.u64 = guest_player;
       force_ctx.r4.u64 = 0;
-      sub_825BED00(force_ctx, base);
+      sub_825E6638(force_ctx, base);
     }
   }
   ctx = result_ctx;
@@ -3395,8 +3395,8 @@ extern "C" void sub_822D7188(PPCContext& ctx, uint8_t* base) {
 // STARTING_GAME owns a sixteen-pointer stack window. Retail handles that
 // bounded low-peer batch; dispatch the identical notification and action to
 // every high peer exactly once before the transition completes.
-extern "C" void sub_826C7E98(PPCContext& ctx, uint8_t* base) {
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_826C7E98);
+extern "C" void sub_826C5200(PPCContext& ctx, uint8_t* base) {
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_826C5200);
   const PPCContext result_ctx = ctx;
   if (REX_LOAD_U8(mp64::kStartGameDirectMessageFlagAddress) != 0) {
     return;
@@ -3408,29 +3408,29 @@ extern "C" void sub_826C7E98(PPCContext& ctx, uint8_t* base) {
         message_ctx.r3.u64 = guest_sink;
         message_ctx.r4.u64 = 1;
         message_ctx.r5.u64 = mp64::kStartGameLiteralAddress;
-        sub_822BCA90(message_ctx, base);
+        sub_822C5800(message_ctx, base);
 
         PPCContext name_ctx = result_ctx;
         name_ctx.r3.u64 = guest_peer;
-        sub_82708A18(name_ctx, base);
+        sub_827083E8(name_ctx, base);
         message_ctx = result_ctx;
         message_ctx.r3.u64 = guest_sink;
         message_ctx.r4.u64 = 1;
         message_ctx.r5.u64 = 0;
         message_ctx.r6.u64 = mp64::kStartGameFormatLiteralAddress;
         message_ctx.r7.u64 = name_ctx.r3.u32;
-        sub_822BCA90(message_ctx, base);
+        sub_822C5800(message_ctx, base);
 
         PPCContext action_ctx = result_ctx;
         action_ctx.r3.u64 = guest_peer;
         action_ctx.r4.u64 = 5;
-        sub_82708640(action_ctx, base);
+        sub_82708018(action_ctx, base);
         return true;
       });
   ctx = result_ctx;
 }
 
-extern "C" void sub_825B2D70(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_825DA788(PPCContext& ctx, uint8_t* base) {
   const int32_t requested_value = ctx.r3.s32;
   uint32_t count = 0;
   for (uint8_t player_id = 0; player_id < mp64::kExtendedPeerCapacity; ++player_id) {
@@ -3446,10 +3446,10 @@ extern "C" void sub_825B2D70(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = count;
 }
 
-extern "C" void sub_8216D490(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8216D358(PPCContext& ctx, uint8_t* base) {
   const ThresholdPlayerLoopContext saved_threshold = g_threshold_player_loop;
   g_threshold_player_loop = {.active = true};
-  __imp__sub_8216D490(ctx, base);
+  __imp__sub_8216D358(ctx, base);
   const PPCContext result_ctx = ctx;
   const ThresholdPlayerLoopContext loop = g_threshold_player_loop;
   g_threshold_player_loop = saved_threshold;
@@ -3487,17 +3487,17 @@ extern "C" void sub_8216D490(PPCContext& ctx, uint8_t* base) {
         }
         PPCContext predicate_ctx = result_ctx;
         predicate_ctx.r3.u64 = *record_address;
-        sub_829DB4E8(predicate_ctx, base);
+        sub_829DAFE0(predicate_ctx, base);
         if (predicate_ctx.r3.u8 == 0) {
           continue;
         }
         PPCContext vector_ctx = result_ctx;
         vector_ctx.r3.u64 = guest_player_info;
-        sub_829DBAA8(vector_ctx, base);
+        sub_825042F8(vector_ctx, base);
         predicate_ctx = result_ctx;
         predicate_ctx.r3.u64 = *record_address;
         predicate_ctx.r4.u64 = vector_ctx.r3.u32;
-        sub_829DB628(predicate_ctx, base);
+        sub_829DB120(predicate_ctx, base);
         if (predicate_ctx.r3.u8 != 0) {
           ++matches;
         }
@@ -3515,12 +3515,12 @@ extern "C" void sub_8216D490(PPCContext& ctx, uint8_t* base) {
   if (low_matches + high_matches >= mp64::kThresholdMatchCount) {
     PPCContext event_ctx = result_ctx;
     event_ctx.r3.u64 = mp64::kThresholdEventId;
-    sub_826CCDB8(event_ctx, base);
+    sub_826CC868(event_ctx, base);
   }
   ctx = result_ctx;
 }
 
-extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D4AB0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const auto initial_session_address =
       mp64::CheckedGuestAddress(guest_manager, mp64::kLobbySessionOffset);
@@ -3533,11 +3533,11 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
       REX_LOAD_U8(*first_scan_flag_address) != 0 &&
       REX_LOAD_U32(mp64::kLobbyClockAddress) > REX_LOAD_U32(*first_scan_timestamp_address)) {
     PPCContext gate_ctx = ctx;
-    sub_826C4C98(gate_ctx, base);
+    sub_826C1E80(gate_ctx, base);
     if (gate_ctx.r3.u8 != 0) {
       gate_ctx = ctx;
-      sub_826C4E48(gate_ctx, base);
-      sub_826F8960(gate_ctx, base);
+      sub_826C2030(gate_ctx, base);
+      sub_826F82B0(gate_ctx, base);
       if (gate_ctx.r3.u8 != 0) {
         const uint32_t guest_session = REX_LOAD_U32(*initial_session_address);
         for (uint8_t player_id = mp64::kLegacyPeerCapacity;
@@ -3549,27 +3549,27 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
           }
           PPCContext vector_ctx = ctx;
           vector_ctx.r3.u64 = guest_player_info;
-          sub_829DBAA8(vector_ctx, base);
+          sub_825042F8(vector_ctx, base);
           const uint32_t guest_vector = vector_ctx.r3.u32;
           PPCContext filter_ctx = ctx;
-          sub_826C4E48(filter_ctx, base);
+          sub_826C2030(filter_ctx, base);
           filter_ctx.r4.u64 = guest_vector;
-          sub_826F8F30(filter_ctx, base);
+          sub_826F8880(filter_ctx, base);
           if (filter_ctx.r3.u8 == 0) {
             continue;
           }
           vector_ctx = ctx;
           vector_ctx.r3.u64 = guest_player_info;
-          sub_829DBAB0(vector_ctx, base);
+          sub_829DB5A0(vector_ctx, base);
           PPCContext contains_ctx = ctx;
           contains_ctx.r3.u64 = guest_session;
           contains_ctx.r4.u64 = vector_ctx.r3.u32;
-          sub_827923F0(contains_ctx, base);
+          sub_8278F690(contains_ctx, base);
           if (contains_ctx.r3.u8 == 0 &&
               static_cast<int32_t>(REX_LOAD_U32(mp64::kLobbySelectionIndexAddress)) != -1) {
             PPCContext select_ctx = ctx;
             select_ctx.r3.u64 = guest_session;
-            sub_82792778(select_ctx, base);
+            sub_8278FA18(select_ctx, base);
           }
         }
       }
@@ -3577,7 +3577,7 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
   }
   const LobbyPositionLoopContext saved_loop = g_lobby_position_loop;
   g_lobby_position_loop = {.active = true};
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_826DE548);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_826D4AB0);
   const PPCContext result_ctx = ctx;
   const bool position_loop_seen = g_lobby_position_loop.seen;
   g_lobby_position_loop = saved_loop;
@@ -3610,12 +3610,12 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext vector_ctx = result_ctx;
     vector_ctx.r3.u64 = guest_player_info;
-    sub_829DBAA8(vector_ctx, base);
+    sub_825042F8(vector_ctx, base);
     const uint32_t guest_vector = vector_ctx.r3.u32;
     PPCContext filter_ctx = result_ctx;
-    sub_826C4E48(filter_ctx, base);
+    sub_826C2030(filter_ctx, base);
     filter_ctx.r4.u64 = guest_vector;
-    sub_826F8F30(filter_ctx, base);
+    sub_826F8880(filter_ctx, base);
     if (filter_ctx.r3.u8 == 0) {
       continue;
     }
@@ -3630,14 +3630,14 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext active_ctx = result_ctx;
       active_ctx.r3.u64 = *record_address;
-      sub_829E4F08(active_ctx, base);
+      sub_829E4C00(active_ctx, base);
       if (active_ctx.r3.u8 == 0) {
         continue;
       }
       PPCContext match_ctx = result_ctx;
       match_ctx.r3.u64 = *record_address;
       match_ctx.r4.u64 = guest_vector;
-      sub_829E4F90(match_ctx, base);
+      sub_829E4C88(match_ctx, base);
       if (match_ctx.r3.u8 != 0) {
         duplicate = true;
         break;
@@ -3659,7 +3659,7 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext active_ctx = result_ctx;
       active_ctx.r3.u64 = *record_address;
-      sub_829E4F08(active_ctx, base);
+      sub_829E4C00(active_ctx, base);
       if (active_ctx.r3.u8 != 0) {
         continue;
       }
@@ -3672,14 +3672,14 @@ extern "C" void sub_826DE548(PPCContext& ctx, uint8_t* base) {
   if (inserted) {
     PPCContext update_ctx = result_ctx;
     update_ctx.r3.u64 = guest_manager;
-    sub_826DE278(update_ctx, base);
+    sub_826D4770(update_ctx, base);
   }
   ctx = result_ctx;
 }
 
-extern "C" void sub_82718AE8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827184A8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_82718AE8(ctx, base);
+  __imp__sub_827184A8(ctx, base);
   if (ctx.r3.s32 >= 0) {
     return;
   }
@@ -3687,7 +3687,7 @@ extern "C" void sub_82718AE8(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (!WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                    [&]() { __imp__sub_82718AE8(attempt_ctx, base); }) ||
+                                    [&]() { __imp__sub_827184A8(attempt_ctx, base); }) ||
         attempt_ctx.r3.s32 < 0) {
       continue;
     }
@@ -3699,9 +3699,9 @@ extern "C" void sub_82718AE8(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_825755A0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_825A7640(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_825755A0(ctx, base);
+  __imp__sub_825A7640(ctx, base);
   if (ctx.r3.s32 >= 0) {
     return;
   }
@@ -3709,7 +3709,7 @@ extern "C" void sub_825755A0(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (!WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                    [&]() { __imp__sub_825755A0(attempt_ctx, base); }) ||
+                                    [&]() { __imp__sub_825A7640(attempt_ctx, base); }) ||
         attempt_ctx.r3.s32 < 0) {
       continue;
     }
@@ -3719,9 +3719,9 @@ extern "C" void sub_825755A0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_821F89C0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821F8020(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_821F89C0(ctx, base);
+  __imp__sub_821F8020(ctx, base);
   if (ctx.r3.u8 == 0) {
     return;
   }
@@ -3729,7 +3729,7 @@ extern "C" void sub_821F89C0(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                   [&]() { __imp__sub_821F89C0(attempt_ctx, base); }) &&
+                                   [&]() { __imp__sub_821F8020(attempt_ctx, base); }) &&
         attempt_ctx.r3.u8 == 0) {
       ctx = attempt_ctx;
       return;
@@ -3737,9 +3737,9 @@ extern "C" void sub_821F89C0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_8222A030(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8224B608(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_8222A030(ctx, base);
+  __imp__sub_8224B608(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -3747,7 +3747,7 @@ extern "C" void sub_8222A030(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                   [&]() { __imp__sub_8222A030(attempt_ctx, base); }) &&
+                                   [&]() { __imp__sub_8224B608(attempt_ctx, base); }) &&
         attempt_ctx.r3.u8 != 0) {
       ctx = attempt_ctx;
       return;
@@ -3755,9 +3755,9 @@ extern "C" void sub_8222A030(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_821F8A78(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821F80D8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_821F8A78(ctx, base);
+  __imp__sub_821F80D8(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -3765,7 +3765,7 @@ extern "C" void sub_821F8A78(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                   [&]() { __imp__sub_821F8A78(attempt_ctx, base); }) &&
+                                   [&]() { __imp__sub_821F80D8(attempt_ctx, base); }) &&
         attempt_ctx.r3.u8 != 0) {
       ctx = attempt_ctx;
       return;
@@ -3773,9 +3773,9 @@ extern "C" void sub_821F8A78(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_823A3DD0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_823A3C88(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_823A3DD0(ctx, base);
+  __imp__sub_823A3C88(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -3783,7 +3783,7 @@ extern "C" void sub_823A3DD0(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                   [&]() { __imp__sub_823A3DD0(attempt_ctx, base); }) &&
+                                   [&]() { __imp__sub_823A3C88(attempt_ctx, base); }) &&
         attempt_ctx.r3.u8 != 0) {
       ctx = attempt_ctx;
       return;
@@ -3791,9 +3791,9 @@ extern "C" void sub_823A3DD0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82502B88(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82502A28(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82502B88);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82502A28);
   if (ctx.r3.u8 == 0) {
     return;
   }
@@ -3801,7 +3801,7 @@ extern "C" void sub_82502B88(PPCContext& ctx, uint8_t* base) {
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     if (WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                                   [&]() { __imp__sub_82502B88(attempt_ctx, base); }) &&
+                                   [&]() { __imp__sub_82502A28(attempt_ctx, base); }) &&
         attempt_ctx.r3.u8 == 0) {
       ctx = attempt_ctx;
       return;
@@ -3825,27 +3825,27 @@ void RunPlayerInfoFloatMinimum(PPCContext& ctx, uint8_t* base) {
   ctx.f1.f64 = best;
 }
 
-extern "C" void sub_822705A0(PPCContext& ctx, uint8_t* base) {
-  RunPlayerInfoFloatMinimum<__imp__sub_822705A0>(ctx, base);
+extern "C" void sub_8227A190(PPCContext& ctx, uint8_t* base) {
+  RunPlayerInfoFloatMinimum<__imp__sub_8227A190>(ctx, base);
 }
 
-extern "C" void sub_826E5D50(PPCContext& ctx, uint8_t* base) {
-  RunPlayerInfoFloatMinimum<__imp__sub_826E5D50>(ctx, base);
+extern "C" void sub_826F23C0(PPCContext& ctx, uint8_t* base) {
+  RunPlayerInfoFloatMinimum<__imp__sub_826F23C0>(ctx, base);
 }
 
-extern "C" void sub_826E5E18(PPCContext& ctx, uint8_t* base) {
-  RunPlayerInfoFloatMinimum<__imp__sub_826E5E18>(ctx, base);
+extern "C" void sub_826F2488(PPCContext& ctx, uint8_t* base) {
+  RunPlayerInfoFloatMinimum<__imp__sub_826F2488>(ctx, base);
 }
 
-extern "C" void sub_821C1460(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821C12A0(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
-  __imp__sub_821C1460(ctx, base);
+  __imp__sub_821C12A0(ctx, base);
   const PPCContext result_ctx = ctx;
   for (uint8_t player_id = mp64::kLegacyPeerCapacity;
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
     PPCContext attempt_ctx = input_ctx;
     WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                               [&]() { __imp__sub_821C1460(attempt_ctx, base); });
+                               [&]() { __imp__sub_821C12A0(attempt_ctx, base); });
   }
   ctx = result_ctx;
 }
@@ -3912,9 +3912,9 @@ void RestoreLegacyProximityStatusTable(uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E0A90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D6FF0(PPCContext& ctx, uint8_t* base) {
   if (!g_nearest_network_decision.active) {
-    __imp__sub_826E0A90(ctx, base);
+    __imp__sub_826D6FF0(ctx, base);
     return;
   }
   const double score = ctx.f29.f64;
@@ -3925,14 +3925,14 @@ extern "C" void sub_826E0A90(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E6E48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826F34B8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const auto timestamp_address =
       mp64::CheckedGuestAddress(input_ctx.r3.u32, mp64::kNearestNetworkTimestampOffset);
   const uint32_t initial_timestamp = timestamp_address ? REX_LOAD_U32(*timestamp_address) : 0;
   const NearestNetworkDecisionContext saved_decision = g_nearest_network_decision;
   g_nearest_network_decision = {.active = true};
-  __imp__sub_826E6E48(ctx, base);
+  __imp__sub_826F34B8(ctx, base);
   const PPCContext result_ctx = ctx;
   const uint32_t final_timestamp = timestamp_address ? REX_LOAD_U32(*timestamp_address) : 0;
   for (uint8_t player_id = mp64::kLegacyPeerCapacity;
@@ -3942,7 +3942,7 @@ extern "C" void sub_826E6E48(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext attempt_ctx = input_ctx;
     WithOnlyExtendedPlayerInfo(attempt_ctx, base, player_id,
-                               [&]() { __imp__sub_826E6E48(attempt_ctx, base); });
+                               [&]() { __imp__sub_826F34B8(attempt_ctx, base); });
   }
   if (timestamp_address) {
     REX_STORE_U32(*timestamp_address, final_timestamp);
@@ -3951,14 +3951,14 @@ extern "C" void sub_826E6E48(PPCContext& ctx, uint8_t* base) {
   g_nearest_network_decision = saved_decision;
   if (decision.captured) {
     PPCContext action_ctx = decision.call_ctx;
-    __imp__sub_826E0A90(action_ctx, base);
+    __imp__sub_826D6FF0(action_ctx, base);
   }
   ctx = result_ctx;
 }
 
-extern "C" void sub_823193D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8231B888(PPCContext& ctx, uint8_t* base) {
   if (!g_population_dispatch_capture.active) {
-    __imp__sub_823193D8(ctx, base);
+    __imp__sub_8231B888(ctx, base);
     return;
   }
   const auto duplicate = std::find_if(
@@ -3974,9 +3974,9 @@ extern "C" void sub_823193D8(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = 0;
 }
 
-extern "C" void sub_823BC0B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_823BBF70(PPCContext& ctx, uint8_t* base) {
   if (g_player_info_batch_projection.active) {
-    __imp__sub_823BC0B8(ctx, base);
+    __imp__sub_823BBF70(ctx, base);
     return;
   }
   const PPCContext input_ctx = ctx;
@@ -3999,7 +3999,7 @@ extern "C" void sub_823BC0B8(PPCContext& ctx, uint8_t* base) {
     }
   };
 
-  __imp__sub_823BC0B8(ctx, base);
+  __imp__sub_823BBF70(ctx, base);
   const PPCContext result_ctx = ctx;
   capture_records();
   for (uint8_t first_player_id = mp64::kLegacyPeerCapacity;
@@ -4007,7 +4007,7 @@ extern "C" void sub_823BC0B8(PPCContext& ctx, uint8_t* base) {
        first_player_id = static_cast<uint8_t>(first_player_id + mp64::kLegacyPeerCapacity)) {
     PPCContext batch_ctx = input_ctx;
     WithProjectedPlayerInfoBatch(
-        first_player_id, [&]() { __imp__sub_823BC0B8(batch_ctx, base); });
+        first_player_id, [&]() { __imp__sub_823BBF70(batch_ctx, base); });
     capture_records();
   }
   for (uint32_t record_index = 0; record_index < merged_records.size(); ++record_index) {
@@ -4021,42 +4021,42 @@ extern "C" void sub_823BC0B8(PPCContext& ctx, uint8_t* base) {
   ctx = result_ctx;
 }
 
-extern "C" void sub_823F70E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_823F7050(PPCContext& ctx, uint8_t* base) {
   if (g_population_dispatch_capture.active) {
-    __imp__sub_823F70E8(ctx, base);
+    __imp__sub_823F7050(ctx, base);
     return;
   }
   const PPCContext input_ctx = ctx;
   const PopulationDispatchCaptureContext saved_capture = g_population_dispatch_capture;
   g_population_dispatch_capture = {.active = true};
-  __imp__sub_823F70E8(ctx, base);
+  __imp__sub_823F7050(ctx, base);
   for (uint8_t first_player_id = mp64::kLegacyPeerCapacity;
        first_player_id < mp64::kExtendedPeerCapacity;
        first_player_id = static_cast<uint8_t>(first_player_id + mp64::kLegacyPeerCapacity)) {
     PPCContext batch_ctx = input_ctx;
     WithProjectedPlayerInfoBatch(
-        first_player_id, [&]() { __imp__sub_823F70E8(batch_ctx, base); });
+        first_player_id, [&]() { __imp__sub_823F7050(batch_ctx, base); });
   }
   const std::vector<PPCContext> calls = std::move(g_population_dispatch_capture.calls);
   g_population_dispatch_capture = saved_capture;
   uint32_t dispatched = 0;
   for (PPCContext call_ctx : calls) {
-    __imp__sub_823193D8(call_ctx, base);
+    __imp__sub_8231B888(call_ctx, base);
     dispatched += call_ctx.r3.u32;
   }
   ctx.r3.u64 = dispatched;
 }
 
-extern "C" void sub_8278D0C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8278CC98(PPCContext& ctx, uint8_t* base) {
   if (g_player_info_batch_projection.active || g_proximity_status_driver_active) {
-    __imp__sub_8278D0C8(ctx, base);
+    __imp__sub_8278CC98(ctx, base);
     return;
   }
   std::scoped_lock status_lock(g_proximity_status_mutex);
   const ProximityStatusCaptureContext saved_capture = g_proximity_status_capture;
   g_proximity_status_capture = {.active = true};
   const PPCContext input_ctx = ctx;
-  __imp__sub_8278D0C8(ctx, base);
+  __imp__sub_8278CC98(ctx, base);
   const PPCContext result_ctx = ctx;
   for (uint8_t player_id = 0; player_id < mp64::kLegacyPeerCapacity; ++player_id) {
     const auto record_address = mp64::CheckedGuestArrayAddress(
@@ -4080,7 +4080,7 @@ extern "C" void sub_8278D0C8(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext batch_ctx = input_ctx;
     WithProjectedPlayerInfoBatch(
-        first_player_id, [&]() { __imp__sub_8278D0C8(batch_ctx, base); });
+        first_player_id, [&]() { __imp__sub_8278CC98(batch_ctx, base); });
     for (uint8_t alias_id = 0; alias_id < mp64::kLegacyPeerCapacity; ++alias_id) {
       const auto record_address = mp64::CheckedGuestArrayAddress(
           mp64::kProximityStatusTableAddress, alias_id, mp64::kProximityStatusRecordSize);
@@ -4096,9 +4096,9 @@ extern "C" void sub_8278D0C8(PPCContext& ctx, uint8_t* base) {
   ctx = result_ctx;
 }
 
-extern "C" void sub_8278D608(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8278D1D8(PPCContext& ctx, uint8_t* base) {
   if (g_player_info_batch_projection.active) {
-    __imp__sub_8278D608(ctx, base);
+    __imp__sub_8278D1D8(ctx, base);
     return;
   }
   std::scoped_lock status_lock(g_proximity_status_mutex);
@@ -4108,7 +4108,7 @@ extern "C" void sub_8278D608(PPCContext& ctx, uint8_t* base) {
   const uint32_t initial_timestamp = REX_LOAD_U32(mp64::kProximityStatusTimestampAddress);
   const bool saved_driver = g_proximity_status_driver_active;
   g_proximity_status_driver_active = true;
-  __imp__sub_8278D608(ctx, base);
+  __imp__sub_8278D1D8(ctx, base);
   g_proximity_status_driver_active = saved_driver;
   const PPCContext result_ctx = ctx;
   const uint32_t final_timestamp = REX_LOAD_U32(mp64::kProximityStatusTimestampAddress);
@@ -4136,7 +4136,7 @@ extern "C" void sub_8278D608(PPCContext& ctx, uint8_t* base) {
     REX_STORE_U32(mp64::kProximityStatusTimestampAddress, initial_timestamp);
     PPCContext batch_ctx = input_ctx;
     WithProjectedPlayerInfoBatch(
-        first_player_id, [&]() { __imp__sub_8278D608(batch_ctx, base); });
+        first_player_id, [&]() { __imp__sub_8278D1D8(batch_ctx, base); });
     for (uint8_t alias_id = 0; alias_id < mp64::kLegacyPeerCapacity; ++alias_id) {
       const auto record_address = mp64::CheckedGuestArrayAddress(
           mp64::kProximityStatusTableAddress, alias_id, mp64::kProximityStatusRecordSize);
@@ -4155,9 +4155,9 @@ extern "C" void sub_8278D608(PPCContext& ctx, uint8_t* base) {
 
 // Retail peer-manager constructor. Register its guest address after all
 // embedded records and pointer slots have been initialized.
-extern "C" void sub_82700AA0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827004F0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82700AA0);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_827004F0);
   if (g_peer_managers.RegisterManager(guest_manager)) {
     PopulateLegacySidecar(base, guest_manager);
   }
@@ -4165,7 +4165,7 @@ extern "C" void sub_82700AA0(PPCContext& ctx, uint8_t* base) {
 
 // Retail peer-manager destructor. Keep the sidecar alive during the original
 // teardown because removal callbacks re-enter the hooked lookup path.
-extern "C" void sub_827013F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82700E48(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   std::vector<uint8_t> extended_peer_ids;
   g_peer_managers.VisitExtendedPeers(guest_manager, [&](uint8_t peer_id, uint32_t) {
@@ -4176,9 +4176,9 @@ extern "C" void sub_827013F8(PPCContext& ctx, uint8_t* base) {
     PPCContext remove_ctx = ctx;
     remove_ctx.r3.u64 = guest_manager;
     remove_ctx.r4.u64 = peer_id;
-    sub_82700E30(remove_ctx, base);
+    sub_82700880(remove_ctx, base);
   }
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_827013F8);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82700E48);
   const auto reassignment_states = g_reassignments.RemoveManager(guest_manager);
   if (rex::Runtime* runtime = rex::Runtime::instance()) {
     for (const auto& state : reassignment_states) {
@@ -4186,7 +4186,7 @@ extern "C" void sub_827013F8(PPCContext& ctx, uint8_t* base) {
         if (guest_transport != 0) {
           PPCContext destroy_ctx = ctx;
           destroy_ctx.r3.u64 = guest_transport;
-          __imp__sub_829F0920(destroy_ctx, base);
+          __imp__sub_829F0580(destroy_ctx, base);
           runtime->memory()->SystemHeapFree(guest_transport);
         }
       }
@@ -4202,30 +4202,30 @@ extern "C" void sub_827013F8(PPCContext& ctx, uint8_t* base) {
 // invalid/sentinel IDs can never become guest pointer arithmetic.
 bool CanBroadcastConnectionData(PPCContext& ctx, uint8_t* base) {
   PPCContext nested_ctx = ctx;
-  __imp__sub_826C4E48(nested_ctx, base);
-  __imp__sub_826F8960(nested_ctx, base);
+  __imp__sub_826C2030(nested_ctx, base);
+  __imp__sub_826F82B0(nested_ctx, base);
   if (nested_ctx.r3.u8 == 0) {
     return false;
   }
   nested_ctx = ctx;
-  __imp__sub_826CD808(nested_ctx, base);
+  __imp__sub_826CD2B8(nested_ctx, base);
   const uint32_t guest_session = nested_ctx.r3.u32;
   if (guest_session == 0) {
     return false;
   }
   nested_ctx = ctx;
-  __imp__sub_826C4778(nested_ctx, base);
+  __imp__sub_826C1960(nested_ctx, base);
   if (nested_ctx.r3.u8 != 0) {
     return false;
   }
   nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_session;
-  __imp__sub_829DBA98(nested_ctx, base);
+  __imp__sub_829DB590(nested_ctx, base);
   return nested_ctx.r3.u8 != 0;
 }
 
-extern "C" void sub_826DDA10(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_826DDA10(ctx, base);
+extern "C" void sub_826D3F08(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_826D3F08(ctx, base);
   if (!CanBroadcastConnectionData(ctx, base)) {
     return;
   }
@@ -4240,11 +4240,11 @@ extern "C" void sub_826DDA10(PPCContext& ctx, uint8_t* base) {
   }
   PPCContext value_ctx = ctx;
   value_ctx.r3.u64 = 0;
-  __imp__sub_826DBFB0(value_ctx, base);
+  __imp__sub_826D24A8(value_ctx, base);
   REX_STORE_U32(guest_payload, value_ctx.r3.s32 < 0 ? 0 : value_ctx.r3.u32);
   value_ctx = ctx;
   value_ctx.r3.u64 = 0;
-  __imp__sub_826DC168(value_ctx, base);
+  __imp__sub_826D2660(value_ctx, base);
   const auto second_word = mp64::CheckedGuestAddress(guest_payload, mp64::kGuestPointerSize);
   if (!second_word) {
     runtime->memory()->SystemHeapFree(guest_payload);
@@ -4259,41 +4259,41 @@ extern "C" void sub_826DDA10(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext eligible_ctx = ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708978(eligible_ctx, base);
+    sub_82708348(eligible_ctx, base);
     if (eligible_ctx.r3.u8 != 0) {
       continue;
     }
     eligible_ctx = ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708620(eligible_ctx, base);
+    sub_827054E0(eligible_ctx, base);
     if (eligible_ctx.r3.u8 == 0) {
       continue;
     }
     eligible_ctx = ctx;
     eligible_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
     eligible_ctx.r4.u64 = peer_id;
-    __imp__sub_826FF150(eligible_ctx, base);
+    __imp__sub_826FEBA0(eligible_ctx, base);
     if (eligible_ctx.r3.s32 < 0) {
       continue;
     }
     const uint32_t channel = eligible_ctx.r3.u32;
     PPCContext sender_ctx = ctx;
-    __imp__sub_826C4E38(sender_ctx, base);
+    __imp__sub_826C2020(sender_ctx, base);
     sender_ctx.r3.u64 = sender_ctx.r3.u32;
     sender_ctx.r4.u64 = channel;
     sender_ctx.r5.u64 = guest_payload;
     sender_ctx.r6.u64 = 1;
     sender_ctx.r7.u64 = 0;
-    __imp__sub_826DD0C8(sender_ctx, base);
+    __imp__sub_826D35C0(sender_ctx, base);
     ctx.r3.u64 = sender_ctx.r3.u64;
   }
   runtime->memory()->SystemHeapFree(guest_payload);
 }
 
-extern "C" void sub_826DDB48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D4040(PPCContext& ctx, uint8_t* base) {
   const int32_t first_value = ctx.r3.s32;
   const uint32_t second_value = ctx.r4.u32;
-  __imp__sub_826DDB48(ctx, base);
+  __imp__sub_826D4040(ctx, base);
   if (!CanBroadcastConnectionData(ctx, base)) {
     return;
   }
@@ -4321,45 +4321,45 @@ extern "C" void sub_826DDB48(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext eligible_ctx = ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708978(eligible_ctx, base);
+    sub_82708348(eligible_ctx, base);
     if (eligible_ctx.r3.u8 != 0) {
       continue;
     }
     eligible_ctx = ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708620(eligible_ctx, base);
+    sub_827054E0(eligible_ctx, base);
     if (eligible_ctx.r3.u8 == 0) {
       continue;
     }
     eligible_ctx = ctx;
     eligible_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
     eligible_ctx.r4.u64 = peer_id;
-    __imp__sub_826FF150(eligible_ctx, base);
+    __imp__sub_826FEBA0(eligible_ctx, base);
     if (eligible_ctx.r3.s32 < 0) {
       continue;
     }
     const uint32_t channel = eligible_ctx.r3.u32;
     PPCContext sender_ctx = ctx;
-    __imp__sub_826C4E38(sender_ctx, base);
+    __imp__sub_826C2020(sender_ctx, base);
     sender_ctx.r3.u64 = sender_ctx.r3.u32;
     sender_ctx.r4.u64 = channel;
     sender_ctx.r5.u64 = guest_payload;
     sender_ctx.r6.u64 = 1;
     sender_ctx.r7.u64 = 0;
-    __imp__sub_826DD150(sender_ctx, base);
+    __imp__sub_826D3648(sender_ctx, base);
     ctx.r3.u64 = sender_ctx.r3.u64;
   }
   runtime->memory()->SystemHeapFree(guest_payload);
 }
 
-extern "C" void sub_826DDD90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D4288(PPCContext& ctx, uint8_t* base) {
   const uint32_t first_argument = ctx.r3.u32;
   const uint32_t second_argument = ctx.r4.u32;
   const uint32_t guest_message = ctx.r5.u32;
   PPCContext type_ctx = ctx;
   type_ctx.r3.u64 = guest_message;
   if (!CallNetworkObjectVirtual(type_ctx, base, guest_message, 0) || type_ctx.r3.u32 != 4) {
-    __imp__sub_826DDD90(ctx, base);
+    __imp__sub_826D4288(ctx, base);
     return;
   }
   const auto payload_pointer =
@@ -4376,10 +4376,10 @@ extern "C" void sub_826DDD90(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext local_address_ctx = ctx;
     local_address_ctx.r3.u64 = guest_peer;
-    __imp__sub_82770AC0(local_address_ctx, base);
+    __imp__sub_829FAE48(local_address_ctx, base);
     local_address_ctx.r3.u64 = local_address_ctx.r3.u32;
     local_address_ctx.r4.u64 = *address;
-    __imp__sub_829E4A70(local_address_ctx, base);
+    __imp__sub_829E4758(local_address_ctx, base);
     if (local_address_ctx.r3.u8 != 0) {
       matching_peer = guest_peer;
       break;
@@ -4391,18 +4391,18 @@ extern "C" void sub_826DDD90(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = first_argument;
   ctx.r4.u64 = second_argument;
   ctx.r5.u64 = guest_message;
-  __imp__sub_826DDD90(ctx, base);
+  __imp__sub_826D4288(ctx, base);
   if (matching_peer != 0) {
     ClearAliasOverride(mp64::kGlobalPeerManagerAddress, kTemporaryAliasPeerId);
   }
 }
 
-extern "C" void sub_826DFA28(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D5F88(PPCContext& ctx, uint8_t* base) {
   std::scoped_lock event_lock(g_event_peer_alias_mutex);
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint32_t guest_event = ctx.r4.u32;
   if (guest_event == 0) {
-    __imp__sub_826DFA28(ctx, base);
+    __imp__sub_826D5F88(ctx, base);
     return;
   }
   const auto peer_manager_address =
@@ -4435,7 +4435,7 @@ extern "C" void sub_826DFA28(PPCContext& ctx, uint8_t* base) {
   }
   ctx.r3.u64 = guest_event_manager;
   ctx.r4.u64 = guest_event;
-  __imp__sub_826DFA28(ctx, base);
+  __imp__sub_826D5F88(ctx, base);
   if (injected) {
     ClearAliasOverride(guest_peer_manager, alias_id);
   }
@@ -4453,7 +4453,7 @@ extern "C" void sub_826DFA28(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E3150(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D96B0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint32_t guest_event = ctx.r4.u32;
   const auto metadata_pointer =
@@ -4461,7 +4461,7 @@ extern "C" void sub_826E3150(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_metadata = metadata_pointer ? REX_LOAD_U32(*metadata_pointer) : 0;
   const auto mask_address = mp64::CheckedGuestAddress(guest_metadata, mp64::kEventScopeMaskOffset);
   if (!mask_address) {
-    __imp__sub_826E3150(ctx, base);
+    __imp__sub_826D96B0(ctx, base);
     g_event_scopes.Remove(guest_event);
     return;
   }
@@ -4478,11 +4478,11 @@ extern "C" void sub_826E3150(PPCContext& ctx, uint8_t* base) {
   if (manager_high_scope) {
     REX_STORE_U16(*mask_address, scope.legacy_low16());
     if (scope.legacy_low16() != 0) {
-      __imp__sub_826E3150(ctx, base);
+      __imp__sub_826D96B0(ctx, base);
       scope.ReplaceLegacyLow16(REX_LOAD_U16(*mask_address));
     }
   } else {
-    __imp__sub_826E3150(ctx, base);
+    __imp__sub_826D96B0(ctx, base);
     scope.ReplaceLegacyLow16(REX_LOAD_U16(*mask_address));
   }
   for (uint8_t peer_id = mp64::kLegacyPeerCapacity; peer_id < mp64::kExtendedPeerCapacity;
@@ -4503,7 +4503,7 @@ extern "C" void sub_826E3150(PPCContext& ctx, uint8_t* base) {
           PPCContext send_ctx = ctx;
           send_ctx.r3.u64 = guest_event_manager;
           send_ctx.r4.u64 = guest_event;
-          __imp__sub_826E3150(send_ctx, base);
+          __imp__sub_826D96B0(send_ctx, base);
           if ((REX_LOAD_U16(*mask_address) & alias_scope) == 0) {
             validation::PublishMultiplayerValidationStage(
                 validation::MultiplayerValidationStage::kFirstExtendedEventSend, peer_id,
@@ -4523,19 +4523,19 @@ extern "C" void sub_826E3150(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826DF530(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D5A90(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   ReleaseEventPeerBuffers(ctx, base, guest_event_manager);
   ctx.r3.u64 = guest_event_manager;
-  __imp__sub_826DF530(ctx, base);
+  __imp__sub_826D5A90(ctx, base);
 }
 
-extern "C" void sub_826DF640(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D5BA0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_peer);
   if (!peer_id || mp64::IsLegacyPeerId(*peer_id)) {
-    __imp__sub_826DF640(ctx, base);
+    __imp__sub_826D5BA0(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(*peer_id) != mp64::PeerIdClass::kExtended) {
@@ -4547,12 +4547,12 @@ extern "C" void sub_826DF640(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = *peer_id;
 }
 
-extern "C" void sub_826DEE10(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D53D0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_peer);
   if (!peer_id || mp64::IsLegacyPeerId(*peer_id)) {
-    __imp__sub_826DEE10(ctx, base);
+    __imp__sub_826D53D0(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(*peer_id) != mp64::PeerIdClass::kExtended) {
@@ -4564,19 +4564,19 @@ extern "C" void sub_826DEE10(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = *peer_id;
 }
 
-extern "C" void sub_826E2CC8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D9228(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   RemoveEventScopesForManager(base, guest_event_manager);
   ReleaseEventPeerBuffers(ctx, base, guest_event_manager);
   ctx.r3.u64 = guest_event_manager;
-  __imp__sub_826E2CC8(ctx, base);
+  __imp__sub_826D9228(ctx, base);
 }
 
-extern "C" void sub_826E2738(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D8C98(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E2738(ctx, base);
+    __imp__sub_826D8C98(ctx, base);
     return;
   }
   const uint32_t guest_peer = EventPeerRecord(base, guest_event_manager, peer_id);
@@ -4587,15 +4587,15 @@ extern "C" void sub_826E2738(PPCContext& ctx, uint8_t* base) {
   WithExtendedEventPeer(ctx, base, guest_event_manager, guest_peer, peer_id, [&](uint8_t alias_id) {
     ctx.r3.u64 = guest_event_manager;
     ctx.r4.u64 = alias_id;
-    __imp__sub_826E2738(ctx, base);
+    __imp__sub_826D8C98(ctx, base);
   });
 }
 
-extern "C" void sub_826E2918(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D8E78(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E2918(ctx, base);
+    __imp__sub_826D8E78(ctx, base);
     return;
   }
   const uint32_t guest_peer = EventPeerRecord(base, guest_event_manager, peer_id);
@@ -4606,15 +4606,15 @@ extern "C" void sub_826E2918(PPCContext& ctx, uint8_t* base) {
   WithExtendedEventPeer(ctx, base, guest_event_manager, guest_peer, peer_id, [&](uint8_t alias_id) {
     ctx.r3.u64 = guest_event_manager;
     ctx.r4.u64 = alias_id;
-    __imp__sub_826E2918(ctx, base);
+    __imp__sub_826D8E78(ctx, base);
   });
 }
 
-extern "C" void sub_826E2F50(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D94B0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E2F50(ctx, base);
+    __imp__sub_826D94B0(ctx, base);
     return;
   }
   const uint32_t guest_peer = EventPeerRecord(base, guest_event_manager, peer_id);
@@ -4637,15 +4637,15 @@ extern "C" void sub_826E2F50(PPCContext& ctx, uint8_t* base) {
     ctx.r8.u64 = sixth;
     ctx.r9.u64 = seventh;
     ctx.r10.u64 = eighth;
-    __imp__sub_826E2F50(ctx, base);
+    __imp__sub_826D94B0(ctx, base);
   });
 }
 
-extern "C" void sub_826E3020(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D9580(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E3020(ctx, base);
+    __imp__sub_826D9580(ctx, base);
     return;
   }
   const uint32_t guest_peer = EventPeerRecord(base, guest_event_manager, peer_id);
@@ -4658,18 +4658,18 @@ extern "C" void sub_826E3020(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = guest_event_manager;
     ctx.r4.u64 = alias_id;
     ctx.r5.u64 = event;
-    __imp__sub_826E3020(ctx, base);
+    __imp__sub_826D9580(ctx, base);
   });
   validation::PublishMultiplayerValidationStage(
       validation::MultiplayerValidationStage::kFirstExtendedEventReceive, peer_id,
       static_cast<uint32_t>(event));
 }
 
-extern "C" void sub_826E30A8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D9608(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E30A8(ctx, base);
+    __imp__sub_826D9608(ctx, base);
     return;
   }
   const uint32_t guest_peer = EventPeerRecord(base, guest_event_manager, peer_id);
@@ -4686,15 +4686,15 @@ extern "C" void sub_826E30A8(PPCContext& ctx, uint8_t* base) {
     ctx.r5.u64 = third;
     ctx.r6.u64 = fourth;
     ctx.r7.u64 = fifth;
-    __imp__sub_826E30A8(ctx, base);
+    __imp__sub_826D9608(ctx, base);
   });
 }
 
-extern "C" void sub_826E3740(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D9CA0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_event_manager = ctx.r3.u32;
   const bool saved_tick = g_event_manager_tick_active;
   g_event_manager_tick_active = true;
-  __imp__sub_826E3740(ctx, base);
+  __imp__sub_826D9CA0(ctx, base);
   g_event_manager_tick_active = saved_tick;
   const uint64_t original_result = ctx.r3.u64;
   for (const auto& [guest_event, scope] : g_event_scopes.Snapshot()) {
@@ -4719,19 +4719,19 @@ extern "C" void sub_826E3740(PPCContext& ctx, uint8_t* base) {
     PPCContext send_ctx = ctx;
     send_ctx.r3.u64 = guest_event_manager;
     send_ctx.r4.u64 = peer_id;
-    sub_826E2738(send_ctx, base);
+    sub_826D8C98(send_ctx, base);
     send_ctx = ctx;
     send_ctx.r3.u64 = guest_event_manager;
     send_ctx.r4.u64 = peer_id;
-    sub_826E2918(send_ctx, base);
+    sub_826D8E78(send_ctx, base);
   }
   ctx.r3.u64 = original_result;
 }
 
-extern "C" void sub_826E7B50(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E46A0(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
-  __imp__sub_826E7B50(ctx, base);
+  __imp__sub_826E46A0(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -4748,7 +4748,7 @@ extern "C" void sub_826E7B50(PPCContext& ctx, uint8_t* base) {
     }
     SetAliasOverride(guest_peer_manager, kTemporaryAliasPeerId, guest_peer);
     PPCContext attempt_ctx = input_ctx;
-    __imp__sub_826E7B50(attempt_ctx, base);
+    __imp__sub_826E46A0(attempt_ctx, base);
     ClearAliasOverride(guest_peer_manager, kTemporaryAliasPeerId);
     if (attempt_ctx.r3.u8 != 0) {
       ctx = attempt_ctx;
@@ -4757,11 +4757,11 @@ extern "C" void sub_826E7B50(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E7CC8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4818(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_output = ctx.r6.u32;
-  __imp__sub_826E7CC8(ctx, base);
+  __imp__sub_826E4818(ctx, base);
   if (guest_output == 0) {
     return;
   }
@@ -4790,7 +4790,7 @@ extern "C" void sub_826E7CC8(PPCContext& ctx, uint8_t* base) {
     }
     SetAliasOverride(guest_peer_manager, candidate_alias, candidate_peer);
     PPCContext attempt_ctx = input_ctx;
-    __imp__sub_826E7CC8(attempt_ctx, base);
+    __imp__sub_826E4818(attempt_ctx, base);
     const uint32_t selected_peer = REX_LOAD_U32(guest_output);
     ClearAliasOverride(guest_peer_manager, candidate_alias);
     if (best_is_extended) {
@@ -4804,19 +4804,19 @@ extern "C" void sub_826E7CC8(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = best_peer != 0 ? 1 : 0;
 }
 
-extern "C" void sub_826E7F48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4A98(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_output = ctx.r6.u32;
   rex::Runtime* runtime = rex::Runtime::instance();
   if (runtime == nullptr || guest_output == 0) {
-    __imp__sub_826E7F48(ctx, base);
+    __imp__sub_826E4A98(ctx, base);
     return;
   }
   const uint32_t guest_scratch =
       runtime->memory()->SystemHeapAlloc(mp64::kProximityPeerScratchSize);
   if (guest_scratch == 0) {
-    __imp__sub_826E7F48(ctx, base);
+    __imp__sub_826E4A98(ctx, base);
     return;
   }
   std::vector<uint32_t> selected;
@@ -4824,7 +4824,7 @@ extern "C" void sub_826E7F48(PPCContext& ctx, uint8_t* base) {
   auto collect = [&](const PPCContext& source_ctx) {
     PPCContext attempt_ctx = source_ctx;
     attempt_ctx.r6.u64 = guest_scratch;
-    __imp__sub_826E7F48(attempt_ctx, base);
+    __imp__sub_826E4A98(attempt_ctx, base);
     const uint32_t count = std::min<uint32_t>(attempt_ctx.r3.u32, mp64::kLegacyPeerCapacity);
     for (uint32_t index = 0; index < count; ++index) {
       const auto peer =
@@ -4866,7 +4866,7 @@ extern "C" void sub_826E7F48(PPCContext& ctx, uint8_t* base) {
   sort_ctx.r4.u64 = selected.size();
   sort_ctx.r5.u64 = mp64::kGuestPointerSize;
   sort_ctx.r6.u64 = mp64::kProximityPeerComparatorAddress;
-  __imp__sub_82A01A20(sort_ctx, base);
+  __imp__sub_82A01620(sort_ctx, base);
   const size_t output_count = std::min(selected.size(), mp64::kProximityPeerResultCapacity);
   for (size_t index = 0; index < output_count; ++index) {
     const auto source =
@@ -4881,10 +4881,10 @@ extern "C" void sub_826E7F48(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = output_count;
 }
 
-extern "C" void sub_826E85B0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E5100(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
-  __imp__sub_826E85B0(ctx, base);
+  __imp__sub_826E5100(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -4901,7 +4901,7 @@ extern "C" void sub_826E85B0(PPCContext& ctx, uint8_t* base) {
     }
     SetAliasOverride(guest_peer_manager, kTemporaryAliasPeerId, guest_peer);
     PPCContext attempt_ctx = input_ctx;
-    __imp__sub_826E85B0(attempt_ctx, base);
+    __imp__sub_826E5100(attempt_ctx, base);
     ClearAliasOverride(guest_peer_manager, kTemporaryAliasPeerId);
     if (attempt_ctx.r3.u8 != 0) {
       ctx = attempt_ctx;
@@ -4910,10 +4910,10 @@ extern "C" void sub_826E85B0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E90C0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E5C10(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
-  __imp__sub_826E90C0(ctx, base);
+  __imp__sub_826E5C10(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -4930,7 +4930,7 @@ extern "C" void sub_826E90C0(PPCContext& ctx, uint8_t* base) {
     }
     SetAliasOverride(guest_peer_manager, kTemporaryAliasPeerId, guest_peer);
     PPCContext attempt_ctx = input_ctx;
-    __imp__sub_826E90C0(attempt_ctx, base);
+    __imp__sub_826E5C10(attempt_ctx, base);
     ClearAliasOverride(guest_peer_manager, kTemporaryAliasPeerId);
     if (attempt_ctx.r3.u8 != 0) {
       ctx = attempt_ctx;
@@ -4939,12 +4939,12 @@ extern "C" void sub_826E90C0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E81E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4D30(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E81E0(ctx, base);
+    __imp__sub_826E4D30(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) != mp64::PeerIdClass::kExtended || guest_object == 0) {
@@ -4961,12 +4961,12 @@ extern "C" void sub_826E81E0(PPCContext& ctx, uint8_t* base) {
                    : 0;
 }
 
-extern "C" void sub_826E8EA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E59F8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const int16_t requested_object_id = ctx.r4.s16;
   const uint8_t owner_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(owner_id)) {
-    __imp__sub_826E8EA8(ctx, base);
+    __imp__sub_826E59F8(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(owner_id) != mp64::PeerIdClass::kExtended) {
@@ -4984,11 +4984,11 @@ extern "C" void sub_826E8EA8(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = matching_object;
 }
 
-extern "C" void sub_826E8F10(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E5A60(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
-  __imp__sub_826E8F10(ctx, base);
+  __imp__sub_826E5A60(ctx, base);
   const auto joining_peer_id = PeerRecordId(base, guest_peer);
   if (!joining_peer_id || !mp64::IsValidPeerId(*joining_peer_id)) {
     return;
@@ -5009,10 +5009,10 @@ extern "C" void sub_826E8F10(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826E8FF0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E5B40(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
-  __imp__sub_826E8FF0(ctx, base);
+  __imp__sub_826E5B40(ctx, base);
   const auto peer_manager_address =
       mp64::CheckedGuestAddress(guest_object_manager, mp64::kObjectManagerPeerManagerOffset);
   const uint32_t guest_peer_manager =
@@ -5025,13 +5025,13 @@ extern "C" void sub_826E8FF0(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext eligible_ctx = input_ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708620(eligible_ctx, base);
+    sub_827054E0(eligible_ctx, base);
     if (eligible_ctx.r3.u8 == 0) {
       continue;
     }
     eligible_ctx = input_ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708770(eligible_ctx, base);
+    sub_82708140(eligible_ctx, base);
     if (eligible_ctx.r3.u8 != 0) {
       continue;
     }
@@ -5039,29 +5039,29 @@ extern "C" void sub_826E8FF0(PPCContext& ctx, uint8_t* base) {
                              [&](uint32_t guest_object) {
                                PPCContext object_ctx = input_ctx;
                                object_ctx.r3.u64 = guest_object;
-                               sub_82702130(object_ctx, base);
+                               sub_82705688(object_ctx, base);
                                if (object_ctx.r3.u8 == 0) {
                                  return;
                                }
                                object_ctx = input_ctx;
                                object_ctx.r3.u64 = guest_object;
-                               sub_826F5B08(object_ctx, base);
+                               sub_826F5458(object_ctx, base);
                                if (object_ctx.r3.u8 != 0) {
                                  return;
                                }
                                object_ctx = input_ctx;
                                object_ctx.r3.u64 = guest_object;
-                               sub_826F6C18(object_ctx, base);
+                               sub_826F6568(object_ctx, base);
                              });
   }
 }
 
-extern "C" void sub_826E95B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E6108(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   PPCContext local_ctx = ctx;
   local_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
-  __imp__sub_826FDDC0(local_ctx, base);
+  __imp__sub_826FD790(local_ctx, base);
   const uint8_t local_peer_id = local_ctx.r3.u8;
   if (!mp64::IsValidPeerId(local_peer_id)) {
     ctx.r3.u64 = 0;
@@ -5069,7 +5069,7 @@ extern "C" void sub_826E95B8(PPCContext& ctx, uint8_t* base) {
   }
   uint32_t count = 0;
   if (mp64::IsLegacyPeerId(local_peer_id)) {
-    __imp__sub_826E95B8(ctx, base);
+    __imp__sub_826E6108(ctx, base);
     count = ctx.r3.u32;
   }
   const auto threshold_address =
@@ -5111,25 +5111,25 @@ extern "C" void sub_826E95B8(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = count;
 }
 
-extern "C" void sub_826E9E60(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E69B0(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E9E60(ctx, base);
+    __imp__sub_826E69B0(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) != mp64::PeerIdClass::kExtended ||
       !WithExtendedPlayerTickAlias(base, guest_manager, peer_id, [&](uint8_t alias_id) {
         ctx = input_ctx;
         ctx.r4.u64 = alias_id;
-        __imp__sub_826E9E60(ctx, base);
+        __imp__sub_826E69B0(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E75B8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_manager = ctx.r3.u32;
   if (REX_LOAD_U8(mp64::kPlayerTickDisabledAddress) != 0) {
@@ -5139,7 +5139,7 @@ extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
   int32_t selected_peer = -1;
   PPCContext predicate_ctx = input_ctx;
   predicate_ctx.r3.u64 = guest_manager;
-  sub_826C4CA8(predicate_ctx, base);
+  sub_826C1E90(predicate_ctx, base);
   if (predicate_ctx.r3.u8 != 0) {
     const auto cursor_address = mp64::CheckedGuestAddress(guest_manager, 0);
     const auto interval_address = mp64::CheckedGuestAddress(guest_manager, mp64::kGuestPointerSize);
@@ -5162,7 +5162,7 @@ extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
       REX_STORE_U32(*cursor_address, cursor);
       PPCContext info_ctx = input_ctx;
       info_ctx.r3.u64 = cursor;
-      sub_8225CF68(info_ctx, base);
+      sub_821D59D8(info_ctx, base);
       while (info_ctx.r3.u32 == 0) {
         cursor = cursor + 1;
         REX_STORE_U32(*cursor_address, cursor);
@@ -5173,7 +5173,7 @@ extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
         }
         info_ctx = input_ctx;
         info_ctx.r3.u64 = cursor;
-        sub_8225CF68(info_ctx, base);
+        sub_821D59D8(info_ctx, base);
       }
       selected_peer = static_cast<int32_t>(cursor);
       REX_STORE_U32(*interval_address, 0);
@@ -5182,7 +5182,7 @@ extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
 
   PPCContext global_ctx = input_ctx;
   global_ctx.r3.u64 = mp64::kPlayerTickGlobalActivityAddress;
-  sub_8222CAF8(global_ctx, base);
+  sub_8224E0D8(global_ctx, base);
   const bool global_active = global_ctx.r3.u32 != 0;
   for (uint8_t peer_id = 0; peer_id < mp64::kExtendedPeerCapacity; ++peer_id) {
     PPCContext tick_ctx = input_ctx;
@@ -5191,12 +5191,12 @@ extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
     tick_ctx.r5.u64 = 0;
     tick_ctx.r6.u64 = selected_peer >= 0 && static_cast<uint32_t>(selected_peer) == peer_id ? 1 : 0;
     tick_ctx.r7.u64 = global_active ? 1 : 0;
-    sub_826E9E60(tick_ctx, base);
+    sub_826E69B0(tick_ctx, base);
   }
 
   PPCContext second_pass_ctx = input_ctx;
   second_pass_ctx.r3.u64 = guest_manager;
-  sub_826E8450(second_pass_ctx, base);
+  sub_826E4FA0(second_pass_ctx, base);
   if (second_pass_ctx.r3.u8 != 0) {
     for (uint8_t peer_id = 0; peer_id < mp64::kExtendedPeerCapacity; ++peer_id) {
       PPCContext tick_ctx = input_ctx;
@@ -5205,77 +5205,77 @@ extern "C" void sub_826EAA68(PPCContext& ctx, uint8_t* base) {
       tick_ctx.r5.u64 = 1;
       tick_ctx.r6.u64 = 0;
       tick_ctx.r7.u64 = 0;
-      sub_826E9E60(tick_ctx, base);
+      sub_826E69B0(tick_ctx, base);
       ctx = tick_ctx;
     }
   }
 }
 
-extern "C" void sub_826F7050(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826F69A0(PPCContext& ctx, uint8_t* base) {
   const ProximityWeightContext saved_context = g_proximity_weight;
   g_proximity_weight = {
       .active = true,
       .extended_injected = false,
   };
-  __imp__sub_826F7050(ctx, base);
+  __imp__sub_826F69A0(ctx, base);
   g_proximity_weight = saved_context;
 }
 
-extern "C" void sub_826E9688(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E61D8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826E9688(ctx, base);
+        __imp__sub_826E61D8(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826E9738(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E6288(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E9738(ctx, base);
+    __imp__sub_826E6288(ctx, base);
     return;
   }
   if (!WithExtendedObjectOwnerList(ctx, base, guest_object_manager, peer_id, [&](uint8_t alias_id) {
         ctx = input_ctx;
         ctx.r4.u64 = alias_id;
-        __imp__sub_826E9738(ctx, base);
+        __imp__sub_826E6288(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826E99A8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E64F8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826E99A8(ctx, base);
+        __imp__sub_826E64F8(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826E9BA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E66F8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826E9BA8(ctx, base);
+        __imp__sub_826E66F8(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826E9C78(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E67C8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const int32_t requested_type = ctx.r4.s32;
-  __imp__sub_826E9C78(ctx, base);
+  __imp__sub_826E67C8(ctx, base);
   uint32_t count = ctx.r3.u32;
   const auto local_peer_id = ObjectManagerLocalPeerId(input_ctx, base, guest_object_manager);
   if (!local_peer_id || !mp64::IsValidPeerId(*local_peer_id)) {
@@ -5287,7 +5287,7 @@ extern "C" void sub_826E9C78(PPCContext& ctx, uint8_t* base) {
                              [&](uint32_t guest_object) {
                                PPCContext type_ctx = input_ctx;
                                type_ctx.r3.u64 = guest_object;
-                               sub_821778A0(type_ctx, base);
+                               sub_82177940(type_ctx, base);
                                if (type_ctx.r3.s32 == requested_type) {
                                  ++count;
                                }
@@ -5296,7 +5296,7 @@ extern "C" void sub_826E9C78(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = count;
 }
 
-extern "C" void sub_826E9D18(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E6868(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const auto local_peer_id = ObjectManagerLocalPeerId(ctx, base, guest_object_manager);
@@ -5307,7 +5307,7 @@ extern "C" void sub_826E9D18(PPCContext& ctx, uint8_t* base) {
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager,
                                        [&](uint8_t) {
                                          ctx = input_ctx;
-                                         __imp__sub_826E9D18(ctx, base);
+                                         __imp__sub_826E6868(ctx, base);
                                        }) ||
       ctx.r3.u8 == 0) {
     return;
@@ -5321,7 +5321,7 @@ extern "C" void sub_826E9D18(PPCContext& ctx, uint8_t* base) {
         }
         PPCContext active_ctx = input_ctx;
         active_ctx.r3.u64 = guest_object;
-        sub_82702130(active_ctx, base);
+        sub_82705688(active_ctx, base);
         if (active_ctx.r3.u8 == 0) {
           return;
         }
@@ -5337,25 +5337,25 @@ extern "C" void sub_826E9D18(PPCContext& ctx, uint8_t* base) {
           }
           PPCContext eligible_ctx = input_ctx;
           eligible_ctx.r3.u64 = guest_peer;
-          sub_82708620(eligible_ctx, base);
+          sub_827054E0(eligible_ctx, base);
           if (eligible_ctx.r3.u8 == 0) {
             continue;
           }
           eligible_ctx = input_ctx;
           eligible_ctx.r3.u64 = guest_peer;
-          sub_82708770(eligible_ctx, base);
+          sub_82708140(eligible_ctx, base);
           if (eligible_ctx.r3.u8 != 0) {
             continue;
           }
           PPCContext mode_ctx = input_ctx;
           mode_ctx.r3.u64 = guest_object;
           mode_ctx.r4.u64 = 2;
-          sub_82701FB0(mode_ctx, base);
+          sub_82705508(mode_ctx, base);
           const bool special_mode = mode_ctx.r3.u8 != 0;
           PPCContext flag_ctx = input_ctx;
           flag_ctx.r3.u64 = guest_object;
           flag_ctx.r4.u64 = peer_id;
-          sub_82702CD8(flag_ctx, base);
+          sub_82706210(flag_ctx, base);
           if (flag_ctx.r3.u8 != 0) {
             if (special_mode) {
               success = false;
@@ -5367,7 +5367,7 @@ extern "C" void sub_826E9D18(PPCContext& ctx, uint8_t* base) {
             flag_ctx = input_ctx;
             flag_ctx.r3.u64 = guest_object;
             flag_ctx.r4.u64 = peer_id;
-            sub_82702DB8(flag_ctx, base);
+            sub_827062F0(flag_ctx, base);
             if (flag_ctx.r3.u8 != 0) {
               success = false;
               return;
@@ -5388,67 +5388,67 @@ extern "C" void sub_826E9D18(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = success ? 1 : 0;
 }
 
-extern "C" void sub_826EB5D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E8128(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826EB5D8(ctx, base);
+        __imp__sub_826E8128(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826EB048(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E7B98(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826EB048(ctx, base);
+        __imp__sub_826E7B98(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826EB9F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E8548(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826EB9F8(ctx, base);
+        __imp__sub_826E8548(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826EBAA0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E85F0(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826EBAA0(ctx, base);
+        __imp__sub_826E85F0(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826EC048(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E8B98(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   if (!WithObjectManagerLocalOwnerList(ctx, base, guest_object_manager, [&](uint8_t) {
         ctx = input_ctx;
-        __imp__sub_826EC048(ctx, base);
+        __imp__sub_826E8B98(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826ED600(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EA000(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint64_t object_id = ctx.r4.u64;
   const bool allow_non_authoritative = ctx.r5.u8 != 0;
-  __imp__sub_826ED600(ctx, base);
+  __imp__sub_826EA000(ctx, base);
   if (ctx.r3.u32 != 0) {
     return;
   }
@@ -5458,7 +5458,7 @@ extern "C" void sub_826ED600(PPCContext& ctx, uint8_t* base) {
     lookup_ctx.r3.u64 = guest_object_manager;
     lookup_ctx.r4.u64 = object_id;
     lookup_ctx.r5.u64 = owner_id;
-    sub_826E8EA8(lookup_ctx, base);
+    sub_826E59F8(lookup_ctx, base);
     const uint32_t guest_object = lookup_ctx.r3.u32;
     if (guest_object == 0) {
       continue;
@@ -5467,7 +5467,7 @@ extern "C" void sub_826ED600(PPCContext& ctx, uint8_t* base) {
       PPCContext authoritative_ctx = input_ctx;
       authoritative_ctx.r3.u64 = guest_object;
       authoritative_ctx.r4.u64 = 2;
-      sub_82701FB0(authoritative_ctx, base);
+      sub_82705508(authoritative_ctx, base);
       if (authoritative_ctx.r3.u8 == 0) {
         continue;
       }
@@ -5477,23 +5477,23 @@ extern "C" void sub_826ED600(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826EDF48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EA948(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
-  __imp__sub_826EDF48(ctx, base);
+  __imp__sub_826EA948(ctx, base);
   uint32_t missing_count = ctx.r3.u32;
   for (uint8_t peer_id = mp64::kLegacyPeerCapacity; peer_id < mp64::kExtendedPeerCapacity;
        ++peer_id) {
     PPCContext info_ctx = input_ctx;
     info_ctx.r3.u64 = peer_id;
-    sub_8225CF68(info_ctx, base);
+    sub_821D59D8(info_ctx, base);
     const uint32_t guest_player_info = info_ctx.r3.u32;
     if (guest_player_info == 0 ||
         REX_LOAD_U32(guest_player_info + mp64::kPlayerInfoPlayerPointerOffset) == 0) {
       continue;
     }
     info_ctx.r3.u64 = guest_player_info;
-    sub_82238D58(info_ctx, base);
+    sub_82252FE0(info_ctx, base);
     if (info_ctx.r3.u8 != 0) {
       continue;
     }
@@ -5512,7 +5512,7 @@ extern "C" void sub_826EDF48(PPCContext& ctx, uint8_t* base) {
     find_ctx.r3.u64 = guest_object_manager;
     find_ctx.r4.u64 = object_id;
     find_ctx.r5.u64 = 0;
-    sub_826ED600(find_ctx, base);
+    sub_826EA000(find_ctx, base);
     if (find_ctx.r3.u32 == 0) {
       ++missing_count;
     }
@@ -5520,7 +5520,7 @@ extern "C" void sub_826EDF48(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = missing_count;
 }
 
-extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EA9E0(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const auto peer_manager_address =
@@ -5528,7 +5528,7 @@ extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_peer_manager =
       peer_manager_address ? REX_LOAD_U32(*peer_manager_address) : 0;
   if (guest_peer_manager == 0) {
-    __imp__sub_826EDFE0(ctx, base);
+    __imp__sub_826EA9E0(ctx, base);
     return;
   }
 
@@ -5539,11 +5539,11 @@ extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
     PPCContext lookup_ctx = input_ctx;
     lookup_ctx.r3.u64 = guest_peer_manager;
     lookup_ctx.r4.u64 = peer_id;
-    sub_826FE880(lookup_ctx, base);
+    sub_826FE2D0(lookup_ctx, base);
     if (IsObjectRecoveryPeerEligible(input_ctx, base, guest_object_manager, lookup_ctx.r3.u32,
                                      peer_id)) {
       ctx = input_ctx;
-      __imp__sub_826EDFE0(ctx, base);
+      __imp__sub_826EA9E0(ctx, base);
       return;
     }
   }
@@ -5561,7 +5561,7 @@ extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
   }
   if (guest_peer == 0) {
     ctx = input_ctx;
-    __imp__sub_826EDFE0(ctx, base);
+    __imp__sub_826EA9E0(ctx, base);
     return;
   }
 
@@ -5570,7 +5570,7 @@ extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
     PPCContext lookup_ctx = input_ctx;
     lookup_ctx.r3.u64 = guest_peer_manager;
     lookup_ctx.r4.u64 = peer_id;
-    sub_826FE880(lookup_ctx, base);
+    sub_826FE2D0(lookup_ctx, base);
     if (lookup_ctx.r3.u32 == 0) {
       alias_peer_id = peer_id;
       break;
@@ -5588,7 +5588,7 @@ extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
   };
   SetAliasOverride(guest_peer_manager, alias_peer_id, guest_peer);
   ctx = input_ctx;
-  __imp__sub_826EDFE0(ctx, base);
+  __imp__sub_826EA9E0(ctx, base);
   if (saved_override) {
     SetAliasOverride(guest_peer_manager, alias_peer_id, *saved_override);
   } else {
@@ -5597,36 +5597,36 @@ extern "C" void sub_826EDFE0(PPCContext& ctx, uint8_t* base) {
   g_object_recovery_peer_alias = saved_context;
 }
 
-extern "C" void sub_826EE9A8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EB408(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t owner_id = NetworkObjectOwner(ctx, base, guest_object);
   if (mp64::IsLegacyPeerId(owner_id)) {
-    __imp__sub_826EE9A8(ctx, base);
+    __imp__sub_826EB408(ctx, base);
     return;
   }
   if (!WithExtendedObjectOwnerList(ctx, base, guest_object_manager, owner_id, [&](uint8_t) {
         ctx.r3.u64 = guest_object_manager;
         ctx.r4.u64 = guest_object;
-        __imp__sub_826EE9A8(ctx, base);
+        __imp__sub_826EB408(ctx, base);
       })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826EEC10(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EB670(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint64_t third_argument = ctx.r5.u64;
   const uint16_t object_id = NetworkObjectId(ctx, base, guest_object);
   const uint8_t owner_id = NetworkObjectOwner(ctx, base, guest_object);
   if (mp64::IsLegacyPeerId(owner_id)) {
-    __imp__sub_826EEC10(ctx, base);
+    __imp__sub_826EB670(ctx, base);
   } else if (!WithExtendedObjectOwnerList(ctx, base, guest_object_manager, owner_id, [&](uint8_t) {
                ctx.r3.u64 = guest_object_manager;
                ctx.r4.u64 = guest_object;
                ctx.r5.u64 = third_argument;
-               __imp__sub_826EEC10(ctx, base);
+               __imp__sub_826EB670(ctx, base);
              })) {
     ctx.r3.u64 = 0;
     return;
@@ -5636,10 +5636,10 @@ extern "C" void sub_826EEC10(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826EEFD0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EBA30(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
-  __imp__sub_826EEFD0(ctx, base);
+  __imp__sub_826EBA30(ctx, base);
   std::vector<uint32_t> removable;
   removable.reserve(mp64::kObjectRemovalBatchCapacity);
   for (uint8_t owner_id = mp64::kLegacyPeerCapacity;
@@ -5654,7 +5654,7 @@ extern "C" void sub_826EEFD0(PPCContext& ctx, uint8_t* base) {
                                PPCContext authoritative_ctx = input_ctx;
                                authoritative_ctx.r3.u64 = guest_object;
                                authoritative_ctx.r4.u64 = 2;
-                               sub_82701FB0(authoritative_ctx, base);
+                               sub_82705508(authoritative_ctx, base);
                                if (authoritative_ctx.r3.u8 != 0) {
                                  removable.push_back(guest_object);
                                }
@@ -5665,16 +5665,16 @@ extern "C" void sub_826EEFD0(PPCContext& ctx, uint8_t* base) {
     remove_ctx.r3.u64 = guest_object_manager;
     remove_ctx.r4.u64 = guest_object;
     remove_ctx.r5.u64 = 0;
-    sub_826EEC10(remove_ctx, base);
+    sub_826EB670(remove_ctx, base);
   }
 }
 
-extern "C" void sub_826F2358(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EEDB8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F2358(ctx, base);
+    __imp__sub_826EEDB8(ctx, base);
     return;
   }
   const uint16_t object_id = NetworkObjectId(ctx, base, guest_object);
@@ -5685,7 +5685,7 @@ extern "C" void sub_826F2358(PPCContext& ctx, uint8_t* base) {
           ctx.r3.u64 = guest_object_manager;
           ctx.r4.u64 = guest_object;
           ctx.r5.u64 = alias_id;
-          __imp__sub_826F2358(ctx, base);
+          __imp__sub_826EEDB8(ctx, base);
         });
   });
   if (!invoked) {
@@ -5693,12 +5693,12 @@ extern "C" void sub_826F2358(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826F2870(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EF2D0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F2870(ctx, base);
+    __imp__sub_826EF2D0(ctx, base);
     return;
   }
   const uint16_t object_id = NetworkObjectId(ctx, base, guest_object);
@@ -5709,7 +5709,7 @@ extern "C" void sub_826F2870(PPCContext& ctx, uint8_t* base) {
           ctx.r3.u64 = guest_object_manager;
           ctx.r4.u64 = guest_object;
           ctx.r5.u64 = alias_id;
-          __imp__sub_826F2870(ctx, base);
+          __imp__sub_826EF2D0(ctx, base);
         });
   });
   if (!invoked) {
@@ -5717,19 +5717,19 @@ extern "C" void sub_826F2870(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826F3668(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826F00C8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint16_t object_id = NetworkObjectId(ctx, base, guest_object);
   ctx = input_ctx;
-  __imp__sub_826F3668(ctx, base);
+  __imp__sub_826F00C8(ctx, base);
   if (ctx.r3.u8 != 0 && object_id != 0) {
     g_object_peer_matrix.ClearObject(guest_object_manager, object_id);
   }
 }
 
-extern "C" void sub_826EFE08(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EC868(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const auto peer_manager_address =
@@ -5741,10 +5741,10 @@ extern "C" void sub_826EFE08(PPCContext& ctx, uint8_t* base) {
   PPCContext peer_id_ctx = input_ctx;
   peer_id_ctx.r3.u64 = REX_LOAD_U32(*peer_manager_address);
   peer_id_ctx.r4.u64 = input_ctx.r4.u64;
-  sub_826FF108(peer_id_ctx, base);
+  sub_826FEB58(peer_id_ctx, base);
   const int32_t resolved_peer_id = peer_id_ctx.r3.s32;
   if (resolved_peer_id >= 0 && resolved_peer_id < static_cast<int32_t>(mp64::kLegacyPeerCapacity)) {
-    __imp__sub_826EFE08(ctx, base);
+    __imp__sub_826EC868(ctx, base);
     return;
   }
   if (resolved_peer_id < static_cast<int32_t>(mp64::kLegacyPeerCapacity) ||
@@ -5753,20 +5753,20 @@ extern "C" void sub_826EFE08(PPCContext& ctx, uint8_t* base) {
           ctx, base, guest_object_manager, static_cast<uint8_t>(resolved_peer_id),
           [&](uint8_t) {
             ctx = input_ctx;
-            __imp__sub_826EFE08(ctx, base);
+            __imp__sub_826EC868(ctx, base);
           })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826F3DD0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826F0830(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const bool remove_expired = ctx.r4.u8 != 0;
   const bool time_changed = (REX_LOAD_U32(mp64::kObjectUpdateFlagsAddress) & 1) != 0 &&
                             REX_LOAD_U32(mp64::kObjectUpdatePreviousTimeAddress) !=
                                 REX_LOAD_U32(mp64::kObjectUpdateCurrentTimeAddress);
-  __imp__sub_826F3DD0(ctx, base);
+  __imp__sub_826F0830(ctx, base);
 
   if (remove_expired && time_changed) {
     for (uint8_t owner_id = mp64::kLegacyPeerCapacity; owner_id < mp64::kExtendedPeerCapacity;
@@ -5791,7 +5791,7 @@ extern "C" void sub_826F3DD0(PPCContext& ctx, uint8_t* base) {
             remove_ctx.r4.u64 = guest_object;
             remove_ctx.r5.u64 = 0;
             remove_ctx.r6.u64 = 0;
-            sub_826EF7D8(remove_ctx, base);
+            sub_826EC238(remove_ctx, base);
           });
     }
   }
@@ -5808,52 +5808,52 @@ extern "C" void sub_826F3DD0(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext eligible_ctx = input_ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708620(eligible_ctx, base);
+    sub_827054E0(eligible_ctx, base);
     if (eligible_ctx.r3.u8 == 0) {
       continue;
     }
     eligible_ctx = input_ctx;
     eligible_ctx.r3.u64 = guest_peer;
-    sub_82708770(eligible_ctx, base);
+    sub_82708140(eligible_ctx, base);
     if (eligible_ctx.r3.u8 != 0) {
       continue;
     }
     PPCContext address_ctx = input_ctx;
     address_ctx.r3.u64 = guest_peer;
-    sub_82A58008(address_ctx, base);
+    sub_82A57BF8(address_ctx, base);
     const uint32_t guest_address = address_ctx.r3.u32;
     address_ctx.r3.u64 = guest_address;
-    sub_826C4FA0(address_ctx, base);
+    sub_826C2188(address_ctx, base);
     if (address_ctx.r3.u8 == 0) {
       continue;
     }
     PPCContext update_ctx = input_ctx;
     update_ctx.r3.u64 = guest_object_manager;
     update_ctx.r4.u64 = guest_peer;
-    sub_826F3B38(update_ctx, base);
+    sub_826F0598(update_ctx, base);
 
     address_ctx = input_ctx;
     address_ctx.r3.u64 = guest_address;
-    sub_8278CEB8(address_ctx, base);
+    sub_8278CA88(address_ctx, base);
     if (address_ctx.r3.u8 != 0) {
       continue;
     }
     update_ctx = input_ctx;
     update_ctx.r3.u64 = guest_object_manager;
     update_ctx.r4.u64 = peer_id;
-    sub_826F0390(update_ctx, base);
+    sub_826ECDF0(update_ctx, base);
     update_ctx = input_ctx;
     update_ctx.r3.u64 = guest_object_manager;
     update_ctx.r4.u64 = peer_id;
-    sub_826F0520(update_ctx, base);
+    sub_826ECF80(update_ctx, base);
     update_ctx = input_ctx;
     update_ctx.r3.u64 = guest_object_manager;
     update_ctx.r4.u64 = guest_address;
-    sub_826EFE08(update_ctx, base);
+    sub_826EC868(update_ctx, base);
   }
 }
 
-extern "C" void sub_826F0B38(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826ED598(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const auto initialized_address =
@@ -5879,7 +5879,7 @@ extern "C" void sub_826F0B38(PPCContext& ctx, uint8_t* base) {
         remove_ctx.r4.u64 = guest_object;
         remove_ctx.r5.u64 = 1;
         remove_ctx.r6.u64 = 0;
-        sub_826EF7D8(remove_ctx, base);
+        sub_826EC238(remove_ctx, base);
         const mp64::ObjectOwnerList after =
             g_object_owner_lists.Get(guest_object_manager, owner_id);
         if (after.guest_head == list.guest_head) {
@@ -5890,15 +5890,15 @@ extern "C" void sub_826F0B38(PPCContext& ctx, uint8_t* base) {
     }
   }
   ctx = input_ctx;
-  __imp__sub_826F0B38(ctx, base);
+  __imp__sub_826ED598(ctx, base);
 }
 
-extern "C" void sub_826E8278(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4DC8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint8_t requested_peer_id = GuestPeerId(ctx.r4.u64);
   const uint8_t peer_id = ObjectManagerTimingPeerId(guest_object_manager, requested_peer_id);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E8278(ctx, base);
+    __imp__sub_826E4DC8(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended) {
@@ -5908,12 +5908,12 @@ extern "C" void sub_826E8278(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = guest_object_manager;
 }
 
-extern "C" void sub_826E82A8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4DF8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint8_t requested_peer_id = GuestPeerId(ctx.r4.u64);
   const uint8_t peer_id = ObjectManagerTimingPeerId(guest_object_manager, requested_peer_id);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E82A8(ctx, base);
+    __imp__sub_826E4DF8(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) != mp64::PeerIdClass::kExtended) {
@@ -5923,7 +5923,7 @@ extern "C" void sub_826E82A8(PPCContext& ctx, uint8_t* base) {
   PPCContext channel_ctx = ctx;
   channel_ctx.r3.u64 = guest_object_manager;
   channel_ctx.r4.u64 = ctx.r5.u32;
-  __imp__sub_826E8160(channel_ctx, base);
+  __imp__sub_826E4CB0(channel_ctx, base);
   if (channel_ctx.r3.u32 < mp64::kObjectManagerChannelCount) {
     g_object_peer_timings.SetChannelReceived(guest_object_manager, peer_id, channel_ctx.r3.u32,
                                              REX_LOAD_U32(mp64::kNetworkClockAddress));
@@ -5931,12 +5931,12 @@ extern "C" void sub_826E82A8(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = guest_object_manager;
 }
 
-extern "C" void sub_826E8308(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4E58(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint8_t requested_peer_id = GuestPeerId(ctx.r4.u64);
   const uint8_t peer_id = ObjectManagerTimingPeerId(guest_object_manager, requested_peer_id);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E8308(ctx, base);
+    __imp__sub_826E4E58(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) != mp64::PeerIdClass::kExtended) {
@@ -5952,12 +5952,12 @@ extern "C" void sub_826E8308(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = threshold_address && elapsed > REX_LOAD_U32(*threshold_address) ? 1 : 0;
 }
 
-extern "C" void sub_826E8380(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E4ED0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint8_t requested_peer_id = GuestPeerId(ctx.r4.u64);
   const uint8_t peer_id = ObjectManagerTimingPeerId(guest_object_manager, requested_peer_id);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826E8380(ctx, base);
+    __imp__sub_826E4ED0(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) != mp64::PeerIdClass::kExtended) {
@@ -5967,7 +5967,7 @@ extern "C" void sub_826E8380(PPCContext& ctx, uint8_t* base) {
   PPCContext channel_ctx = ctx;
   channel_ctx.r3.u64 = guest_object_manager;
   channel_ctx.r4.u64 = ctx.r5.u32;
-  __imp__sub_826E8160(channel_ctx, base);
+  __imp__sub_826E4CB0(channel_ctx, base);
   if (channel_ctx.r3.u32 >= mp64::kObjectManagerChannelCount) {
     ctx.r3.u64 = 0;
     return;
@@ -5978,42 +5978,42 @@ extern "C" void sub_826E8380(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = now > last && now - last > mp64::kObjectManagerChannelTimeout ? 1 : 0;
 }
 
-extern "C" void sub_826F0390(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826ECDF0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F0390(ctx, base);
+    __imp__sub_826ECDF0(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
     ctx.r3.u64 = guest_manager;
     ctx.r4.u64 = alias_id;
-    __imp__sub_826F0390(ctx, base);
+    __imp__sub_826ECDF0(ctx, base);
   });
 }
 
-extern "C" void sub_826F0520(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826ECF80(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F0520(ctx, base);
+    __imp__sub_826ECF80(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
     ctx.r3.u64 = guest_manager;
     ctx.r4.u64 = alias_id;
-    __imp__sub_826F0520(ctx, base);
+    __imp__sub_826ECF80(ctx, base);
   });
 }
 
-extern "C" void sub_826F0840(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826ED2A0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const uint64_t third = ctx.r5.u64;
   const uint64_t fourth = ctx.r6.u64;
   const uint64_t fifth = ctx.r7.u64;
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F0840(ctx, base);
+    __imp__sub_826ED2A0(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
@@ -6022,7 +6022,7 @@ extern "C" void sub_826F0840(PPCContext& ctx, uint8_t* base) {
     ctx.r5.u64 = third;
     ctx.r6.u64 = fourth;
     ctx.r7.u64 = fifth;
-    __imp__sub_826F0840(ctx, base);
+    __imp__sub_826ED2A0(ctx, base);
   });
 }
 
@@ -6030,14 +6030,14 @@ extern "C" void sub_826F0840(PPCContext& ctx, uint8_t* base) {
 // indexing its 1,032-byte message and 16-bit sequence tables. During a scoped
 // high-peer projection, return the physical alias ID to that generated index;
 // all peer identity and accounting hooks continue to expose the actual ID.
-extern "C" void sub_826FF108(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_826FF108(ctx, base);
+extern "C" void sub_826FEB58(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_826FEB58(ctx, base);
   if (g_object_peer_alias.active && ctx.r3.u8 == g_object_peer_alias.actual_peer_id) {
     ctx.r3.u64 = g_object_peer_alias.alias_peer_id;
   }
 }
 
-extern "C" void sub_826F1158(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EDBB8(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const auto peer_manager_address =
@@ -6049,10 +6049,10 @@ extern "C" void sub_826F1158(PPCContext& ctx, uint8_t* base) {
   PPCContext peer_id_ctx = input_ctx;
   peer_id_ctx.r3.u64 = REX_LOAD_U32(*peer_manager_address);
   peer_id_ctx.r4.u64 = input_ctx.r4.u64;
-  sub_826FF108(peer_id_ctx, base);
+  sub_826FEB58(peer_id_ctx, base);
   const int32_t resolved_peer_id = peer_id_ctx.r3.s32;
   if (resolved_peer_id >= 0 && resolved_peer_id < static_cast<int32_t>(mp64::kLegacyPeerCapacity)) {
-    __imp__sub_826F1158(ctx, base);
+    __imp__sub_826EDBB8(ctx, base);
     return;
   }
   if (resolved_peer_id < static_cast<int32_t>(mp64::kLegacyPeerCapacity) ||
@@ -6061,19 +6061,19 @@ extern "C" void sub_826F1158(PPCContext& ctx, uint8_t* base) {
           ctx, base, guest_object_manager, static_cast<uint8_t>(resolved_peer_id),
           [&](uint8_t) {
             ctx = input_ctx;
-            __imp__sub_826F1158(ctx, base);
+            __imp__sub_826EDBB8(ctx, base);
           })) {
     ctx.r3.u64 = 0;
   }
 }
 
-extern "C" void sub_826F13C0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EDE20(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const std::array<uint64_t, 5> arguments = {ctx.r5.u64, ctx.r6.u64, ctx.r7.u64, ctx.r8.u64,
                                              ctx.r9.u64};
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F13C0(ctx, base);
+    __imp__sub_826EDE20(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
@@ -6084,17 +6084,17 @@ extern "C" void sub_826F13C0(PPCContext& ctx, uint8_t* base) {
     ctx.r7.u64 = arguments[2];
     ctx.r8.u64 = arguments[3];
     ctx.r9.u64 = arguments[4];
-    __imp__sub_826F13C0(ctx, base);
+    __imp__sub_826EDE20(ctx, base);
   });
 }
 
-extern "C" void sub_826F1468(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EDEC8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const uint64_t third = ctx.r5.u64;
   const uint64_t fourth = ctx.r6.u64;
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F1468(ctx, base);
+    __imp__sub_826EDEC8(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
@@ -6102,18 +6102,18 @@ extern "C" void sub_826F1468(PPCContext& ctx, uint8_t* base) {
     ctx.r4.u64 = alias_id;
     ctx.r5.u64 = third;
     ctx.r6.u64 = fourth;
-    __imp__sub_826F1468(ctx, base);
+    __imp__sub_826EDEC8(ctx, base);
   });
 }
 
-extern "C" void sub_826F14E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EDF48(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const uint64_t third = ctx.r5.u64;
   const uint64_t fourth = ctx.r6.u64;
   const uint64_t fifth = ctx.r7.u64;
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F14E8(ctx, base);
+    __imp__sub_826EDF48(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
@@ -6122,17 +6122,17 @@ extern "C" void sub_826F14E8(PPCContext& ctx, uint8_t* base) {
     ctx.r5.u64 = third;
     ctx.r6.u64 = fourth;
     ctx.r7.u64 = fifth;
-    __imp__sub_826F14E8(ctx, base);
+    __imp__sub_826EDF48(ctx, base);
   });
 }
 
-extern "C" void sub_826F1570(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EDFD0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const uint64_t third = ctx.r5.u64;
   const uint64_t fourth = ctx.r6.u64;
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F1570(ctx, base);
+    __imp__sub_826EDFD0(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
@@ -6140,17 +6140,17 @@ extern "C" void sub_826F1570(PPCContext& ctx, uint8_t* base) {
     ctx.r4.u64 = alias_id;
     ctx.r5.u64 = third;
     ctx.r6.u64 = fourth;
-    __imp__sub_826F1570(ctx, base);
+    __imp__sub_826EDFD0(ctx, base);
   });
 }
 
-extern "C" void sub_826F15F0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EE050(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const uint64_t third = ctx.r5.u64;
   const uint64_t fourth = ctx.r6.u64;
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_826F15F0(ctx, base);
+    __imp__sub_826EE050(ctx, base);
     return;
   }
   WithExtendedObjectManagerPeer(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
@@ -6158,11 +6158,11 @@ extern "C" void sub_826F15F0(PPCContext& ctx, uint8_t* base) {
     ctx.r4.u64 = alias_id;
     ctx.r5.u64 = third;
     ctx.r6.u64 = fourth;
-    __imp__sub_826F15F0(ctx, base);
+    __imp__sub_826EE050(ctx, base);
   });
 }
 
-extern "C" void sub_826F4448(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826F0EA8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   ReleaseObjectPeerBuffers(ctx, base, guest_object_manager);
   g_player_tick_states.RemoveManager(guest_object_manager);
@@ -6170,13 +6170,13 @@ extern "C" void sub_826F4448(PPCContext& ctx, uint8_t* base) {
   g_object_owner_lists.RemoveManager(guest_object_manager);
   g_object_peer_matrix.RemoveManager(guest_object_manager);
   ctx.r3.u64 = guest_object_manager;
-  __imp__sub_826F4448(ctx, base);
+  __imp__sub_826F0EA8(ctx, base);
 }
 
 // The one-time object-manager initializer constructs only its sixteen inline
 // buffers and tables. Extended storage is lazy, but must start from a clean
 // lifecycle state if the guest address is reused after teardown.
-extern "C" void sub_826ED450(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826E9E50(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   const auto initialized =
       mp64::CheckedGuestAddress(guest_object_manager, mp64::kObjectManagerInitializedFlagOffset);
@@ -6188,13 +6188,13 @@ extern "C" void sub_826ED450(PPCContext& ctx, uint8_t* base) {
     g_object_peer_matrix.RemoveManager(guest_object_manager);
   }
   ctx.r3.u64 = guest_object_manager;
-  __imp__sub_826ED450(ctx, base);
+  __imp__sub_826E9E50(ctx, base);
 }
 
-extern "C" void sub_826F2040(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EEAA0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object_manager = ctx.r3.u32;
   ctx.r3.u64 = guest_object_manager;
-  __imp__sub_826F2040(ctx, base);
+  __imp__sub_826EEAA0(ctx, base);
   ReleaseObjectPeerBuffers(ctx, base, guest_object_manager);
   g_player_tick_states.RemoveManager(guest_object_manager);
   g_object_peer_timings.RemoveManager(guest_object_manager);
@@ -6202,13 +6202,13 @@ extern "C" void sub_826F2040(PPCContext& ctx, uint8_t* base) {
   g_object_peer_matrix.RemoveManager(guest_object_manager);
 }
 
-extern "C" void sub_826EF9F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EC458(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_object_manager = ctx.r3.u32;
   const uint32_t guest_departing_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_departing_peer);
   if (!peer_id || mp64::IsLegacyPeerId(*peer_id)) {
-    __imp__sub_826EF9F8(ctx, base);
+    __imp__sub_826EC458(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended) {
@@ -6218,7 +6218,7 @@ extern "C" void sub_826EF9F8(PPCContext& ctx, uint8_t* base) {
         peer_manager_address ? REX_LOAD_U32(*peer_manager_address) : 0;
     PPCContext local_ctx = input_ctx;
     local_ctx.r3.u64 = guest_peer_manager;
-    __imp__sub_826FDDC0(local_ctx, base);
+    __imp__sub_826FD790(local_ctx, base);
     const uint8_t local_peer_id = local_ctx.r3.u8;
     for (uint8_t owner_id = 0; owner_id < mp64::kExtendedPeerCapacity; ++owner_id) {
       ForEachObjectInOwnerList(base, ObjectOwnerListFor(base, guest_object_manager, owner_id),
@@ -6235,25 +6235,25 @@ extern "C" void sub_826EF9F8(PPCContext& ctx, uint8_t* base) {
                                  PPCContext predicate_ctx = input_ctx;
                                  predicate_ctx.r3.u64 = guest_object;
                                  predicate_ctx.r4.u64 = 2;
-                                 sub_82701FB0(predicate_ctx, base);
+                                 sub_82705508(predicate_ctx, base);
                                  if (predicate_ctx.r3.u8 == 0) {
                                    return;
                                  }
                                  predicate_ctx = input_ctx;
                                  predicate_ctx.r3.u64 = guest_object;
-                                 sub_82702D08(predicate_ctx, base);
+                                 sub_82706240(predicate_ctx, base);
                                  if (predicate_ctx.r3.u8 != 0) {
                                    return;
                                  }
                                  predicate_ctx = input_ctx;
                                  predicate_ctx.r3.u64 = guest_object;
-                                 sub_82702CA0(predicate_ctx, base);
+                                 sub_827061D8(predicate_ctx, base);
                                  if (predicate_ctx.r3.u8 != 0) {
                                    return;
                                  }
                                  predicate_ctx = input_ctx;
                                  predicate_ctx.r3.u64 = guest_object;
-                                 sub_82702D78(predicate_ctx, base);
+                                 sub_827062B0(predicate_ctx, base);
                                  if (predicate_ctx.r3.u8 != 0) {
                                    return;
                                  }
@@ -6261,7 +6261,7 @@ extern "C" void sub_826EF9F8(PPCContext& ctx, uint8_t* base) {
                                  remove_ctx.r3.u64 = guest_object_manager;
                                  remove_ctx.r4.u64 = guest_object;
                                  remove_ctx.r5.u64 = 0;
-                                 sub_826EEC10(remove_ctx, base);
+                                 sub_826EB670(remove_ctx, base);
                                });
     }
     g_player_tick_states.RemovePeer(guest_object_manager, *peer_id);
@@ -6275,13 +6275,13 @@ extern "C" void sub_826EF9F8(PPCContext& ctx, uint8_t* base) {
       PPCContext reassignment_ctx = input_ctx;
       reassignment_ctx.r3.u64 = *reassignment_manager;
       reassignment_ctx.r4.u64 = guest_departing_peer;
-      sub_82787340(reassignment_ctx, base);
+      sub_82788BE8(reassignment_ctx, base);
     }
   }
   ctx.r3.u64 = peer_id.value_or(mp64::kInvalidPeerId);
 }
 
-extern "C" void sub_826FE880(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FE2D0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
 
@@ -6324,7 +6324,7 @@ extern "C" void sub_826FE880(PPCContext& ctx, uint8_t* base) {
 
   switch (mp64::ClassifyPeerId(peer_id)) {
     case mp64::PeerIdClass::kLegacy:
-      __imp__sub_826FE880(ctx, base);
+      __imp__sub_826FE2D0(ctx, base);
       g_peer_managers.SetPeer(guest_manager, peer_id, ctx.r3.u32);
       return;
     case mp64::PeerIdClass::kExtended:
@@ -6339,10 +6339,10 @@ extern "C" void sub_826FE880(PPCContext& ctx, uint8_t* base) {
 // Peer lookup by the record's title-owned numeric connection key. Retail
 // scans only the embedded sixteen-pointer table. Preserve its ordering, then
 // inspect extended records through the same record accessor.
-extern "C" void sub_826FE808(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FE258(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const int32_t connection_key = ctx.r4.s32;
-  __imp__sub_826FE808(ctx, base);
+  __imp__sub_826FE258(ctx, base);
   if (ctx.r3.u32 != 0 || connection_key < 0) {
     return;
   }
@@ -6351,7 +6351,7 @@ extern "C" void sub_826FE808(PPCContext& ctx, uint8_t* base) {
   g_peer_managers.VisitExtendedPeers(guest_manager, [&](uint8_t, uint32_t guest_peer) {
     PPCContext nested_ctx = ctx;
     nested_ctx.r3.u64 = guest_peer;
-    __imp__sub_82A58008(nested_ctx, base);
+    __imp__sub_82A57BF8(nested_ctx, base);
     if (nested_ctx.r3.s32 != connection_key) {
       return true;
     }
@@ -6365,10 +6365,10 @@ extern "C" void sub_826FE808(PPCContext& ctx, uint8_t* base) {
 // local-peer fast path. Let retail resolve the local/low population first,
 // then continue through the canonical sidecar without ever indexing manager
 // memory with a high ID.
-extern "C" void sub_826FE908(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FE358(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_identity = ctx.r4.u32;
-  __imp__sub_826FE908(ctx, base);
+  __imp__sub_826FE358(ctx, base);
   if (ctx.r3.u32 != 0) {
     return;
   }
@@ -6382,14 +6382,14 @@ extern "C" void sub_826FE908(PPCContext& ctx, uint8_t* base) {
   g_peer_managers.VisitExtendedPeers(guest_manager, [&](uint8_t, uint32_t guest_peer) {
     PPCContext player_info_ctx = ctx;
     player_info_ctx.r3.u64 = guest_peer;
-    sub_82708A48(player_info_ctx, base);
+    sub_82708418(player_info_ctx, base);
     if (player_info_ctx.r3.u32 == 0) {
       return true;
     }
     PPCContext compare_ctx = ctx;
     compare_ctx.r3.u64 = player_info_ctx.r3.u32;
     compare_ctx.r4.u64 = guest_identity;
-    __imp__sub_829DB628(compare_ctx, base);
+    __imp__sub_829DB120(compare_ctx, base);
     if (compare_ctx.r3.u8 == 0) {
       return true;
     }
@@ -6399,10 +6399,10 @@ extern "C" void sub_826FE908(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = match;
 }
 
-extern "C" void sub_826FE9C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FE418(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_identity = ctx.r4.u32;
-  __imp__sub_826FE9C8(ctx, base);
+  __imp__sub_826FE418(ctx, base);
   if (ctx.r3.u32 != 0) {
     return;
   }
@@ -6416,7 +6416,7 @@ extern "C" void sub_826FE9C8(PPCContext& ctx, uint8_t* base) {
   g_peer_managers.VisitExtendedPeers(guest_manager, [&](uint8_t, uint32_t guest_peer) {
     PPCContext identity_ctx = ctx;
     identity_ctx.r3.u64 = guest_peer;
-    sub_82708A78(identity_ctx, base);
+    sub_82708448(identity_ctx, base);
     if (identity_ctx.r3.u32 != guest_identity) {
       return true;
     }
@@ -6429,10 +6429,10 @@ extern "C" void sub_826FE9C8(PPCContext& ctx, uint8_t* base) {
 // Clone construction contains two direct sixteen-peer loops. Keep the retail
 // object creation and command path intact while marking its exact endpoint
 // build/type-query seams for the extended work performed below.
-extern "C" void sub_826EFF58(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826EC9B8(PPCContext& ctx, uint8_t* base) {
   const ClonePeerExpansionContext saved_context = g_clone_peer_expansion;
   g_clone_peer_expansion.active = true;
-  __imp__sub_826EFF58(ctx, base);
+  __imp__sub_826EC9B8(ctx, base);
   g_clone_peer_expansion = saved_context;
 }
 
@@ -6442,12 +6442,12 @@ extern "C" void sub_826EFF58(PPCContext& ctx, uint8_t* base) {
 // its two direct sixteen-peer scans. If the retail table contains no peer
 // other than the target, one saved pointer slot is mirrored for the duration
 // of the call so the original loop still reaches an accessor seam.
-extern "C" void sub_826FFCB0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FF700(PPCContext& ctx, uint8_t* base) {
   const PPCContext input_ctx = ctx;
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t target_peer_id = GuestPeerId(ctx.r4.u64);
   if (guest_manager == 0 || !mp64::IsValidPeerId(target_peer_id) || g_peer_uniqueness.active) {
-    __imp__sub_826FFCB0(ctx, base);
+    __imp__sub_826FF700(ctx, base);
     return;
   }
 
@@ -6455,10 +6455,10 @@ extern "C" void sub_826FFCB0(PPCContext& ctx, uint8_t* base) {
   PPCContext lookup_ctx = input_ctx;
   lookup_ctx.r3.u64 = guest_manager;
   lookup_ctx.r4.u64 = target_peer_id;
-  sub_826FE880(lookup_ctx, base);
+  sub_826FE2D0(lookup_ctx, base);
   const uint32_t guest_target_peer = lookup_ctx.r3.u32;
   if (guest_target_peer == 0) {
-    __imp__sub_826FFCB0(ctx, base);
+    __imp__sub_826FF700(ctx, base);
     return;
   }
 
@@ -6535,16 +6535,16 @@ extern "C" void sub_826FFCB0(PPCContext& ctx, uint8_t* base) {
 
   const PeerUniquenessContext saved_context = g_peer_uniqueness;
   g_peer_uniqueness = call_context;
-  __imp__sub_826FFCB0(ctx, base);
+  __imp__sub_826FF700(ctx, base);
   g_peer_uniqueness = saved_context;
   if (saved_pointer_address) {
     REX_STORE_U32(*saved_pointer_address, saved_pointer);
   }
 }
 
-extern "C" void sub_827087E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827081B8(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller_return_address = ctx.lr;
-  __imp__sub_827087E8(ctx, base);
+  __imp__sub_827081B8(ctx, base);
   if (!g_peer_uniqueness.active ||
       caller_return_address != mp64::kPeerUniquenessIdentityScanReturnAddress ||
       g_peer_uniqueness.matching_identity_player_info == 0 ||
@@ -6558,9 +6558,9 @@ extern "C" void sub_827087E8(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_827087D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827081A8(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller_return_address = ctx.lr;
-  __imp__sub_827087D8(ctx, base);
+  __imp__sub_827081A8(ctx, base);
   if (!g_peer_uniqueness.active) {
     return;
   }
@@ -6588,7 +6588,7 @@ extern "C" void sub_827087D8(PPCContext& ctx, uint8_t* base) {
 // entries across the complete 64-peer population. Every connected peer is
 // serviced over successive voice ticks without writing beyond that stack
 // window; callers with a 64-entry buffer receive the full population at once.
-extern "C" void sub_826FEBE8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FE638(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_output = ctx.r4.u32;
   const uint32_t output_capacity = ctx.r5.u32;
@@ -6597,7 +6597,7 @@ extern "C" void sub_826FEBE8(PPCContext& ctx, uint8_t* base) {
     return;
   }
 
-  __imp__sub_826FEBE8(ctx, base);
+  __imp__sub_826FE638(ctx, base);
   size_t written = std::min<size_t>(ctx.r3.u32, output_capacity);
   const size_t extended_count = g_peer_managers.CountExtendedPeers(guest_manager);
 
@@ -6672,9 +6672,9 @@ extern "C" void sub_826FEBE8(PPCContext& ctx, uint8_t* base) {
 
 // Report the real sidecar-aware count while leaving the embedded free-list
 // bookkeeping untouched.
-extern "C" void sub_826FEAE0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FE530(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
-  __imp__sub_826FEAE0(ctx, base);
+  __imp__sub_826FE530(ctx, base);
   const size_t total = std::min<size_t>(
       static_cast<size_t>(ctx.r3.u32) + g_peer_managers.CountExtendedPeers(guest_manager),
       mp64::kExtendedPeerCapacity);
@@ -6687,7 +6687,7 @@ extern "C" void sub_826FEAE0(PPCContext& ctx, uint8_t* base) {
 // notification hooks restore the actual ID before any later callbacks, and the
 // saved legacy slot is restored before returning. Thus the original add logic
 // runs in full without ever indexing manager memory with 16..63.
-extern "C" void sub_82700108(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FFB58(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_add_record = ctx.r6.u32;
   if (guest_manager == 0 || guest_add_record == 0) {
@@ -6698,13 +6698,13 @@ extern "C" void sub_82700108(PPCContext& ctx, uint8_t* base) {
   const uint8_t peer_id = REX_LOAD_U8(guest_add_record);
   const mp64::PeerIdClass peer_class = mp64::ClassifyPeerId(peer_id);
   if (peer_class == mp64::PeerIdClass::kInvalid) {
-    WarnInvalidPeerOnce(g_invalid_add_peer_warning, "sub_82700108", peer_id,
+    WarnInvalidPeerOnce(g_invalid_add_peer_warning, "sub_826FFB58", peer_id,
                         "peer ID is outside 0..63 or is the 0xFF sentinel");
     ctx.r3.u64 = 0;
     return;
   }
   if (peer_class == mp64::PeerIdClass::kLegacy) {
-    __imp__sub_82700108(ctx, base);
+    __imp__sub_826FFB58(ctx, base);
     if (ctx.r3.u32 != 0) {
       g_peer_managers.SetPeer(guest_manager, peer_id, ctx.r3.u32);
     }
@@ -6727,7 +6727,7 @@ extern "C" void sub_82700108(PPCContext& ctx, uint8_t* base) {
 
   const uint32_t guest_peer = runtime->memory()->SystemHeapAlloc(mp64::kPeerRecordSize);
   if (guest_peer == 0) {
-    WarnRuntimeFailureOnce(g_extended_peer_allocation_warning, "sub_82700108", peer_id,
+    WarnRuntimeFailureOnce(g_extended_peer_allocation_warning, "sub_826FFB58", peer_id,
                            "guest system heap allocation failed");
     ctx.r3.u64 = 0;
     return;
@@ -6756,7 +6756,7 @@ extern "C" void sub_82700108(PPCContext& ctx, uint8_t* base) {
   validation::PublishMultiplayerValidationStage(
       validation::MultiplayerValidationStage::kExtendedPeerAdd, peer_id, guest_peer);
 
-  __imp__sub_82700108(ctx, base);
+  __imp__sub_826FFB58(ctx, base);
   const bool constructed = g_extended_add.constructed;
   const bool complete =
       constructed && g_extended_add.notification_boundary_reached && ctx.r3.u32 == guest_peer;
@@ -6773,7 +6773,7 @@ extern "C" void sub_82700108(PPCContext& ctx, uint8_t* base) {
       PPCContext remove_ctx = ctx;
       remove_ctx.r3.u64 = guest_manager;
       remove_ctx.r4.u64 = peer_id;
-      sub_82700E30(remove_ctx, base);
+      sub_82700880(remove_ctx, base);
     }
     ctx.r3.u64 = 0;
   }
@@ -6783,7 +6783,7 @@ extern "C" void sub_82700108(PPCContext& ctx, uint8_t* base) {
 // every callback and resets the peer record, while the free-list insertion
 // hook suppresses returning a heap-backed record to the embedded 16-record
 // pool. The allocation is released after the original teardown completes.
-extern "C" void sub_82700E30(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82700880(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   const mp64::PeerIdClass peer_class = mp64::ClassifyPeerId(peer_id);
@@ -6794,7 +6794,7 @@ extern "C" void sub_82700E30(PPCContext& ctx, uint8_t* base) {
   if (peer_class == mp64::PeerIdClass::kLegacy) {
     validation::PublishMultiplayerValidationStage(
         validation::MultiplayerValidationStage::kRemoval, peer_id);
-    __imp__sub_82700E30(ctx, base);
+    __imp__sub_82700880(ctx, base);
     g_peer_managers.RemovePeer(guest_manager, peer_id);
     return;
   }
@@ -6818,7 +6818,7 @@ extern "C" void sub_82700E30(PPCContext& ctx, uint8_t* base) {
       .actual_peer_id = peer_id,
   };
   ctx.r4.u64 = kTemporaryAliasPeerId;
-  __imp__sub_82700E30(ctx, base);
+  __imp__sub_82700880(ctx, base);
   REX_STORE_U32(*alias_table, saved_alias_peer);
   ClearAliasOverride(guest_manager);
   g_extended_remove = {};
@@ -6827,7 +6827,7 @@ extern "C" void sub_82700E30(PPCContext& ctx, uint8_t* base) {
   if (PlayerInfoForId(base, peer_id).guest_player_info != 0) {
     PPCContext destroy_player_ctx = ctx;
     destroy_player_ctx.r3.u64 = peer_id;
-    sub_82261CA8(destroy_player_ctx, base);
+    sub_821DA788(destroy_player_ctx, base);
   }
   g_peer_managers.RemovePeer(guest_manager, peer_id);
   if (rex::Runtime* runtime = rex::Runtime::instance()) {
@@ -6838,9 +6838,9 @@ extern "C" void sub_82700E30(PPCContext& ctx, uint8_t* base) {
 // Extended ADDING_PEER calls the original 64-byte record constructor with the
 // temporary alias. Restore the real ID immediately after construction and
 // publish the record to sidecar lookups before subsequent callbacks run.
-extern "C" void sub_827088F0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827082C0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_peer = ctx.r3.u32;
-  __imp__sub_827088F0(ctx, base);
+  __imp__sub_827082C0(ctx, base);
   if (!g_extended_add.active || guest_peer != g_extended_add.guest_record) {
     return;
   }
@@ -6862,7 +6862,7 @@ extern "C" void sub_827088F0(PPCContext& ctx, uint8_t* base) {
 // Extended IDs receive the same 1456-byte guest allocation and field layout,
 // while their pointer and generation live in a host sidecar instead of writing
 // beyond the adjacent sixteen-entry globals.
-extern "C" void sub_8225CD80(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821D57F0(PPCContext& ctx, uint8_t* base) {
   static_cast<void>(base);
   auto alias_gate = g_player_info_alias_gate.EnterRead();
   const uint32_t guest_player = ctx.r3.u32;
@@ -6878,7 +6878,7 @@ extern "C" void sub_8225CD80(PPCContext& ctx, uint8_t* base) {
   ctx.r3.s64 = -1;
 }
 
-extern "C" void sub_8225CE98(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821D5908(PPCContext& ctx, uint8_t* base) {
   static_cast<void>(base);
   auto alias_gate = g_player_info_alias_gate.EnterRead();
   const uint32_t primary_player = REX_LOAD_U32(mp64::kPrimaryPlayerIdAddress);
@@ -6894,10 +6894,10 @@ extern "C" void sub_8225CE98(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = count;
 }
 
-extern "C" void sub_82260D20(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821D9800(PPCContext& ctx, uint8_t* base) {
   auto alias_gate = g_player_info_alias_gate.EnterOpaque();
   std::scoped_lock alias_lock(g_player_info_alias_mutex);
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82260D20);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821D9800);
   const PPCContext result_ctx = ctx;
   for (uint8_t player_id = mp64::kLegacyPeerCapacity;
        player_id < mp64::kExtendedPeerCapacity; ++player_id) {
@@ -6914,15 +6914,15 @@ extern "C" void sub_82260D20(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext update_ctx = result_ctx;
     update_ctx.r3.u64 = guest_player_info;
-    sub_822398C8(update_ctx, base);
+    sub_82253B50(update_ctx, base);
   }
   ctx = result_ctx;
 }
 
-extern "C" void sub_82261E48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DA928(PPCContext& ctx, uint8_t* base) {
   auto alias_gate = g_player_info_alias_gate.EnterOpaque();
   std::scoped_lock alias_lock(g_player_info_alias_mutex);
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82261E48);
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DA928);
   std::vector<uint8_t> extended_players;
   const auto entries = g_player_infos.Snapshot();
   for (uint8_t player_id = mp64::kLegacyPeerCapacity;
@@ -6934,12 +6934,12 @@ extern "C" void sub_82261E48(PPCContext& ctx, uint8_t* base) {
   for (uint8_t player_id : extended_players) {
     PPCContext destroy_ctx = ctx;
     destroy_ctx.r3.u64 = player_id;
-    sub_82261CA8(destroy_ctx, base);
+    sub_821DA788(destroy_ctx, base);
   }
   SyncPlayerInfoShadow(base);
 }
 
-extern "C" void sub_82261EA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DA988(PPCContext& ctx, uint8_t* base) {
   const uint8_t source_id = GuestPeerId(ctx.r3.u64);
   const uint8_t destination_id = GuestPeerId(ctx.r4.u64);
   if (!mp64::IsValidPeerId(source_id) || !mp64::IsValidPeerId(destination_id) ||
@@ -6949,7 +6949,7 @@ extern "C" void sub_82261EA8(PPCContext& ctx, uint8_t* base) {
   if (mp64::IsLegacyPeerId(source_id) && mp64::IsLegacyPeerId(destination_id)) {
     auto alias_gate = g_player_info_alias_gate.EnterOpaque();
     std::scoped_lock alias_lock(g_player_info_alias_mutex);
-    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82261EA8);
+    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DA988);
     SyncPlayerInfoShadow(base);
     return;
   }
@@ -6964,7 +6964,7 @@ extern "C" void sub_82261EA8(PPCContext& ctx, uint8_t* base) {
   if (PlayerInfoForId(base, destination_id).guest_player_info != 0) {
     PPCContext destroy_ctx = ctx;
     destroy_ctx.r3.u64 = destination_id;
-    sub_82261CA8(destroy_ctx, base);
+    sub_821DA788(destroy_ctx, base);
   }
 
   if (mp64::IsLegacyPeerId(source_id)) {
@@ -7000,17 +7000,17 @@ extern "C" void sub_82261EA8(PPCContext& ctx, uint8_t* base) {
   if (guest_player != 0) {
     PPCContext notify_ctx = ctx;
     notify_ctx.r3.u64 = guest_player;
-    sub_823CF550(notify_ctx, base);
+    sub_823CF8D8(notify_ctx, base);
   }
   SyncPlayerInfoShadow(base);
 }
 
-extern "C" void sub_822619E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DA4C8(PPCContext& ctx, uint8_t* base) {
   const uint8_t player_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(player_id)) {
     auto alias_gate = g_player_info_alias_gate.EnterOpaque();
     std::scoped_lock alias_lock(g_player_info_alias_mutex);
-    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_822619E8);
+    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DA4C8);
     return;
   }
   auto alias_gate = g_player_info_alias_gate.EnterOpaque();
@@ -7039,15 +7039,15 @@ extern "C" void sub_822619E8(PPCContext& ctx, uint8_t* base) {
     REX_STORE_U32(mp64::kLegacyPlayerInfoGenerationTableAddress, saved_generation);
   });
   ctx.r4.u64 = kTemporaryAliasPeerId;
-  __imp__sub_822619E8(ctx, base);
+  __imp__sub_821DA4C8(ctx, base);
 }
 
-extern "C" void sub_82263000(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DBAE0(PPCContext& ctx, uint8_t* base) {
   const uint8_t player_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(player_id)) {
     auto alias_gate = g_player_info_alias_gate.EnterOpaque();
     std::scoped_lock alias_lock(g_player_info_alias_mutex);
-    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82263000);
+    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DBAE0);
     SyncPlayerInfoShadow(base);
     return;
   }
@@ -7060,7 +7060,7 @@ extern "C" void sub_82263000(PPCContext& ctx, uint8_t* base) {
   if (g_player_infos.Get(player_id).guest_player_info != 0) {
     PPCContext destroy_ctx = ctx;
     destroy_ctx.r3.u64 = player_id;
-    sub_82261CA8(destroy_ctx, base);
+    sub_821DA788(destroy_ctx, base);
   }
 
   const bool becomes_primary = REX_LOAD_U8(ctx.r3.u32) == 0 && REX_LOAD_U8(ctx.r3.u32 + 1) == 0;
@@ -7083,7 +7083,7 @@ extern "C" void sub_82263000(PPCContext& ctx, uint8_t* base) {
   REX_STORE_U32(mp64::kLegacyPlayerInfoPointerTableAddress, 0);
   REX_STORE_U32(mp64::kLegacyPlayerInfoGenerationTableAddress, 0);
   ctx.r4.u64 = kTemporaryAliasPeerId;
-  __imp__sub_82263000(ctx, base);
+  __imp__sub_821DBAE0(ctx, base);
   const uint32_t guest_player_info = REX_LOAD_U32(mp64::kLegacyPlayerInfoPointerTableAddress);
   const uint32_t generation = REX_LOAD_U32(mp64::kLegacyPlayerInfoGenerationTableAddress);
   REX_STORE_U32(mp64::kLegacyPlayerInfoPointerTableAddress, saved_pointer);
@@ -7103,8 +7103,8 @@ extern "C" void sub_82263000(PPCContext& ctx, uint8_t* base) {
   SyncPlayerInfoShadow(base);
 }
 
-extern "C" void sub_822636F0(PPCContext& ctx, uint8_t* base) {
-  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_822636F0);
+extern "C" void sub_821DC1D0(PPCContext& ctx, uint8_t* base) {
+  RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DC1D0);
   auto player_info_read = g_player_info_alias_gate.EnterRead();
   const int32_t retail_result = ctx.r3.s32;
   uint32_t best_generation = std::numeric_limits<uint32_t>::max();
@@ -7128,7 +7128,7 @@ extern "C" void sub_822636F0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826DAD70(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D12B8(PPCContext& ctx, uint8_t* base) {
   if (ctx.lr == mp64::kPlayerInfoNetworkArrayRegisterReturnAddress &&
       ctx.r4.u32 == mp64::kLegacyPlayerInfoPointerTableAddress &&
       ctx.r5.u32 == mp64::kLegacyPeerCapacity) {
@@ -7147,10 +7147,10 @@ extern "C" void sub_826DAD70(PPCContext& ctx, uint8_t* base) {
       ctx.r5.u64 = mp64::kExtendedPeerCapacity;
     }
   }
-  __imp__sub_826DAD70(ctx, base);
+  __imp__sub_826D12B8(ctx, base);
 }
 
-extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DBCE0(PPCContext& ctx, uint8_t* base) {
   auto alias_gate = g_player_info_alias_gate.EnterOpaque();
   std::scoped_lock alias_lock(g_player_info_alias_mutex);
   uint8_t peer_id = GuestPeerId(ctx.r3.u64);
@@ -7168,7 +7168,7 @@ extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
 
   const mp64::PeerIdClass peer_class = mp64::ClassifyPeerId(peer_id);
   if (peer_class == mp64::PeerIdClass::kLegacy) {
-    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82263200);
+    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DBCE0);
     if (ctx.r3.u32 != 0) {
       g_peer_teams.Set(peer_id, initial_team);
       validation::PublishMultiplayerValidationStage(
@@ -7178,7 +7178,7 @@ extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
     return;
   }
   if (peer_class == mp64::PeerIdClass::kInvalid || ctx.r4.u32 == 0) {
-    WarnInvalidPeerOnce(g_player_info_table_warning, "sub_82263200", peer_id,
+    WarnInvalidPeerOnce(g_player_info_table_warning, "sub_821DBCE0", peer_id,
                         "invalid player-info ID or null 96-byte payload");
     ctx.r3.u64 = 0;
     return;
@@ -7187,7 +7187,7 @@ extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
   if (g_player_infos.Get(peer_id).guest_player_info != 0) {
     PPCContext destroy_ctx = ctx;
     destroy_ctx.r3.u64 = peer_id;
-    sub_82261CA8(destroy_ctx, base);
+    sub_821DA788(destroy_ctx, base);
   }
 
   const uint32_t payload = ctx.r4.u32;
@@ -7197,12 +7197,12 @@ extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
   const uint32_t value_1232 = ctx.r8.u32;
   PPCContext nested_ctx = ctx;
   nested_ctx.r3.u64 = mp64::kPlayerInfoSize;
-  __imp__sub_821B3510(nested_ctx, base);
+  __imp__sub_821B3520(nested_ctx, base);
   uint32_t guest_player_info = nested_ctx.r3.u32;
   if (guest_player_info != 0) {
     nested_ctx = ctx;
     nested_ctx.r3.u64 = guest_player_info;
-    __imp__sub_82239828(nested_ctx, base);
+    __imp__sub_82253AB0(nested_ctx, base);
     guest_player_info = nested_ctx.r3.u32;
   }
   if (guest_player_info == 0) {
@@ -7223,7 +7223,7 @@ extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
   if (!g_player_infos.Set(peer_id, {guest_player_info, generation})) {
     nested_ctx = ctx;
     nested_ctx.r3.u64 = guest_player_info;
-    __imp__sub_821B3560(nested_ctx, base);
+    __imp__sub_821B3570(nested_ctx, base);
     ctx.r3.u64 = 0;
     return;
   }
@@ -7241,7 +7241,7 @@ extern "C" void sub_82263200(PPCContext& ctx, uint8_t* base) {
 // This is the canonical player-info-by-ID accessor. It has no retail bounds
 // check, so a remote/sparse peer ID must never reach its base + id * 4 load.
 // Extended records resolve their heap-backed player-info through the sidecar.
-extern "C" void sub_8225CF68(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821D59D8(PPCContext& ctx, uint8_t* base) {
   auto alias_gate = g_player_info_alias_gate.EnterRead();
   const uint8_t peer_id = GuestPeerId(ctx.r3.u64);
   if (g_player_transition_loop.active) {
@@ -7284,7 +7284,7 @@ extern "C" void sub_8225CF68(PPCContext& ctx, uint8_t* base) {
         ctx.r3.u64 = g_player_info_alias_legacy_zero.load(std::memory_order_relaxed);
         return;
       }
-      __imp__sub_8225CF68(ctx, base);
+      __imp__sub_821D59D8(ctx, base);
       return;
     case mp64::PeerIdClass::kExtended:
       ctx.r3.u64 = g_player_infos.Get(peer_id).guest_player_info;
@@ -7298,13 +7298,13 @@ extern "C" void sub_8225CF68(PPCContext& ctx, uint8_t* base) {
 // Player-info destruction. The retail destructor contains substantial logic
 // beyond freeing memory. Run it against a serialized slot-zero alias, preserve
 // every slot-zero/global-ID value it may touch, then discard the sidecar entry.
-extern "C" void sub_82261CA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_821DA788(PPCContext& ctx, uint8_t* base) {
   const uint8_t peer_id = GuestPeerId(ctx.r3.u64);
   const mp64::PeerIdClass peer_class = mp64::ClassifyPeerId(peer_id);
   if (peer_class == mp64::PeerIdClass::kLegacy) {
     auto alias_gate = g_player_info_alias_gate.EnterOpaque();
     std::scoped_lock alias_lock(g_player_info_alias_mutex);
-    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82261CA8);
+    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_821DA788);
     g_peer_teams.Clear(peer_id);
     SyncPlayerInfoShadow(base);
     return;
@@ -7340,18 +7340,18 @@ extern "C" void sub_82261CA8(PPCContext& ctx, uint8_t* base) {
       g_player_info_alias_active.store(saved_alias_active, std::memory_order_release);
     });
     ctx.r3.u64 = kTemporaryAliasPeerId;
-    __imp__sub_82261CA8(ctx, base);
+    __imp__sub_821DA788(ctx, base);
   }
   g_player_infos.Remove(peer_id);
   g_peer_teams.Clear(peer_id);
   SyncPlayerInfoShadow(base);
 }
 
-// All six record-to-player-info convenience routines call sub_8225CF68 rather
+// All six record-to-player-info convenience routines call sub_821D59D8 rather
 // than indexing the fixed table themselves. Their downstream helper is only
 // valid after the peer's player-info lifecycle has constructed its sidecar,
 // so a missing object retains the retail null-result semantics.
-extern "C" void sub_82708978(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82708348(PPCContext& ctx, uint8_t* base) {
   const auto peer_id = PeerRecordId(base, ctx.r3.u32);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id) ||
       (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended &&
@@ -7359,10 +7359,10 @@ extern "C" void sub_82708978(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82708978(ctx, base);
+  __imp__sub_82708348(ctx, base);
 }
 
-extern "C" void sub_827089C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82708398(PPCContext& ctx, uint8_t* base) {
   const auto peer_id = PeerRecordId(base, ctx.r3.u32);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id) ||
       (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended &&
@@ -7370,10 +7370,10 @@ extern "C" void sub_827089C8(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_827089C8(ctx, base);
+  __imp__sub_82708398(ctx, base);
 }
 
-extern "C" void sub_82708A18(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827083E8(PPCContext& ctx, uint8_t* base) {
   const auto peer_id = PeerRecordId(base, ctx.r3.u32);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id) ||
       (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended &&
@@ -7381,10 +7381,10 @@ extern "C" void sub_82708A18(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82708A18(ctx, base);
+  __imp__sub_827083E8(ctx, base);
 }
 
-extern "C" void sub_82708A48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82708418(PPCContext& ctx, uint8_t* base) {
   const auto peer_id = PeerRecordId(base, ctx.r3.u32);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id) ||
       (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended &&
@@ -7392,10 +7392,10 @@ extern "C" void sub_82708A48(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82708A48(ctx, base);
+  __imp__sub_82708418(ctx, base);
 }
 
-extern "C" void sub_82708A78(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82708448(PPCContext& ctx, uint8_t* base) {
   const auto peer_id = PeerRecordId(base, ctx.r3.u32);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id) ||
       (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended &&
@@ -7403,10 +7403,10 @@ extern "C" void sub_82708A78(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82708A78(ctx, base);
+  __imp__sub_82708448(ctx, base);
 }
 
-extern "C" void sub_82708B18(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827084E8(PPCContext& ctx, uint8_t* base) {
   const auto peer_id = PeerRecordId(base, ctx.r3.u32);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id) ||
       (mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended &&
@@ -7414,13 +7414,13 @@ extern "C" void sub_82708B18(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82708B18(ctx, base);
+  __imp__sub_827084E8(ctx, base);
 }
 
 // Extended REMOVING_PEER resets its record through the original function, but
 // heap-owned records must not be inserted into the manager's embedded free
 // list. Preserve the temporary insertion-result ABI without mutating the list.
-extern "C" void sub_826FF070(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826FEAC0(PPCContext& ctx, uint8_t* base) {
   if (g_extended_remove.active && ctx.r6.u32 == g_extended_remove.guest_record) {
     const auto expected_list =
         mp64::CheckedGuestAddress(g_extended_remove.guest_manager, mp64::kFreePeerListOffset);
@@ -7434,17 +7434,17 @@ extern "C" void sub_826FF070(PPCContext& ctx, uint8_t* base) {
       return;
     }
   }
-  __imp__sub_826FF070(ctx, base);
+  __imp__sub_826FEAC0(ctx, base);
 }
 
 // Construct the per-recipient sync endpoint for every canonical peer slot.
 // The original covers 0..15; the hooked class factories route 16..63 into the
 // endpoint sidecar and preserve the exact endpoint type for each object class.
-extern "C" void sub_82702190(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827056E8(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller_return_address = ctx.lr;
   const uint32_t guest_source_object = ctx.r31.u32;
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_82702190(ctx, base);
+  __imp__sub_827056E8(ctx, base);
   const auto owner_address =
       mp64::CheckedGuestAddress(guest_object, mp64::kNetworkObjectOwnerPeerOffset);
   if (!owner_address) {
@@ -7475,45 +7475,45 @@ extern "C" void sub_82702190(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext predicate_ctx = ctx;
       predicate_ctx.r3.u64 = guest_peer;
-      sub_82708620(predicate_ctx, base);
+      sub_827054E0(predicate_ctx, base);
       if (predicate_ctx.r3.u8 == 0) {
         continue;
       }
       predicate_ctx = ctx;
       predicate_ctx.r3.u64 = guest_peer;
-      sub_82708770(predicate_ctx, base);
+      sub_82708140(predicate_ctx, base);
       if (predicate_ctx.r3.u8 != 0) {
         continue;
       }
       PPCContext endpoint_ctx = ctx;
       endpoint_ctx.r3.u64 = guest_object;
       endpoint_ctx.r4.u64 = peer_id;
-      sub_82702DE8(endpoint_ctx, base);
+      sub_82706320(endpoint_ctx, base);
       if (endpoint_ctx.r3.u32 == 0) {
         continue;
       }
       endpoint_ctx = ctx;
       endpoint_ctx.r3.u64 = guest_source_object;
       endpoint_ctx.r4.u64 = peer_id;
-      sub_82703038(endpoint_ctx, base);
+      sub_82706570(endpoint_ctx, base);
       const uint32_t guest_source_state = endpoint_ctx.r3.u32;
       endpoint_ctx = ctx;
       endpoint_ctx.r3.u64 = guest_object;
       endpoint_ctx.r4.u64 = peer_id;
-      sub_82703038(endpoint_ctx, base);
+      sub_82706570(endpoint_ctx, base);
       CopyNetworkEndpointCloneState(base, guest_source_state, endpoint_ctx.r3.u32);
     }
   }
   ctx.r3.u64 = result;
 }
 
-// sub_826EFF58 queries the clone type immediately after constructing all
+// sub_826EC9B8 queries the clone type immediately after constructing all
 // recipient endpoints. Extend its type-one endpoint flag update to sidecar
 // recipients at that exact return address.
-extern "C" void sub_821778A0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82177940(PPCContext& ctx, uint8_t* base) {
   const uint32_t caller_return_address = ctx.lr;
   const uint32_t guest_object = ctx.r30.u32;
-  __imp__sub_821778A0(ctx, base);
+  __imp__sub_82177940(ctx, base);
   if (!g_clone_peer_expansion.active ||
       caller_return_address != mp64::kCloneTypeQueryReturnAddress || ctx.r3.s32 != 1 ||
       guest_object == 0) {
@@ -7527,20 +7527,20 @@ extern "C" void sub_821778A0(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    sub_82708620(predicate_ctx, base);
+    sub_827054E0(predicate_ctx, base);
     if (predicate_ctx.r3.u8 == 0) {
       continue;
     }
     predicate_ctx = ctx;
     predicate_ctx.r3.u64 = guest_peer;
-    sub_82708770(predicate_ctx, base);
+    sub_82708140(predicate_ctx, base);
     if (predicate_ctx.r3.u8 != 0) {
       continue;
     }
     PPCContext endpoint_ctx = ctx;
     endpoint_ctx.r3.u64 = guest_object;
     endpoint_ctx.r4.u64 = peer_id;
-    sub_82702DE8(endpoint_ctx, base);
+    sub_82706320(endpoint_ctx, base);
     if (endpoint_ctx.r3.u32 == 0) {
       continue;
     }
@@ -7549,13 +7549,13 @@ extern "C" void sub_821778A0(PPCContext& ctx, uint8_t* base) {
     endpoint_ctx.r4.u64 = peer_id;
     endpoint_ctx.r5.u64 = mp64::kCloneEndpointTypeOneFlag;
     endpoint_ctx.r6.u64 = 1;
-    sub_82703160(endpoint_ctx, base);
+    sub_82706698(endpoint_ctx, base);
   }
 }
 
-extern "C" void sub_82702CA0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827061D8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_82702CA0(ctx, base);
+  __imp__sub_827061D8(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -7568,11 +7568,11 @@ extern "C" void sub_82702CA0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702CD8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706210(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702CD8(ctx, base);
+    __imp__sub_82706210(ctx, base);
     return;
   }
   ctx.r3.u64 = mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended
@@ -7580,11 +7580,11 @@ extern "C" void sub_82702CD8(PPCContext& ctx, uint8_t* base) {
                    : 0;
 }
 
-extern "C" void sub_82702CF0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706228(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702CF0(ctx, base);
+    __imp__sub_82706228(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended) {
@@ -7592,9 +7592,9 @@ extern "C" void sub_82702CF0(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702D08(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706240(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_82702D08(ctx, base);
+  __imp__sub_82706240(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -7607,11 +7607,11 @@ extern "C" void sub_82702D08(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702D48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706280(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702D48(ctx, base);
+    __imp__sub_82706280(ctx, base);
     return;
   }
   ctx.r3.u64 = mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended
@@ -7619,11 +7619,11 @@ extern "C" void sub_82702D48(PPCContext& ctx, uint8_t* base) {
                    : 0;
 }
 
-extern "C" void sub_82702D60(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706298(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702D60(ctx, base);
+    __imp__sub_82706298(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended) {
@@ -7631,9 +7631,9 @@ extern "C" void sub_82702D60(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702D78(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827062B0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_82702D78(ctx, base);
+  __imp__sub_827062B0(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -7646,11 +7646,11 @@ extern "C" void sub_82702D78(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702DB8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827062F0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702DB8(ctx, base);
+    __imp__sub_827062F0(ctx, base);
     return;
   }
   ctx.r3.u64 = mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended
@@ -7658,11 +7658,11 @@ extern "C" void sub_82702DB8(PPCContext& ctx, uint8_t* base) {
                    : 0;
 }
 
-extern "C" void sub_82702DD0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706308(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702DD0(ctx, base);
+    __imp__sub_82706308(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kExtended) {
@@ -7673,12 +7673,12 @@ extern "C" void sub_82702DD0(PPCContext& ctx, uint8_t* base) {
 // Capture the complete 64-peer form whenever the title materializes its three
 // legacy masks from an object's current per-peer state. The matching setter
 // consumes this snapshot, preserving high bits across retail-only call frames.
-extern "C" void sub_82703F80(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827074B8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint32_t guest_first = ctx.r4.u32;
   const uint32_t guest_second = ctx.r5.u32;
   const uint32_t guest_third = ctx.r6.u32;
-  __imp__sub_82703F80(ctx, base);
+  __imp__sub_827074B8(ctx, base);
   if (guest_first == 0 || guest_second == 0 || guest_third == 0) {
     g_network_peer_mask_snapshot = {};
     return;
@@ -7711,7 +7711,7 @@ extern "C" void sub_82703F80(PPCContext& ctx, uint8_t* base) {
 // present. When a high recipient is present, bit 16 marks three following
 // 16-bit chunks that carry peers 16..63. Both ends use the same bit-buffer
 // primitives, so subsequent fields retain their normal ordering.
-extern "C" void sub_82707968(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82704850(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_stream = ctx.r3.u32;
   const uint32_t low_union =
       (ctx.r4.u32 | ctx.r5.u32 | ctx.r6.u32) & mp64::kNetworkPeerMaskLegacyMask;
@@ -7728,7 +7728,7 @@ extern "C" void sub_82707968(PPCContext& ctx, uint8_t* base) {
   }
   PPCContext local_ctx = ctx;
   local_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
-  sub_826FDD68(local_ctx, base);
+  sub_826FD738(local_ctx, base);
   if (const auto local_peer_id = PeerRecordId(base, local_ctx.r3.u32); local_peer_id) {
     complete.Set(*local_peer_id);
   }
@@ -7744,7 +7744,7 @@ extern "C" void sub_82707968(PPCContext& ctx, uint8_t* base) {
   wire_ctx.r3.u64 = *guest_bit_buffer;
   wire_ctx.r4.u64 = wire.header;
   wire_ctx.r5.u64 = mp64::kNetworkPeerMaskHeaderBits;
-  sub_826D9BB0(wire_ctx, base);
+  sub_829F5500(wire_ctx, base);
   bool success = wire_ctx.r3.u8 != 0;
   if (success && wire.extended) {
     for (const uint16_t chunk : wire.extension) {
@@ -7752,7 +7752,7 @@ extern "C" void sub_82707968(PPCContext& ctx, uint8_t* base) {
       wire_ctx.r3.u64 = *guest_bit_buffer;
       wire_ctx.r4.u64 = chunk;
       wire_ctx.r5.u64 = mp64::kNetworkPeerMaskExtensionChunkBits;
-      sub_826D9BB0(wire_ctx, base);
+      sub_829F5500(wire_ctx, base);
       success = wire_ctx.r3.u8 != 0;
       if (!success) {
         break;
@@ -7762,7 +7762,7 @@ extern "C" void sub_82707968(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = success ? 1 : 0;
 }
 
-extern "C" void sub_82707D78(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82704C60(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_stream = ctx.r3.u32;
   const uint32_t guest_first = ctx.r4.u32;
   const uint32_t guest_second = ctx.r5.u32;
@@ -7787,7 +7787,7 @@ extern "C" void sub_82707D78(PPCContext& ctx, uint8_t* base) {
   wire_ctx.r3.u64 = *guest_bit_buffer;
   wire_ctx.r4.u64 = guest_first;
   wire_ctx.r5.u64 = mp64::kNetworkPeerMaskHeaderBits;
-  sub_822118C8(wire_ctx, base);
+  sub_826F9178(wire_ctx, base);
   bool success = wire_ctx.r3.u8 != 0;
   header = REX_LOAD_U32(guest_first);
   std::array<uint16_t, mp64::kNetworkPeerMaskExtensionChunkCount> extension{};
@@ -7798,7 +7798,7 @@ extern "C" void sub_82707D78(PPCContext& ctx, uint8_t* base) {
       wire_ctx.r3.u64 = *guest_bit_buffer;
       wire_ctx.r4.u64 = guest_second;
       wire_ctx.r5.u64 = mp64::kNetworkPeerMaskExtensionChunkBits;
-      sub_822118C8(wire_ctx, base);
+      sub_826F9178(wire_ctx, base);
       success = wire_ctx.r3.u8 != 0;
       if (!success) {
         break;
@@ -7824,9 +7824,9 @@ extern "C" void sub_82707D78(PPCContext& ctx, uint8_t* base) {
 // CNetworkObject embeds three per-peer bytes for only sixteen recipients.
 // Refresh the low table with the original and mirror every representable mask
 // bit into the extended sidecar. Extended clone packets supply the complete
-// high mask through the snapshot set by sub_82707D78; local legacy callers
+// high mask through the snapshot set by sub_82704C60; local legacy callers
 // continue to drive representable bits through the transition hooks.
-extern "C" void sub_82704070(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827075A8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint32_t first_mask = ctx.r4.u32;
   const uint32_t second_mask = ctx.r5.u32;
@@ -7841,11 +7841,11 @@ extern "C" void sub_82704070(PPCContext& ctx, uint8_t* base) {
   if (use_snapshot || g_network_peer_mask_snapshot.guest_object == guest_object) {
     g_network_peer_mask_snapshot = {};
   }
-  __imp__sub_82704070(ctx, base);
+  __imp__sub_827075A8(ctx, base);
 
   PPCContext local_ctx = ctx;
   local_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
-  sub_826FDD68(local_ctx, base);
+  sub_826FD738(local_ctx, base);
   const uint32_t guest_local_peer = local_ctx.r3.u32;
   for (uint8_t peer_id = mp64::kLegacyPeerCapacity; peer_id < mp64::kExtendedPeerCapacity;
        ++peer_id) {
@@ -7854,7 +7854,7 @@ extern "C" void sub_82704070(PPCContext& ctx, uint8_t* base) {
     if (guest_peer != 0 && guest_peer != guest_local_peer) {
       PPCContext active_ctx = ctx;
       active_ctx.r3.u64 = guest_peer;
-      sub_82708620(active_ctx, base);
+      sub_827054E0(active_ctx, base);
       if (active_ctx.r3.u8 != 0) {
         if (use_snapshot) {
           flags[0] = snapshot.first.Contains(peer_id);
@@ -7872,12 +7872,12 @@ extern "C" void sub_82704070(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82703DC0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827072F8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_result = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703DC0(ctx, base);
+    __imp__sub_827072F8(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -7893,20 +7893,20 @@ extern "C" void sub_82703DC0(PPCContext& ctx, uint8_t* base) {
                             ctx.r3.u64 = guest_result;
                             ctx.r4.u64 = guest_object;
                             ctx.r5.u64 = alias_id;
-                            __imp__sub_82703DC0(ctx, base);
+                            __imp__sub_827072F8(ctx, base);
                           });
 }
 
 // The sync serializer indexes both the endpoint table and per-peer flags with
 // its recipient argument. Project a high recipient into one safe retail slot;
 // the nested mask writer replaces that alias with the canonical peer ID.
-extern "C" void sub_827045B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82707AF0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint32_t guest_stream = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   const uint32_t include_state = ctx.r6.u32;
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_827045B8(ctx, base);
+    __imp__sub_82707AF0(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -7920,19 +7920,19 @@ extern "C" void sub_827045B8(PPCContext& ctx, uint8_t* base) {
                             ctx.r4.u64 = guest_stream;
                             ctx.r5.u64 = alias_id;
                             ctx.r6.u64 = include_state;
-                            __imp__sub_827045B8(ctx, base);
+                            __imp__sub_82707AF0(ctx, base);
                           });
   validation::PublishMultiplayerValidationStage(
       validation::MultiplayerValidationStage::kFirstExtendedObjectSync, peer_id,
       guest_object);
 }
 
-extern "C" void sub_827038B0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706DE8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_peer);
   if (!peer_id || mp64::IsLegacyPeerId(*peer_id)) {
-    __imp__sub_827038B0(ctx, base);
+    __imp__sub_82706DE8(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(*peer_id) != mp64::PeerIdClass::kExtended) {
@@ -7942,16 +7942,16 @@ extern "C" void sub_827038B0(PPCContext& ctx, uint8_t* base) {
   WithExtendedNetworkPeer(ctx, base, guest_object, guest_peer, *peer_id, false, [&](uint8_t) {
     ctx.r3.u64 = guest_object;
     ctx.r4.u64 = guest_peer;
-    __imp__sub_827038B0(ctx, base);
+    __imp__sub_82706DE8(ctx, base);
   });
   ctx.r3.u64 = *peer_id;
 }
 
-extern "C" void sub_82703BC0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827070F8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82703BC0);
+    RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_827070F8);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -7963,15 +7963,15 @@ extern "C" void sub_82703BC0(PPCContext& ctx, uint8_t* base) {
                           [&](uint8_t alias_id) {
                             ctx.r3.u64 = guest_object;
                             ctx.r4.u64 = alias_id;
-                            RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_82703BC0);
+                            RunPrimaryPlayerInfoAlias(ctx, base, __imp__sub_827070F8);
                           });
 }
 
-extern "C" void sub_827041A8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827076E0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_827041A8(ctx, base);
+    __imp__sub_827076E0(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -7985,16 +7985,16 @@ extern "C" void sub_827041A8(PPCContext& ctx, uint8_t* base) {
                             ctx.r3.u64 = guest_object;
                             ctx.r4.u64 = alias_id;
                             ctx.r5.u64 = enabled;
-                            __imp__sub_827041A8(ctx, base);
+                            __imp__sub_827076E0(ctx, base);
                           });
 }
 
-extern "C" void sub_82704390(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827078C8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_peer);
   if (!peer_id || mp64::IsLegacyPeerId(*peer_id)) {
-    __imp__sub_82704390(ctx, base);
+    __imp__sub_827078C8(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(*peer_id) != mp64::PeerIdClass::kExtended) {
@@ -8008,7 +8008,7 @@ extern "C" void sub_82704390(PPCContext& ctx, uint8_t* base) {
     ctx.r4.u64 = guest_peer;
     ctx.r5.u64 = first_flag;
     ctx.r6.u64 = second_flag;
-    __imp__sub_82704390(ctx, base);
+    __imp__sub_827078C8(ctx, base);
   });
   if (ctx.r3.u8 == 0) {
     return;
@@ -8028,13 +8028,13 @@ extern "C" void sub_82704390(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext active_ctx = ctx;
     active_ctx.r3.u64 = candidate_peer;
-    sub_82708620(active_ctx, base);
+    sub_827054E0(active_ctx, base);
     if (active_ctx.r3.u8 == 0) {
       continue;
     }
     active_ctx = ctx;
     active_ctx.r3.u64 = candidate_peer;
-    sub_82708770(active_ctx, base);
+    sub_82708140(active_ctx, base);
     if (active_ctx.r3.u8 != 0) {
       continue;
     }
@@ -8057,9 +8057,9 @@ extern "C" void sub_82704390(PPCContext& ctx, uint8_t* base) {
 // sixteen-recipient loop. Isolating one high peer in a retail slot lets the
 // original update endpoint construction, destruction, retransmit mode, and
 // timers without replaying any low-peer work.
-extern "C" void sub_827047B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82707CF0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_827047B8(ctx, base);
+  __imp__sub_82707CF0(ctx, base);
   const auto owner_address =
       mp64::CheckedGuestAddress(guest_object, mp64::kNetworkObjectOwnerPeerOffset);
   if (!owner_address) {
@@ -8077,17 +8077,17 @@ extern "C" void sub_827047B8(PPCContext& ctx, uint8_t* base) {
     WithExtendedNetworkPeer(extended_ctx, base, guest_object, guest_peer, peer_id, true,
                             [&](uint8_t) {
                               extended_ctx.r3.u64 = guest_object;
-                              __imp__sub_827047B8(extended_ctx, base);
+                              __imp__sub_82707CF0(extended_ctx, base);
                             });
   }
   ctx.r3.u64 = 0;
 }
 
-extern "C" void sub_82704180(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827076B8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82704180(ctx, base);
+    __imp__sub_827076B8(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8102,12 +8102,12 @@ extern "C" void sub_82704180(PPCContext& ctx, uint8_t* base) {
   CallNetworkObjectVirtual(ctx, base, guest_endpoint, 16);
 }
 
-extern "C" void sub_82703938(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706E70(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_result = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703938(ctx, base);
+    __imp__sub_82706E70(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -8127,16 +8127,16 @@ extern "C" void sub_82703938(PPCContext& ctx, uint8_t* base) {
                             ctx.r5.u64 = alias_id;
                             ctx.r6.u64 = guest_changed_mask;
                             ctx.r7.u64 = guest_requested_mask;
-                            __imp__sub_82703938(ctx, base);
+                            __imp__sub_82706E70(ctx, base);
                           });
 }
 
-extern "C" void sub_82703200(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706738(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_result = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703200(ctx, base);
+    __imp__sub_82706738(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -8152,16 +8152,16 @@ extern "C" void sub_82703200(PPCContext& ctx, uint8_t* base) {
                             ctx.r3.u64 = guest_result;
                             ctx.r4.u64 = guest_object;
                             ctx.r5.u64 = alias_id;
-                            __imp__sub_82703200(ctx, base);
+                            __imp__sub_82706738(ctx, base);
                           });
 }
 
-extern "C" void sub_82703050(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706588(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_result = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703050(ctx, base);
+    __imp__sub_82706588(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -8179,15 +8179,15 @@ extern "C" void sub_82703050(PPCContext& ctx, uint8_t* base) {
                             ctx.r4.u64 = guest_object;
                             ctx.r5.u64 = alias_id;
                             ctx.r6.u64 = guest_component_mask;
-                            __imp__sub_82703050(ctx, base);
+                            __imp__sub_82706588(ctx, base);
                           });
 }
 
-extern "C" void sub_82703350(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706888(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703350(ctx, base);
+    __imp__sub_82706888(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -8203,16 +8203,16 @@ extern "C" void sub_82703350(PPCContext& ctx, uint8_t* base) {
                             ctx.r4.u64 = alias_id;
                             ctx.r5.u64 = sequence;
                             ctx.r6.u64 = component_mask;
-                            __imp__sub_82703350(ctx, base);
+                            __imp__sub_82706888(ctx, base);
                           });
 }
 
-extern "C" void sub_82704288(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827077C0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_result = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r5.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82704288(ctx, base);
+    __imp__sub_827077C0(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -8228,15 +8228,15 @@ extern "C" void sub_82704288(PPCContext& ctx, uint8_t* base) {
                             ctx.r3.u64 = guest_result;
                             ctx.r4.u64 = guest_object;
                             ctx.r5.u64 = alias_id;
-                            __imp__sub_82704288(ctx, base);
+                            __imp__sub_827077C0(ctx, base);
                           });
 }
 
-extern "C" void sub_82703D08(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82707240(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703D08(ctx, base);
+    __imp__sub_82707240(ctx, base);
     return;
   }
   const uint32_t guest_peer = g_peer_managers.GetPeer(mp64::kGlobalPeerManagerAddress, peer_id);
@@ -8250,11 +8250,11 @@ extern "C" void sub_82703D08(PPCContext& ctx, uint8_t* base) {
                             ctx.r3.u64 = guest_object;
                             ctx.r4.u64 = alias_id;
                             ctx.r5.u64 = third_argument;
-                            __imp__sub_82703D08(ctx, base);
+                            __imp__sub_82707240(ctx, base);
                           });
 }
 
-extern "C" void sub_82702C58(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706190(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   std::vector<uint32_t> extended_endpoints;
   g_network_endpoints.VisitExtended(guest_object, [&](uint8_t, uint32_t guest_endpoint) {
@@ -8264,7 +8264,7 @@ extern "C" void sub_82702C58(PPCContext& ctx, uint8_t* base) {
   for (const uint32_t guest_endpoint : extended_endpoints) {
     DestroyNetworkEndpoint(ctx, base, guest_endpoint);
   }
-  __imp__sub_82702C58(ctx, base);
+  __imp__sub_82706190(ctx, base);
   g_network_endpoints.RemoveObject(guest_object);
   g_network_peer_flags.RemoveObject(guest_object);
   g_ped_network_peer_states.RemoveObject(guest_object);
@@ -8273,7 +8273,7 @@ extern "C" void sub_82702C58(PPCContext& ctx, uint8_t* base) {
 // CNetworkObject owns only sixteen inline per-recipient endpoint pointers at
 // object+92. IDs 16..63 use a sidecar; these canonical endpoint accessors and
 // forwarding helpers must never evaluate object + (peer+23)*4 for those IDs.
-extern "C" void sub_82702DE8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706320(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
@@ -8285,15 +8285,15 @@ extern "C" void sub_82702DE8(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82702DE8(ctx, base);
+  __imp__sub_82706320(ctx, base);
 }
 
-extern "C" void sub_82702E00(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706338(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
   if (mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kLegacy) {
-    __imp__sub_82702E00(ctx, base);
+    __imp__sub_82706338(ctx, base);
     return;
   }
   if (mp64::ClassifyPeerId(peer_id) == mp64::PeerIdClass::kInvalid) {
@@ -8311,9 +8311,9 @@ extern "C" void sub_82702E00(PPCContext& ctx, uint8_t* base) {
   DestroyNetworkEndpoint(ctx, base, guest_endpoint);
 }
 
-extern "C" void sub_82702E98(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827063D0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_82702E98(ctx, base);
+  __imp__sub_827063D0(ctx, base);
   std::vector<uint8_t> extended_ids;
   g_network_endpoints.VisitExtended(guest_object, [&](uint8_t peer_id, uint32_t) {
     extended_ids.push_back(peer_id);
@@ -8323,18 +8323,18 @@ extern "C" void sub_82702E98(PPCContext& ctx, uint8_t* base) {
     PPCContext destroy_ctx = ctx;
     destroy_ctx.r3.u64 = guest_object;
     destroy_ctx.r4.u64 = peer_id;
-    sub_82702E00(destroy_ctx, base);
+    sub_82706338(destroy_ctx, base);
   }
   g_network_endpoints.RemoveObject(guest_object);
   g_network_peer_flags.RemoveObject(guest_object);
   g_ped_network_peer_states.RemoveObject(guest_object);
 }
 
-extern "C" void sub_82702EF0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706428(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702EF0(ctx, base);
+    __imp__sub_82706428(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8348,11 +8348,11 @@ extern "C" void sub_82702EF0(PPCContext& ctx, uint8_t* base) {
   CallNetworkObjectVirtual(ctx, base, guest_endpoint, 20);
 }
 
-extern "C" void sub_82702F18(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706450(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702F18(ctx, base);
+    __imp__sub_82706450(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8368,11 +8368,11 @@ extern "C" void sub_82702F18(PPCContext& ctx, uint8_t* base) {
   CallNetworkObjectVirtual(ctx, base, guest_endpoint, 24);
 }
 
-extern "C" void sub_82702F48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706480(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702F48(ctx, base);
+    __imp__sub_82706480(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8385,11 +8385,11 @@ extern "C" void sub_82702F48(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702F70(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827064A8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82702F70(ctx, base);
+    __imp__sub_827064A8(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8399,9 +8399,9 @@ extern "C" void sub_82702F70(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82702F90(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827064C8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
-  __imp__sub_82702F90(ctx, base);
+  __imp__sub_827064C8(ctx, base);
   g_network_endpoints.VisitExtended(guest_object, [&](uint8_t, uint32_t endpoint) {
     PPCContext endpoint_ctx = ctx;
     endpoint_ctx.r3.u64 = endpoint;
@@ -8410,11 +8410,11 @@ extern "C" void sub_82702F90(PPCContext& ctx, uint8_t* base) {
   });
 }
 
-extern "C" void sub_82703008(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706540(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703008(ctx, base);
+    __imp__sub_82706540(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8426,11 +8426,11 @@ extern "C" void sub_82703008(PPCContext& ctx, uint8_t* base) {
   CallNetworkObjectVirtual(ctx, base, guest_endpoint, 36);
 }
 
-extern "C" void sub_82703038(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706570(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703038(ctx, base);
+    __imp__sub_82706570(ctx, base);
     return;
   }
   const uint32_t guest_endpoint = g_network_endpoints.Get(guest_object, peer_id);
@@ -8465,11 +8465,11 @@ void DispatchExtendedEndpointComponents(PPCContext& ctx, uint8_t* base, uint32_t
   }
 }
 
-extern "C" void sub_82703160(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706698(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82703160(ctx, base);
+    __imp__sub_82706698(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id)) {
@@ -8479,11 +8479,11 @@ extern "C" void sub_82703160(PPCContext& ctx, uint8_t* base) {
   DispatchExtendedEndpointComponents(ctx, base, guest_object, peer_id, ctx.r5.u32, ctx.r6.u32);
 }
 
-extern "C" void sub_827032B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827067F0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_827032B8(ctx, base);
+    __imp__sub_827067F0(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id)) {
@@ -8496,8 +8496,8 @@ extern "C" void sub_827032B8(PPCContext& ctx, uint8_t* base) {
 // The reassignment entry builder asks the object for its current owner and
 // immediately uses that byte in the fixed owner-list table. Return the active
 // physical slot only inside the serialized extended-owner window.
-extern "C" void sub_82701F58(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82701F58(ctx, base);
+extern "C" void sub_82705498(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_82705498(ctx, base);
   if (g_object_owner_list_alias.active && ctx.r3.u8 == g_object_owner_list_alias.actual_owner_id) {
     ctx.r3.u64 = g_object_owner_list_alias.alias_owner_id;
     return;
@@ -8512,15 +8512,15 @@ extern "C" void sub_82701F58(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_826FDDC0(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_826FDDC0(ctx, base);
+extern "C" void sub_826FD790(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_826FD790(ctx, base);
   if (g_object_owner_list_alias.active && ctx.r3.u8 == g_object_owner_list_alias.actual_owner_id) {
     ctx.r3.u64 = g_object_owner_list_alias.alias_owner_id;
   }
 }
 
-extern "C" void sub_82701F88(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_82701F88(ctx, base);
+extern "C" void sub_82708020(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_82708020(ctx, base);
   const uint8_t actual_id = ctx.r3.u8;
   if (g_proximity_status_capture.active &&
       ctx.lr == mp64::kProximityStatusEligibleIdReturnAddress &&
@@ -8564,12 +8564,12 @@ extern "C" void sub_82701F88(PPCContext& ctx, uint8_t* base) {
 // endpoint types have no embedded peer ID. Extended recipients use the exact
 // retail constructor over system-heap storage and keep ownership in the
 // sidecar; an active projected alias is only a temporary view of that pointer.
-extern "C" void sub_82729AC0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82729508(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82729AC0(ctx, base);
+    __imp__sub_82729508(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id) || g_network_endpoints.Get(guest_object, peer_id) != 0) {
@@ -8579,16 +8579,16 @@ extern "C" void sub_82729AC0(PPCContext& ctx, uint8_t* base) {
   const uint32_t create_argument = ctx.r5.u32;
   const uint32_t endpoint =
       AllocateNetworkEndpoint(ctx, base, mp64::kVehicleSyncPoolPointerAddress,
-                              __imp__sub_82726AA8);
+                              __imp__sub_82726440);
   FinishExtendedEndpointCreation(ctx, base, guest_object, peer_id, endpoint, create_argument);
 }
 
-extern "C" void sub_827788E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827785B8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_827788E0(ctx, base);
+    __imp__sub_827785B8(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id) || g_network_endpoints.Get(guest_object, peer_id) != 0) {
@@ -8598,16 +8598,16 @@ extern "C" void sub_827788E0(PPCContext& ctx, uint8_t* base) {
   const uint32_t create_argument = ctx.r5.u32;
   const uint32_t endpoint =
       AllocateNetworkEndpoint(ctx, base, mp64::kPlayerSyncPoolPointerAddress,
-                              __imp__sub_82778050);
+                              __imp__sub_82777D28);
   FinishExtendedEndpointCreation(ctx, base, guest_object, peer_id, endpoint, create_argument);
 }
 
-extern "C" void sub_82789678(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784018(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82789678(ctx, base);
+    __imp__sub_82784018(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id) || g_network_endpoints.Get(guest_object, peer_id) != 0) {
@@ -8617,16 +8617,16 @@ extern "C" void sub_82789678(PPCContext& ctx, uint8_t* base) {
   const uint32_t create_argument = ctx.r5.u32;
   const uint32_t endpoint =
       AllocateNetworkEndpoint(ctx, base, mp64::kDummyPedSyncPoolPointerAddress,
-                              __imp__sub_82789010);
+                              __imp__sub_827839B0);
   FinishExtendedEndpointCreation(ctx, base, guest_object, peer_id, endpoint, create_argument);
 }
 
-extern "C" void sub_82711A28(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827113F8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82711A28(ctx, base);
+    __imp__sub_827113F8(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id) || g_network_endpoints.Get(guest_object, peer_id) != 0) {
@@ -8646,16 +8646,16 @@ extern "C" void sub_82711A28(PPCContext& ctx, uint8_t* base) {
   }
   const uint32_t endpoint =
       AllocateNetworkEndpoint(ctx, base, mp64::kPedSyncPoolPointerAddress,
-                              __imp__sub_8270C9A8);
+                              __imp__sub_8270C378);
   FinishExtendedEndpointCreation(ctx, base, guest_object, peer_id, endpoint, create_argument);
 }
 
-extern "C" void sub_8272E098(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8272DB50(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t peer_id =
       CanonicalNetworkEndpointPeerId(guest_object, GuestPeerId(ctx.r4.u64));
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_8272E098(ctx, base);
+    __imp__sub_8272DB50(ctx, base);
     return;
   }
   if (!mp64::IsValidPeerId(peer_id) || g_network_endpoints.Get(guest_object, peer_id) != 0) {
@@ -8665,7 +8665,7 @@ extern "C" void sub_8272E098(PPCContext& ctx, uint8_t* base) {
   const uint32_t create_argument = ctx.r5.u32;
   const uint32_t endpoint =
       AllocateNetworkEndpoint(ctx, base, mp64::kObjectSyncPoolPointerAddress,
-                              __imp__sub_8272C3A0);
+                              __imp__sub_8272BE58);
   FinishExtendedEndpointCreation(ctx, base, guest_object, peer_id, endpoint, create_argument);
 }
 
@@ -8673,7 +8673,7 @@ extern "C" void sub_8272E098(PPCContext& ctx, uint8_t* base) {
 // and new records through the hooked peer manager. After the unchanged retail
 // low-ID transition, mirror endpoint creation and ownership-command fan-out to
 // every extended recipient held by the endpoint sidecar.
-extern "C" void sub_82703590(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82706AC8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_object = ctx.r3.u32;
   const uint8_t new_owner = GuestPeerId(ctx.r4.u64);
   const uint8_t suppress_notifications = GuestPeerId(ctx.r5.u64);
@@ -8701,12 +8701,12 @@ extern "C" void sub_82703590(PPCContext& ctx, uint8_t* base) {
   const bool old_owner_supported =
       old_owner == mp64::kInvalidPeerId || mp64::IsValidPeerId(old_owner);
   if (!mp64::IsValidPeerId(new_owner) || !old_owner_supported) {
-    WarnInvalidPeerOnce(g_ownership_warning, "sub_82703590", new_owner,
+    WarnInvalidPeerOnce(g_ownership_warning, "sub_82706AC8", new_owner,
                         "owner ID is outside 0..63");
     ctx.r3.u64 = 0;
     return;
   }
-  __imp__sub_82703590(ctx, base);
+  __imp__sub_82706AC8(ctx, base);
   const uint64_t original_result = ctx.r3.u64;
 
   std::vector<uint8_t> extended_recipients;
@@ -8759,7 +8759,7 @@ extern "C" void sub_82703590(PPCContext& ctx, uint8_t* base) {
     clear_ctx.r3.u64 = guest_object;
     clear_ctx.r4.u64 = peer_id;
     clear_ctx.r5.u64 = component_mask;
-    sub_827032B8(clear_ctx, base);
+    sub_827067F0(clear_ctx, base);
 
     REX_STORE_U32(guest_command_mask, 0);
     PPCContext fill_ctx = ctx;
@@ -8774,7 +8774,7 @@ extern "C" void sub_82703590(PPCContext& ctx, uint8_t* base) {
     send_ctx.r4.u64 = peer_id;
     send_ctx.r5.u64 = REX_LOAD_U32(guest_command_mask);
     send_ctx.r6.u64 = 1;
-    sub_82703160(send_ctx, base);
+    sub_82706698(send_ctx, base);
   }
   REX_STORE_U32(*ownership_token_address, current_ownership_token);
   runtime->memory()->SystemHeapFree(guest_command_mask);
@@ -8783,39 +8783,39 @@ extern "C" void sub_82703590(PPCContext& ctx, uint8_t* base) {
 
 // Packet constructors store the owner ID as a byte. During an extended-owner
 // window the physical retail slot must never leak onto the wire.
-extern "C" void sub_82795588(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82794368(PPCContext& ctx, uint8_t* base) {
   if (g_reassignment_call.active && ctx.r4.u8 == g_reassignment_call.owner_alias) {
     ctx.r4.u64 = g_reassignment_call.actual_owner;
   }
-  __imp__sub_82795588(ctx, base);
+  __imp__sub_82794368(ctx, base);
 }
 
-extern "C" void sub_827955D0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827943B0(PPCContext& ctx, uint8_t* base) {
   if (g_reassignment_call.active && ctx.r4.u8 == g_reassignment_call.owner_alias) {
     ctx.r4.u64 = g_reassignment_call.actual_owner;
   }
-  __imp__sub_827955D0(ctx, base);
+  __imp__sub_827943B0(ctx, base);
 }
 
-extern "C" void sub_82795608(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827943E8(PPCContext& ctx, uint8_t* base) {
   if (g_reassignment_call.active && ctx.r4.u8 == g_reassignment_call.owner_alias) {
     ctx.r4.u64 = g_reassignment_call.actual_owner;
   }
-  __imp__sub_82795608(ctx, base);
+  __imp__sub_827943E8(ctx, base);
 }
 
-extern "C" void sub_82783F98(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82785840(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_message = ctx.r3.u32;
-  __imp__sub_82783F98(ctx, base);
+  __imp__sub_82785840(ctx, base);
   if (g_reassignment_call.active && ctx.r3.u8 != 0 &&
       REX_LOAD_U8(guest_message) == g_reassignment_call.actual_owner) {
     REX_STORE_U8(guest_message, g_reassignment_call.owner_alias);
   }
 }
 
-extern "C" void sub_827842D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82785B80(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_message = ctx.r3.u32;
-  __imp__sub_827842D8(ctx, base);
+  __imp__sub_82785B80(ctx, base);
   if (g_reassignment_call.active && ctx.r3.u8 != 0 &&
       REX_LOAD_U8(guest_message) == g_reassignment_call.actual_owner) {
     REX_STORE_U8(guest_message, g_reassignment_call.owner_alias);
@@ -8825,21 +8825,21 @@ extern "C" void sub_827842D8(PPCContext& ctx, uint8_t* base) {
 // The retail sender derives a pointer into its 16x16 transport matrix before
 // entering these helpers. Replace that pointer with the constructed sidecar
 // state for projected recipients.
-extern "C" void sub_82785940(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827871E8(PPCContext& ctx, uint8_t* base) {
   if (g_reassignment_call.active && g_reassignment_call.guest_transport_state != 0) {
     ctx.r7.u64 = g_reassignment_call.guest_transport_state;
   }
-  __imp__sub_82785940(ctx, base);
+  __imp__sub_827871E8(ctx, base);
 }
 
-extern "C" void sub_827859C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82787270(PPCContext& ctx, uint8_t* base) {
   if (g_reassignment_call.active && g_reassignment_call.guest_transport_state != 0) {
     ctx.r7.u64 = g_reassignment_call.guest_transport_state;
   }
-  __imp__sub_827859C8(ctx, base);
+  __imp__sub_82787270(ctx, base);
 }
 
-extern "C" void sub_82783960(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82785208(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const auto stale_states = g_reassignments.RemoveManager(guest_manager);
   if (rex::Runtime* runtime = rex::Runtime::instance()) {
@@ -8848,14 +8848,14 @@ extern "C" void sub_82783960(PPCContext& ctx, uint8_t* base) {
         if (guest_transport != 0) {
           PPCContext destroy_ctx = ctx;
           destroy_ctx.r3.u64 = guest_transport;
-          __imp__sub_829F0920(destroy_ctx, base);
+          __imp__sub_829F0580(destroy_ctx, base);
           runtime->memory()->SystemHeapFree(guest_transport);
         }
       }
     }
   }
   ctx.r3.u64 = guest_manager;
-  __imp__sub_82783960(ctx, base);
+  __imp__sub_82785208(ctx, base);
 }
 
 // The retail activation constructor initializes its embedded 16-owner command
@@ -8863,25 +8863,25 @@ extern "C" void sub_82783960(PPCContext& ctx, uint8_t* base) {
 // window; the complete 64-owner command records and transports are held by the
 // sidecar. Capture the newly initialized low masks at this exact lifecycle seam
 // so later mixed low/high fan-out starts from one canonical registry state.
-extern "C" void sub_827869B0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82788258(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
-  __imp__sub_827869B0(ctx, base);
+  __imp__sub_82788258(ctx, base);
   for (uint8_t owner_id = 0; owner_id < mp64::kLegacyPeerCapacity; ++owner_id) {
     LoadReassignmentState(base, guest_manager, owner_id);
   }
 }
 
-extern "C" void sub_827845E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82785E88(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   DestroyReassignmentSidecars(ctx, base, guest_manager);
   ctx.r3.u64 = guest_manager;
-  __imp__sub_827845E0(ctx, base);
+  __imp__sub_82785E88(ctx, base);
 }
 
-extern "C" void sub_82783140(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827849E8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
-  __imp__sub_82783140(ctx, base);
+  __imp__sub_827849E8(ctx, base);
   for (uint8_t owner_id = mp64::kLegacyPeerCapacity; owner_id < mp64::kExtendedPeerCapacity;
        ++owner_id) {
     WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id, [&](uint8_t alias_id) {
@@ -8906,9 +8906,9 @@ extern "C" void sub_82783140(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82783208(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784AB0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
-  __imp__sub_82783208(ctx, base);
+  __imp__sub_82784AB0(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -8930,10 +8930,10 @@ extern "C" void sub_82783208(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = 0;
 }
 
-extern "C" void sub_82783248(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784AF0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const int32_t object_key = ctx.r4.s32;
-  __imp__sub_82783248(ctx, base);
+  __imp__sub_82784AF0(ctx, base);
   uint32_t count = ctx.r3.u32;
   for (uint8_t owner_id = mp64::kLegacyPeerCapacity; owner_id < mp64::kExtendedPeerCapacity;
        ++owner_id) {
@@ -8953,7 +8953,7 @@ extern "C" void sub_82783248(PPCContext& ctx, uint8_t* base) {
         if (guest_object != 0) {
           PPCContext key_ctx = ctx;
           key_ctx.r3.u64 = guest_object;
-          __imp__sub_821778A0(key_ctx, base);
+          __imp__sub_82177940(key_ctx, base);
           if (key_ctx.r3.s32 == object_key && (REX_LOAD_U8(entry + 15) & 0x40) == 0) {
             ++count;
           }
@@ -8965,13 +8965,13 @@ extern "C" void sub_82783248(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = count;
 }
 
-extern "C" void sub_827832E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784B90(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
-  __imp__sub_827832E8(ctx, base);
+  __imp__sub_82784B90(ctx, base);
   PPCContext id_ctx = ctx;
   id_ctx.r3.u64 = guest_object;
-  __imp__sub_82701F50(id_ctx, base);
+  __imp__sub_82705490(id_ctx, base);
   const uint32_t object_id = id_ctx.r3.u32;
   for (uint8_t owner_id = mp64::kLegacyPeerCapacity; owner_id < mp64::kExtendedPeerCapacity;
        ++owner_id) {
@@ -8986,7 +8986,7 @@ extern "C" void sub_827832E8(PPCContext& ctx, uint8_t* base) {
       PPCContext find_ctx = ctx;
       find_ctx.r3.u64 = *record + 4;
       find_ctx.r4.u64 = object_id;
-      __imp__sub_82782F58(find_ctx, base);
+      __imp__sub_82784800(find_ctx, base);
       if (find_ctx.r3.u32 != 0) {
         REX_STORE_U8(find_ctx.r3.u32 + 15, REX_LOAD_U8(find_ctx.r3.u32 + 15) | 0x10);
       }
@@ -8994,10 +8994,10 @@ extern "C" void sub_827832E8(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_82782FC8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784870(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t object_id = ctx.r4.u32;
-  __imp__sub_82782FC8(ctx, base);
+  __imp__sub_82784870(ctx, base);
   if (ctx.r3.u32 != 0) {
     return;
   }
@@ -9015,7 +9015,7 @@ extern "C" void sub_82782FC8(PPCContext& ctx, uint8_t* base) {
       PPCContext find_ctx = ctx;
       find_ctx.r3.u64 = *record + 4;
       find_ctx.r4.u64 = object_id;
-      __imp__sub_82782F58(find_ctx, base);
+      __imp__sub_82784800(find_ctx, base);
       if (find_ctx.r3.u32 != 0 && (REX_LOAD_U8(find_ctx.r3.u32 + 15) & 0x40) == 0) {
         match = find_ctx.r3.u32;
       }
@@ -9028,9 +9028,9 @@ extern "C" void sub_82782FC8(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = 0;
 }
 
-extern "C" void sub_827830C0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784968(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
-  __imp__sub_827830C0(ctx, base);
+  __imp__sub_82784968(ctx, base);
   if (ctx.r3.u8 != 0) {
     return;
   }
@@ -9055,7 +9055,7 @@ extern "C" void sub_827830C0(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = vacant;
 }
 
-extern "C" void sub_827847F0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82786098(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_object = ctx.r4.u32;
   const uint8_t owner_id = GuestPeerId(ctx.r5.u64);
@@ -9069,17 +9069,17 @@ extern "C" void sub_827847F0(PPCContext& ctx, uint8_t* base) {
           : owner_id;
   PPCContext current_owner_ctx = ctx;
   current_owner_ctx.r3.u64 = guest_object;
-  __imp__sub_82701F58(current_owner_ctx, base);
+  __imp__sub_82705498(current_owner_ctx, base);
   const uint8_t current_owner = current_owner_ctx.r3.u8;
   const auto invoke_original = [&](uint8_t physical_owner) {
     ctx.r5.u64 = physical_owner;
     if (mp64::ClassifyPeerId(current_owner) != mp64::PeerIdClass::kExtended ||
         current_owner == logical_owner) {
-      __imp__sub_827847F0(ctx, base);
+      __imp__sub_82786098(ctx, base);
       return;
     }
     WithExtendedReassignmentObjectList(base, guest_manager, current_owner, physical_owner,
-                                       [&](uint8_t) { __imp__sub_827847F0(ctx, base); });
+                                       [&](uint8_t) { __imp__sub_82786098(ctx, base); });
   };
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id,
                                     [&](uint8_t alias_id) { invoke_original(alias_id); })) {
@@ -9088,7 +9088,7 @@ extern "C" void sub_827847F0(PPCContext& ctx, uint8_t* base) {
   invoke_original(owner_id);
 }
 
-extern "C" void sub_82784960(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82786208(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_entry = ctx.r4.u32;
   const uint8_t owner_id = GuestPeerId(ctx.r5.u64);
@@ -9105,19 +9105,19 @@ extern "C" void sub_82784960(PPCContext& ctx, uint8_t* base) {
   const auto invoke_original = [&](uint8_t physical_owner) {
     ctx.r5.u64 = physical_owner;
     if (mp64::ClassifyPeerId(new_owner) != mp64::PeerIdClass::kExtended) {
-      __imp__sub_82784960(ctx, base);
+      __imp__sub_82786208(ctx, base);
       return;
     }
     if (new_owner == logical_owner &&
         mp64::ClassifyPeerId(logical_owner) == mp64::PeerIdClass::kExtended) {
       REX_STORE_U8(guest_entry + 14, physical_owner);
-      __imp__sub_82784960(ctx, base);
+      __imp__sub_82786208(ctx, base);
       return;
     }
     WithExtendedReassignmentObjectList(base, guest_manager, new_owner, physical_owner,
                                        [&](uint8_t object_list_alias) {
                                          REX_STORE_U8(guest_entry + 14, object_list_alias);
-                                         __imp__sub_82784960(ctx, base);
+                                         __imp__sub_82786208(ctx, base);
                                        });
   };
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id,
@@ -9127,7 +9127,7 @@ extern "C" void sub_82784960(PPCContext& ctx, uint8_t* base) {
   invoke_original(owner_id);
 }
 
-extern "C" void sub_82785008(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827868B0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_message = ctx.r4.u32;
   if (guest_message == 0) {
@@ -9141,15 +9141,15 @@ extern "C" void sub_82785008(PPCContext& ctx, uint8_t* base) {
   }
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id, [&](uint8_t alias_id) {
         REX_STORE_U8(guest_message, alias_id);
-        __imp__sub_82785008(ctx, base);
+        __imp__sub_827868B0(ctx, base);
         REX_STORE_U8(guest_message, owner_id);
       })) {
     return;
   }
-  __imp__sub_82785008(ctx, base);
+  __imp__sub_827868B0(ctx, base);
 }
 
-extern "C" void sub_82783380(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82784C28(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t guest_message = ctx.r4.u32;
   if (guest_message == 0) {
@@ -9163,43 +9163,43 @@ extern "C" void sub_82783380(PPCContext& ctx, uint8_t* base) {
   }
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id, [&](uint8_t alias_id) {
         REX_STORE_U8(guest_message, alias_id);
-        __imp__sub_82783380(ctx, base);
+        __imp__sub_82784C28(ctx, base);
         REX_STORE_U8(guest_message, owner_id);
       })) {
     return;
   }
-  __imp__sub_82783380(ctx, base);
+  __imp__sub_82784C28(ctx, base);
 }
 
-extern "C" void sub_82786088(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82787930(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const auto owner_id = ParseReassignmentConfirmationOwner(ctx, base, guest_manager, ctx.r6.u32);
   if (!owner_id || !mp64::IsValidPeerId(*owner_id)) {
-    __imp__sub_82786088(ctx, base);
+    __imp__sub_82787930(ctx, base);
     return;
   }
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, *owner_id,
-                                    [&](uint8_t) { __imp__sub_82786088(ctx, base); })) {
+                                    [&](uint8_t) { __imp__sub_82787930(ctx, base); })) {
     return;
   }
-  __imp__sub_82786088(ctx, base);
+  __imp__sub_82787930(ctx, base);
 }
 
-extern "C" void sub_82786628(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82787ED0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const auto owner_id = ParseReassignmentStatusOwner(ctx, base, ctx.r6.u32);
   if (!owner_id || !mp64::IsValidPeerId(*owner_id)) {
-    __imp__sub_82786628(ctx, base);
+    __imp__sub_82787ED0(ctx, base);
     return;
   }
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, *owner_id,
-                                    [&](uint8_t) { __imp__sub_82786628(ctx, base); })) {
+                                    [&](uint8_t) { __imp__sub_82787ED0(ctx, base); })) {
     return;
   }
-  __imp__sub_82786628(ctx, base);
+  __imp__sub_82787ED0(ctx, base);
 }
 
-extern "C" void sub_82785AE0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82787388(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t requested_owner = GuestPeerId(ctx.r4.u64);
   const int8_t requested_recipient = ctx.r5.s8;
@@ -9215,7 +9215,7 @@ extern "C" void sub_82785AE0(PPCContext& ctx, uint8_t* base) {
     if (ctx.lr == kReassignmentNegotiationReturnAddress) {
       PopulateExtendedNegotiationMask(ctx, base, guest_manager, actual_owner);
     }
-    RunReassignmentSender(ctx, base, __imp__sub_82785AE0, guest_manager, actual_owner,
+    RunReassignmentSender(ctx, base, __imp__sub_82787388, guest_manager, actual_owner,
                           requested_owner, requested_recipient);
     return;
   }
@@ -9225,7 +9225,7 @@ extern "C" void sub_82785AE0(PPCContext& ctx, uint8_t* base) {
       if (ctx.lr == kReassignmentNegotiationReturnAddress) {
         PopulateExtendedNegotiationMask(ctx, base, guest_manager, requested_owner);
       }
-      RunReassignmentSender(ctx, base, __imp__sub_82785AE0, guest_manager, requested_owner,
+      RunReassignmentSender(ctx, base, __imp__sub_82787388, guest_manager, requested_owner,
                             alias_id, requested_recipient);
     });
     return;
@@ -9234,11 +9234,11 @@ extern "C" void sub_82785AE0(PPCContext& ctx, uint8_t* base) {
   if (ctx.lr == kReassignmentNegotiationReturnAddress) {
     PopulateExtendedNegotiationMask(ctx, base, guest_manager, requested_owner);
   }
-  RunReassignmentSender(ctx, base, __imp__sub_82785AE0, guest_manager, requested_owner,
+  RunReassignmentSender(ctx, base, __imp__sub_82787388, guest_manager, requested_owner,
                         requested_owner, requested_recipient);
 }
 
-extern "C" void sub_82785D30(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827875D8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t requested_owner = GuestPeerId(ctx.r4.u64);
   const int8_t requested_recipient = ctx.r5.s8;
@@ -9254,7 +9254,7 @@ extern "C" void sub_82785D30(PPCContext& ctx, uint8_t* base) {
     if (ctx.lr == kReassignmentConfirmationReturnAddress) {
       PopulateExtendedConfirmationMask(ctx, base, guest_manager, actual_owner);
     }
-    RunReassignmentSender(ctx, base, __imp__sub_82785D30, guest_manager, actual_owner,
+    RunReassignmentSender(ctx, base, __imp__sub_827875D8, guest_manager, actual_owner,
                           requested_owner, requested_recipient);
     return;
   }
@@ -9264,7 +9264,7 @@ extern "C" void sub_82785D30(PPCContext& ctx, uint8_t* base) {
       if (ctx.lr == kReassignmentConfirmationReturnAddress) {
         PopulateExtendedConfirmationMask(ctx, base, guest_manager, requested_owner);
       }
-      RunReassignmentSender(ctx, base, __imp__sub_82785D30, guest_manager, requested_owner,
+      RunReassignmentSender(ctx, base, __imp__sub_827875D8, guest_manager, requested_owner,
                             alias_id, requested_recipient);
     });
     return;
@@ -9273,7 +9273,7 @@ extern "C" void sub_82785D30(PPCContext& ctx, uint8_t* base) {
   if (ctx.lr == kReassignmentConfirmationReturnAddress) {
     PopulateExtendedConfirmationMask(ctx, base, guest_manager, requested_owner);
   }
-  RunReassignmentSender(ctx, base, __imp__sub_82785D30, guest_manager, requested_owner,
+  RunReassignmentSender(ctx, base, __imp__sub_827875D8, guest_manager, requested_owner,
                         requested_owner, requested_recipient);
 }
 
@@ -9281,7 +9281,7 @@ extern "C" void sub_82785D30(PPCContext& ctx, uint8_t* base) {
 // 20 bytes and separately indexes owner lists through (owner+42)*8. Extended
 // owners therefore execute through a serialized retail-slot window whose
 // record, list header and masks are copied to/from the 64-owner sidecar.
-extern "C" void sub_82784C48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827864F0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (!mp64::IsValidPeerId(peer_id)) {
@@ -9294,7 +9294,7 @@ extern "C" void sub_82784C48(PPCContext& ctx, uint8_t* base) {
           : peer_id;
   if (WithExtendedReassignmentOwner(ctx, base, guest_manager, peer_id, [&](uint8_t alias_id) {
         ctx.r4.u64 = alias_id;
-        __imp__sub_82784C48(ctx, base);
+        __imp__sub_827864F0(ctx, base);
       })) {
     mp64::ReassignmentOwnerState state = g_reassignments.Get(guest_manager, peer_id);
     state.involved.Clear();
@@ -9303,7 +9303,7 @@ extern "C" void sub_82784C48(PPCContext& ctx, uint8_t* base) {
     g_reassignments.Set(guest_manager, peer_id, state);
     return;
   }
-  __imp__sub_82784C48(ctx, base);
+  __imp__sub_827864F0(ctx, base);
   mp64::ReassignmentOwnerState state = LoadReassignmentState(base, guest_manager, logical_peer_id);
   state.involved.Clear();
   state.confirmed.Clear();
@@ -9311,7 +9311,7 @@ extern "C" void sub_82784C48(PPCContext& ctx, uint8_t* base) {
   g_reassignments.Set(guest_manager, logical_peer_id, state);
 }
 
-extern "C" void sub_82786B18(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827883C0(PPCContext& ctx, uint8_t* base) {
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (!mp64::IsValidPeerId(peer_id)) {
     ctx.r3.u64 = 0;
@@ -9319,14 +9319,14 @@ extern "C" void sub_82786B18(PPCContext& ctx, uint8_t* base) {
   }
   if (WithExtendedReassignmentOwner(ctx, base, ctx.r3.u32, peer_id, [&](uint8_t alias_id) {
         ctx.r4.u64 = alias_id;
-        __imp__sub_82786B18(ctx, base);
+        __imp__sub_827883C0(ctx, base);
       })) {
     return;
   }
-  __imp__sub_82786B18(ctx, base);
+  __imp__sub_827883C0(ctx, base);
 }
 
-extern "C" void sub_82786ED0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82788778(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (!mp64::IsValidPeerId(peer_id)) {
@@ -9340,14 +9340,14 @@ extern "C" void sub_82786ED0(PPCContext& ctx, uint8_t* base) {
   ResetExtendedReassignmentState(ctx, base, guest_manager, logical_peer_id);
   if (WithExtendedReassignmentOwner(ctx, base, ctx.r3.u32, peer_id, [&](uint8_t alias_id) {
         ctx.r4.u64 = alias_id;
-        __imp__sub_82786ED0(ctx, base);
+        __imp__sub_82788778(ctx, base);
       })) {
     return;
   }
-  __imp__sub_82786ED0(ctx, base);
+  __imp__sub_82788778(ctx, base);
 }
 
-extern "C" void sub_82787108(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827889B0(PPCContext& ctx, uint8_t* base) {
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (!mp64::IsValidPeerId(peer_id)) {
     ctx.r3.u64 = 0;
@@ -9355,16 +9355,16 @@ extern "C" void sub_82787108(PPCContext& ctx, uint8_t* base) {
   }
   if (WithExtendedReassignmentOwner(ctx, base, ctx.r3.u32, peer_id, [&](uint8_t alias_id) {
         ctx.r4.u64 = alias_id;
-        __imp__sub_82787108(ctx, base);
+        __imp__sub_827889B0(ctx, base);
       })) {
     return;
   }
-  __imp__sub_82787108(ctx, base);
+  __imp__sub_827889B0(ctx, base);
 }
 
-extern "C" void sub_82787210(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82788AB8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
-  __imp__sub_82787210(ctx, base);
+  __imp__sub_82788AB8(ctx, base);
   for (uint8_t owner_id = mp64::kLegacyPeerCapacity; owner_id < mp64::kExtendedPeerCapacity;
        ++owner_id) {
     WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id, [&](uint8_t alias_id) {
@@ -9377,28 +9377,28 @@ extern "C" void sub_82787210(PPCContext& ctx, uint8_t* base) {
       advance_ctx.r3.u64 = guest_manager;
       advance_ctx.r4.u64 = alias_id;
       if (REX_LOAD_U32(*record + 12) == 1) {
-        sub_82787108(advance_ctx, base);
+        sub_827889B0(advance_ctx, base);
       } else {
-        sub_82784C48(advance_ctx, base);
+        sub_827864F0(advance_ctx, base);
       }
     });
   }
 }
 
-extern "C" void sub_82787340(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82788BE8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_manager = ctx.r3.u32;
   const uint32_t changed_peer = ctx.r4.u32;
   PPCContext id_ctx = ctx;
   id_ctx.r3.u64 = changed_peer;
-  __imp__sub_82701F88(id_ctx, base);
+  __imp__sub_82708020(id_ctx, base);
   const uint8_t changed_id = id_ctx.r3.u8;
   if (!mp64::IsValidPeerId(changed_id)) {
-    __imp__sub_82787340(ctx, base);
+    __imp__sub_82788BE8(ctx, base);
     return;
   }
 
   if (mp64::ClassifyPeerId(changed_id) == mp64::PeerIdClass::kLegacy) {
-    __imp__sub_82787340(ctx, base);
+    __imp__sub_82788BE8(ctx, base);
     for (uint8_t owner_id = mp64::kLegacyPeerCapacity; owner_id < mp64::kExtendedPeerCapacity;
          ++owner_id) {
       WithExtendedReassignmentOwner(ctx, base, guest_manager, owner_id, [&](uint8_t alias_id) {
@@ -9428,7 +9428,7 @@ extern "C" void sub_82787340(PPCContext& ctx, uint8_t* base) {
         PPCContext reset_ctx = ctx;
         reset_ctx.r3.u64 = guest_manager;
         reset_ctx.r4.u64 = alias_id;
-        sub_82786ED0(reset_ctx, base);
+        sub_82788778(reset_ctx, base);
       });
     }
     return;
@@ -9437,7 +9437,7 @@ extern "C" void sub_82787340(PPCContext& ctx, uint8_t* base) {
   // High departing IDs use the canonical 64-owner state transition directly,
   // preserving every unrelated low bit and every owner record.
   PPCContext network_ready_ctx = ctx;
-  __imp__sub_826C4CA8(network_ready_ctx, base);
+  __imp__sub_826C1E90(network_ready_ctx, base);
   if (network_ready_ctx.r3.u8 == 0 || changed_peer == 0) {
     return;
   }
@@ -9461,7 +9461,7 @@ extern "C" void sub_82787340(PPCContext& ctx, uint8_t* base) {
       remove_ctx.r4.u64 = REX_LOAD_U32(node + 4);
       remove_ctx.r5.u64 = 1;
       remove_ctx.r6.u64 = 1;
-      __imp__sub_826EF7D8(remove_ctx, base);
+      __imp__sub_826EC238(remove_ctx, base);
     }
   });
   if (changed_owner_active) {
@@ -9495,7 +9495,7 @@ extern "C" void sub_82787340(PPCContext& ctx, uint8_t* base) {
     PPCContext reset_ctx = ctx;
     reset_ctx.r3.u64 = guest_manager;
     reset_ctx.r4.u64 = physical_owner;
-    sub_82786ED0(reset_ctx, base);
+    sub_82788778(reset_ctx, base);
   };
 
   for (uint8_t owner_id = 0; owner_id < mp64::kLegacyPeerCapacity; ++owner_id) {
@@ -9511,19 +9511,19 @@ extern "C" void sub_82787340(PPCContext& ctx, uint8_t* base) {
   }
 
   PPCContext network_role_ctx = ctx;
-  __imp__sub_826C4DD8(network_role_ctx, base);
+  __imp__sub_826C1FC0(network_role_ctx, base);
   if (network_role_ctx.r3.u8 == 0) {
     PPCContext cleanup_ctx = ctx;
     cleanup_ctx.r3.u64 = guest_manager;
     cleanup_ctx.r4.u64 = changed_id;
-    sub_82786B18(cleanup_ctx, base);
+    sub_827883C0(cleanup_ctx, base);
   }
 }
 
 // Network-array traffic accounting has a retail 16-entry global table. Keep
 // high-peer accounting in host storage so serialization never aliases peer
 // zero's counters.
-extern "C" void sub_8278CCE8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_8278C8B8(PPCContext& ctx, uint8_t* base) {
   uint8_t peer_id = GuestPeerId(ctx.r3.u64);
   if (g_event_peer_alias.active && peer_id == g_event_peer_alias.alias_peer_id) {
     peer_id = g_event_peer_alias.actual_peer_id;
@@ -9540,19 +9540,19 @@ extern "C" void sub_8278CCE8(PPCContext& ctx, uint8_t* base) {
     ctx.r3.u64 = peer_id;
     return;
   }
-  __imp__sub_8278CCE8(ctx, base);
+  __imp__sub_8278C8B8(ctx, base);
 }
 
 // The normal outbound-flush helper derives its 1 KiB message buffer by
 // indexing an embedded sixteen-record array. During an extended dispatch call
 // the exact selected sidecar buffer is already known, so execute the same send,
 // accounting, and queue-reset sequence directly against that buffer.
-extern "C" void sub_826DAC48(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D1190(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_network_manager = ctx.r3.u32;
   const uint8_t requested_peer_id = GuestPeerId(ctx.r4.u64);
   if (!g_dispatch_alias.active || requested_peer_id != g_dispatch_alias.alias_peer_id ||
       guest_network_manager != g_dispatch_alias.guest_network_manager) {
-    __imp__sub_826DAC48(ctx, base);
+    __imp__sub_826D1190(ctx, base);
     return;
   }
 
@@ -9571,14 +9571,14 @@ extern "C" void sub_826DAC48(PPCContext& ctx, uint8_t* base) {
 
   PPCContext nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_peer;
-  sub_82708620(nested_ctx, base);
+  sub_827054E0(nested_ctx, base);
   if (nested_ctx.r3.u8 == 0) {
     ctx.r3.u64 = 0;
     return;
   }
   nested_ctx = ctx;
   nested_ctx.r3.u64 = *queue_address;
-  sub_82853560(nested_ctx, base);
+  sub_82852F68(nested_ctx, base);
   if (nested_ctx.r3.s32 <= 0) {
     ctx.r3.u64 = nested_ctx.r3.u64;
     return;
@@ -9586,7 +9586,7 @@ extern "C" void sub_826DAC48(PPCContext& ctx, uint8_t* base) {
 
   nested_ctx = ctx;
   nested_ctx.r3.u64 = guest_peer;
-  sub_82A58008(nested_ctx, base);
+  sub_82A57BF8(nested_ctx, base);
   const uint32_t peer_transport_id = nested_ctx.r3.u32;
   nested_ctx = ctx;
   nested_ctx.r3.u64 = REX_LOAD_U32(*sender_address);
@@ -9594,29 +9594,29 @@ extern "C" void sub_826DAC48(PPCContext& ctx, uint8_t* base) {
   nested_ctx.r5.u64 = guest_message;
   nested_ctx.r6.u64 = 0;
   nested_ctx.r7.u64 = 0;
-  sub_826DA690(nested_ctx, base);
+  sub_826D0BD8(nested_ctx, base);
 
   nested_ctx = ctx;
   nested_ctx.r3.u64 = *queue_address;
-  sub_82853560(nested_ctx, base);
+  sub_82852F68(nested_ctx, base);
   const uint32_t message_bits = nested_ctx.r3.u32;
   nested_ctx = ctx;
   nested_ctx.r3.u64 = g_dispatch_alias.actual_peer_id;
   nested_ctx.r4.u64 = message_bits + mp64::kDispatchMessageWireHeaderBytes;
-  sub_8278CCE8(nested_ctx, base);
+  sub_8278C8B8(nested_ctx, base);
 
   ctx.r3.u64 = *queue_address;
   ctx.r4.u64 = *payload_address;
   ctx.r5.u64 = mp64::kDispatchMessagePayloadCapacity;
-  sub_82853400(ctx, base);
+  sub_82852E08(ctx, base);
 }
 
 // The retail network-array tick explicitly enumerates peer IDs 0..15. Retain
 // that path, then perform the identical host-side eligibility checks for every
 // live sidecar peer and feed it through the widened serializer.
-extern "C" void sub_826D9E10(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D0358(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_network_manager = ctx.r3.u32;
-  __imp__sub_826D9E10(ctx, base);
+  __imp__sub_826D0358(ctx, base);
   const auto handler_list_address =
       mp64::CheckedGuestAddress(guest_network_manager, mp64::kNetworkArrayHandlerListOffset);
   const auto peer_manager_address =
@@ -9660,7 +9660,7 @@ extern "C" void sub_826D9E10(PPCContext& ctx, uint8_t* base) {
     }
     const uint32_t state = REX_LOAD_U32(*state_address);
     nested_ctx = ctx;
-    sub_826C4D78(nested_ctx, base);
+    sub_826C1F60(nested_ctx, base);
     const bool send_to_all_peers = (state == 0 && nested_ctx.r3.u8 != 0) || state == 2;
     if (!send_to_all_peers) {
       continue;
@@ -9668,7 +9668,7 @@ extern "C" void sub_826D9E10(PPCContext& ctx, uint8_t* base) {
     if (REX_LOAD_U8(*initialized_address) == 0) {
       nested_ctx = ctx;
       nested_ctx.r3.u64 = guest_handler;
-      sub_82705998(nested_ctx, base);
+      sub_82702888(nested_ctx, base);
     }
 
     SyncDispatchLegacyMasks(base, guest_handler);
@@ -9682,33 +9682,33 @@ extern "C" void sub_826D9E10(PPCContext& ctx, uint8_t* base) {
       nested_ctx = ctx;
       nested_ctx.r3.u64 = REX_LOAD_U32(*peer_manager_address);
       nested_ctx.r4.u64 = peer_id;
-      sub_826FE880(nested_ctx, base);
+      sub_826FE2D0(nested_ctx, base);
       const uint32_t guest_peer = nested_ctx.r3.u32;
       if (guest_peer == 0) {
         continue;
       }
       nested_ctx = ctx;
       nested_ctx.r3.u64 = guest_peer;
-      sub_82708620(nested_ctx, base);
+      sub_827054E0(nested_ctx, base);
       if (nested_ctx.r3.u8 == 0) {
         continue;
       }
       nested_ctx = ctx;
       nested_ctx.r3.u64 = guest_peer;
-      sub_82708770(nested_ctx, base);
+      sub_82708140(nested_ctx, base);
       if (nested_ctx.r3.u8 != 0) {
         continue;
       }
       nested_ctx = ctx;
       nested_ctx.r3.u64 = guest_peer;
-      sub_82191F00(nested_ctx, base);
+      sub_82191F08(nested_ctx, base);
       if (nested_ctx.r3.s32 != 5) {
         continue;
       }
       nested_ctx = ctx;
       nested_ctx.r3.u64 = guest_peer;
-      sub_82A58008(nested_ctx, base);
-      sub_826C4FA0(nested_ctx, base);
+      sub_82A57BF8(nested_ctx, base);
+      sub_826C2188(nested_ctx, base);
       if (nested_ctx.r3.u8 == 0) {
         continue;
       }
@@ -9716,54 +9716,54 @@ extern "C" void sub_826D9E10(PPCContext& ctx, uint8_t* base) {
       nested_ctx.r3.u64 = guest_handler;
       nested_ctx.r4.u64 = guest_peer;
       nested_ctx.r5.u64 = 0;
-      sub_82705BD0(nested_ctx, base);
+      sub_82702AC0(nested_ctx, base);
     }
     nested_ctx = ctx;
     nested_ctx.r3.u64 = guest_handler;
-    sub_82705300(nested_ctx, base);
+    sub_827021F0(nested_ctx, base);
   }
 }
 
 // Joining/leaving peers may reuse a sparse ID. Reinitialize that peer's
 // sidecar message queue at the same lifecycle points used by all handlers.
-extern "C" void sub_826DA050(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D0598(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_network_manager = ctx.r3.u32;
   const auto peer_id = PeerRecordId(base, ctx.r4.u32);
   if (peer_id && mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended) {
     ResetDispatchMessage(ctx, base, guest_network_manager, *peer_id);
   }
-  __imp__sub_826DA050(ctx, base);
+  __imp__sub_826D0598(ctx, base);
 }
 
-extern "C" void sub_826DA0E0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D0628(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_network_manager = ctx.r3.u32;
   const auto peer_id = PeerRecordId(base, ctx.r4.u32);
-  __imp__sub_826DA0E0(ctx, base);
+  __imp__sub_826D0628(ctx, base);
   if (peer_id && mp64::ClassifyPeerId(*peer_id) == mp64::PeerIdClass::kExtended) {
     ResetDispatchMessage(ctx, base, guest_network_manager, *peer_id);
   }
 }
 
-extern "C" void sub_826DAD00(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_826D1248(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_network_manager = ctx.r3.u32;
-  __imp__sub_826DAD00(ctx, base);
+  __imp__sub_826D1248(ctx, base);
   DestroyDispatchMessages(guest_network_manager);
 }
 
 // Reset the extended per-element sequence/acknowledgement state alongside the
 // retail sixteen-entry arrays.
-extern "C" void sub_82704D40(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82701C30(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
-  __imp__sub_82704D40(ctx, base);
+  __imp__sub_82701C30(ctx, base);
   g_dispatch_peer_states.Reset(guest_dispatch);
 }
 
 // Rebuild CDispatchOrderArrayHandler's "eligible peer" mask for sidecar peers.
 // The original continues to own all embedded dispatch state and low 32 bits;
 // the same two record predicates are evaluated for IDs 16..63.
-extern "C" void sub_82704FE8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82701ED8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
-  __imp__sub_82704FE8(ctx, base);
+  __imp__sub_82701ED8(ctx, base);
   if (guest_dispatch == 0) {
     return;
   }
@@ -9776,7 +9776,7 @@ extern "C" void sub_82704FE8(PPCContext& ctx, uint8_t* base) {
     return;
   }
   PPCContext nested_ctx = ctx;
-  __imp__sub_826C4D78(nested_ctx, base);
+  __imp__sub_826C1F60(nested_ctx, base);
   if (nested_ctx.r3.u8 == 0) {
     return;
   }
@@ -9786,20 +9786,20 @@ extern "C" void sub_82704FE8(PPCContext& ctx, uint8_t* base) {
     nested_ctx = ctx;
     nested_ctx.r3.u64 = mp64::kGlobalPeerManagerAddress;
     nested_ctx.r4.u64 = peer_id;
-    sub_826FE880(nested_ctx, base);
+    sub_826FE2D0(nested_ctx, base);
     const uint32_t guest_peer = nested_ctx.r3.u32;
     if (guest_peer == 0) {
       continue;
     }
     nested_ctx = ctx;
     nested_ctx.r3.u64 = guest_peer;
-    __imp__sub_82708620(nested_ctx, base);
+    __imp__sub_827054E0(nested_ctx, base);
     if (nested_ctx.r3.u8 == 0) {
       continue;
     }
     nested_ctx = ctx;
     nested_ctx.r3.u64 = guest_peer;
-    __imp__sub_82708770(nested_ctx, base);
+    __imp__sub_82708140(nested_ctx, base);
     if (nested_ctx.r3.u8 == 0) {
       g_dispatch_masks.Set(guest_dispatch, peer_id, true, false);
     }
@@ -9808,11 +9808,11 @@ extern "C" void sub_82704FE8(PPCContext& ctx, uint8_t* base) {
 
 // Peer removal clears both dispatch masks. Capture the ID before the original
 // record teardown, then mirror its low-word mutation and clear the high bit.
-extern "C" void sub_82705190(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82702080(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
   const auto peer_id = PeerRecordId(base, ctx.r4.u32);
   if (!peer_id || mp64::ClassifyPeerId(*peer_id) != mp64::PeerIdClass::kExtended) {
-    __imp__sub_82705190(ctx, base);
+    __imp__sub_82702080(ctx, base);
     SyncDispatchLegacyMasks(base, guest_dispatch);
     if (peer_id && mp64::IsValidPeerId(*peer_id)) {
       g_dispatch_masks.Reset(guest_dispatch, *peer_id, true, true);
@@ -9866,11 +9866,11 @@ extern "C" void sub_82705190(PPCContext& ctx, uint8_t* base) {
 // Acknowledgements directly index the retail sixteen-entry state arrays. A
 // high peer is projected through slot zero, then every mutation is captured
 // back into its canonical sidecar record.
-extern "C" void sub_82705390(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82702280(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
   const uint8_t peer_id = GuestPeerId(ctx.r4.u64);
   if (mp64::IsLegacyPeerId(peer_id)) {
-    __imp__sub_82705390(ctx, base);
+    __imp__sub_82702280(ctx, base);
     SyncDispatchLegacyMasks(base, guest_dispatch);
     return;
   }
@@ -9887,14 +9887,14 @@ extern "C" void sub_82705390(PPCContext& ctx, uint8_t* base) {
                            [&](uint8_t alias_id) {
                              ctx.r3.u64 = guest_dispatch;
                              ctx.r4.u64 = alias_id;
-                             __imp__sub_82705390(ctx, base);
+                             __imp__sub_82702280(ctx, base);
                            });
   ctx.r3.u64 = guest_dispatch;
 }
 
 // Changing an element's authority clears the retail state/ack slot for every
 // peer. Mirror that broadcast reset across all extended peer records.
-extern "C" void sub_82705488(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82702378(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
   const size_t element = ctx.r4.u32;
   const uint8_t new_authority = GuestPeerId(ctx.r5.u64);
@@ -9909,7 +9909,7 @@ extern "C" void sub_82705488(PPCContext& ctx, uint8_t* base) {
                                                           mp64::kDispatchAuthorityRecordSize);
     authority_changed = authority && REX_LOAD_U8(*authority) != new_authority;
   }
-  __imp__sub_82705488(ctx, base);
+  __imp__sub_82702378(ctx, base);
   if (authority_changed) {
     g_dispatch_peer_states.ResetElement(guest_dispatch, element);
   }
@@ -9919,12 +9919,12 @@ extern "C" void sub_82705488(PPCContext& ctx, uint8_t* base) {
 // four-byte state record per element, an acknowledgement bit per element, and
 // two handler-wide masks. Projecting them as one serialized transaction keeps
 // its exact retail retry/sequence behavior for peers 16..63.
-extern "C" void sub_82705BD0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82702AC0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_peer);
   if (!peer_id || mp64::IsLegacyPeerId(*peer_id)) {
-    __imp__sub_82705BD0(ctx, base);
+    __imp__sub_82702AC0(ctx, base);
     SyncDispatchLegacyMasks(base, guest_dispatch);
     return;
   }
@@ -9954,16 +9954,16 @@ extern "C" void sub_82705BD0(PPCContext& ctx, uint8_t* base) {
                              ctx.r3.u64 = guest_dispatch;
                              ctx.r4.u64 = guest_peer;
                              ctx.r5.u64 = guest_message;
-                             __imp__sub_82705BD0(ctx, base);
+                             __imp__sub_82702AC0(ctx, base);
                            });
   ctx.r3.u64 = *peer_id;
 }
 
 // Dispatch reset/initialization zeroes both embedded masks and invalidates the
 // matching sidecar lifetime.
-extern "C" void sub_82706CA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82703B98(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
-  __imp__sub_82706CA8(ctx, base);
+  __imp__sub_82703B98(ctx, base);
   g_dispatch_masks.Remove(guest_dispatch);
   g_dispatch_peer_states.Reset(guest_dispatch);
 }
@@ -9971,17 +9971,17 @@ extern "C" void sub_82706CA8(PPCContext& ctx, uint8_t* base) {
 // CDispatchOrderArrayHandler clears two 32-bit masks using peer->id. Mirror
 // low words after the retail path and handle IDs 32..63 exclusively in the
 // sidecar, avoiding the PowerPC shift-to-zero behavior.
-extern "C" void sub_82704AF8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827019E8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
   const uint32_t guest_peer = ctx.r4.u32;
   const auto peer_id = PeerRecordId(base, guest_peer);
   if (!peer_id || !mp64::IsValidPeerId(*peer_id)) {
-    __imp__sub_82704AF8(ctx, base);
+    __imp__sub_827019E8(ctx, base);
     SyncDispatchLegacyMasks(base, guest_dispatch);
     return;
   }
   if (*peer_id < mp64::kLegacyCommandParticipantCapacity) {
-    __imp__sub_82704AF8(ctx, base);
+    __imp__sub_827019E8(ctx, base);
     SyncDispatchLegacyMasks(base, guest_dispatch);
   }
   g_dispatch_masks.Reset(guest_dispatch, *peer_id, true, true);
@@ -9990,9 +9990,9 @@ extern "C" void sub_82704AF8(PPCContext& ctx, uint8_t* base) {
 
 // The deleting destructor is reachable without the reset virtual on several
 // handler subclasses. Retire both sidecars at that unconditional seam.
-extern "C" void sub_82718420(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82717DE0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_dispatch = ctx.r3.u32;
-  __imp__sub_82718420(ctx, base);
+  __imp__sub_82717DE0(ctx, base);
   g_dispatch_masks.Remove(guest_dispatch);
   g_dispatch_peer_states.Reset(guest_dispatch);
 }
@@ -10000,9 +10000,9 @@ extern "C" void sub_82718420(PPCContext& ctx, uint8_t* base) {
 // rlSession construction relocates the participant table before participant
 // 32 would collide with the retail count field at +1544. Low records are
 // mirrored into the embedded table for unchanged retail consumers.
-extern "C" void sub_829F9810(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F9468(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
-  __imp__sub_829F9810(ctx, base);
+  __imp__sub_829F9468(ctx, base);
   rex::Runtime* runtime = rex::Runtime::instance();
   if (guest_session == 0 || runtime == nullptr) {
     return;
@@ -10032,19 +10032,19 @@ extern "C" void sub_829F9810(PPCContext& ctx, uint8_t* base) {
 // Command objects can be destroyed by queue cancellation and session teardown
 // without reaching their normal completion consumers. Release relocated
 // CmdJoin/CmdLeave payloads at the common command-deallocation seam.
-extern "C" void sub_829F58B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827C9D58(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_command = ctx.r3.u32;
   ReleaseParticipantCommandSidecar(guest_command);
   ctx.r3.u64 = guest_command;
-  __imp__sub_829F58B8(ctx, base);
+  __imp__sub_827C9D58(ctx, base);
 }
 
 // rlSession's non-deleting destructor is reached by both direct destruction
 // and the deleting vfunc. Keep the relocated participant table alive through
 // retail teardown, then release it exactly once.
-extern "C" void sub_829F9E58(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F9AB0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
-  __imp__sub_829F9E58(ctx, base);
+  __imp__sub_829F9AB0(ctx, base);
   ReleaseSessionParticipantSidecar(guest_session);
 }
 
@@ -10052,7 +10052,7 @@ extern "C" void sub_829F9E58(PPCContext& ctx, uint8_t* base) {
 // 32..63 use embedded record 31 only as a serialized constructor scratch;
 // the old bytes and all overlapping session fields are restored before the
 // original routine returns.
-extern "C" void sub_829F5628(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F5270(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_participant = ctx.r4.u32;
   const bool is_private = ctx.r5.u32 != 0;
@@ -10060,7 +10060,7 @@ extern "C" void sub_829F5628(PPCContext& ctx, uint8_t* base) {
   std::scoped_lock mutation_lock(g_session_participant_mutation_mutex);
   mp64::SessionParticipantState state = g_session_participants.Get(guest_session);
   if (state.guest_record_table == 0) {
-    __imp__sub_829F5628(ctx, base);
+    __imp__sub_829F5270(ctx, base);
     return;
   }
   if (state.count == mp64::kExtendedPeerCapacity) {
@@ -10068,7 +10068,7 @@ extern "C" void sub_829F5628(PPCContext& ctx, uint8_t* base) {
     return;
   }
   if (state.count < mp64::kLegacyCommandParticipantCapacity) {
-    __imp__sub_829F5628(ctx, base);
+    __imp__sub_829F5270(ctx, base);
     const auto count_address =
         mp64::CheckedGuestAddress(guest_session, mp64::kSessionParticipantCountOffset);
     if (count_address && REX_LOAD_U32(*count_address) == state.count + 1 &&
@@ -10109,7 +10109,7 @@ extern "C" void sub_829F5628(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = guest_session;
   ctx.r4.u64 = guest_participant;
   ctx.r5.u64 = is_private;
-  __imp__sub_829F5628(ctx, base);
+  __imp__sub_829F5270(ctx, base);
   const bool constructed = REX_LOAD_U32(*count_address) == mp64::kLegacyCommandParticipantCapacity;
   if (constructed) {
     std::memcpy(base + *destination, base + *scratch_record, mp64::kSessionParticipantRecordSize);
@@ -10130,12 +10130,12 @@ extern "C" void sub_829F5628(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_829F56E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F5330(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_identity = ctx.r4.u32;
   const mp64::SessionParticipantState state = g_session_participants.Get(guest_session);
   if (state.guest_record_table == 0) {
-    __imp__sub_829F56E8(ctx, base);
+    __imp__sub_829F5330(ctx, base);
     return;
   }
   std::scoped_lock mutation_lock(g_session_participant_mutation_mutex);
@@ -10144,24 +10144,24 @@ extern "C" void sub_829F56E8(PPCContext& ctx, uint8_t* base) {
 
 // Invite duplicate filtering must inspect the relocated half of the roster as
 // well as the mirrored first 32 records.
-extern "C" void sub_829F6630(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F6288(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_identities = ctx.r4.u32;
   const int32_t identity_count = ctx.r5.s32;
   const mp64::SessionParticipantState state = g_session_participants.Get(guest_session);
   if (state.guest_record_table == 0 || identity_count <= 0 || identity_count > 31) {
-    __imp__sub_829F6630(ctx, base);
+    __imp__sub_829F6288(ctx, base);
     return;
   }
   rex::Runtime* runtime = rex::Runtime::instance();
   if (runtime == nullptr) {
-    __imp__sub_829F6630(ctx, base);
+    __imp__sub_829F6288(ctx, base);
     return;
   }
   const uint32_t guest_filtered =
       runtime->memory()->SystemHeapAlloc(mp64::kMaxInviteIdentityBufferSize);
   if (guest_filtered == 0) {
-    __imp__sub_829F6630(ctx, base);
+    __imp__sub_829F6288(ctx, base);
     return;
   }
   uint32_t filtered_count = 0;
@@ -10183,7 +10183,7 @@ extern "C" void sub_829F6630(PPCContext& ctx, uint8_t* base) {
         PPCContext compare_ctx = ctx;
         compare_ctx.r3.u64 = *input;
         compare_ctx.r4.u64 = *identity;
-        __imp__sub_829E4F90(compare_ctx, base);
+        __imp__sub_829E4C88(compare_ctx, base);
         if (compare_ctx.r3.u8 != 0) {
           duplicate = true;
           break;
@@ -10205,17 +10205,17 @@ extern "C" void sub_829F6630(PPCContext& ctx, uint8_t* base) {
   }
   ctx.r4.u64 = guest_filtered;
   ctx.r5.u64 = filtered_count;
-  __imp__sub_829F6630(ctx, base);
+  __imp__sub_829F6288(ctx, base);
   runtime->memory()->SystemHeapFree(guest_filtered);
 }
 
-extern "C" void sub_829F7C38(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F7890(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_identity = ctx.r4.u32;
   std::scoped_lock mutation_lock(g_session_participant_mutation_mutex);
   mp64::SessionParticipantState state = g_session_participants.Get(guest_session);
   if (state.guest_record_table == 0) {
-    __imp__sub_829F7C38(ctx, base);
+    __imp__sub_829F7890(ctx, base);
     return;
   }
   const int32_t index = FindSessionParticipant(ctx, base, state, guest_identity);
@@ -10246,9 +10246,9 @@ extern "C" void sub_829F7C38(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = guest_session;
 }
 
-extern "C" void sub_829F8C80(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F88D8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
-  __imp__sub_829F8C80(ctx, base);
+  __imp__sub_829F88D8(ctx, base);
   const mp64::SessionParticipantState state = g_session_participants.Get(guest_session);
   if (state.guest_record_table != 0) {
     g_session_participants.SetCounts(guest_session, 0, 0, 0);
@@ -10262,12 +10262,12 @@ extern "C" void sub_829F8C80(PPCContext& ctx, uint8_t* base) {
   }
 }
 
-extern "C" void sub_829F7428(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F7080(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_command = ctx.r4.u32;
   const mp64::ParticipantCommandState command_state = g_participant_commands.Get(guest_command);
   if (command_state.guest_record_table == 0) {
-    __imp__sub_829F7428(ctx, base);
+    __imp__sub_829F7080(ctx, base);
     return;
   }
   std::vector<uint32_t> public_records;
@@ -10310,13 +10310,13 @@ extern "C" void sub_829F7428(PPCContext& ctx, uint8_t* base) {
 
 // Consume relocated CmdLeave payloads without entering the retail loops that
 // assume both command records and the session participant table stop at 32.
-extern "C" void sub_829F9118(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F8D70(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_command = ctx.r4.u32;
   const mp64::ParticipantCommandState command_state = g_participant_commands.Get(guest_command);
   const mp64::SessionParticipantState participant_state = g_session_participants.Get(guest_session);
   if (command_state.guest_record_table == 0 || participant_state.guest_record_table == 0) {
-    __imp__sub_829F9118(ctx, base);
+    __imp__sub_829F8D70(ctx, base);
     return;
   }
 
@@ -10347,13 +10347,13 @@ extern "C" void sub_829F9118(PPCContext& ctx, uint8_t* base) {
     PPCContext remove_ctx = ctx;
     remove_ctx.r3.u64 = guest_session;
     remove_ctx.r4.u64 = record;
-    sub_829F7C38(remove_ctx, base);
+    sub_829F7890(remove_ctx, base);
   }
   for (const uint32_t record : private_records) {
     PPCContext remove_ctx = ctx;
     remove_ctx.r3.u64 = guest_session;
     remove_ctx.r4.u64 = record;
-    sub_829F7C38(remove_ctx, base);
+    sub_829F7890(remove_ctx, base);
   }
 
   size_t public_start = 0;
@@ -10378,10 +10378,10 @@ extern "C" void sub_829F9118(PPCContext& ctx, uint8_t* base) {
 // SetMaxSlots completion reclassifies public/private records. The original
 // mutates only its 32 inline records, so re-run the same ordered conversion on
 // the canonical table and then refresh the mirror.
-extern "C" void sub_829F9418(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F9070(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const mp64::SessionParticipantState before = g_session_participants.Get(guest_session);
-  __imp__sub_829F9418(ctx, base);
+  __imp__sub_829F9070(ctx, base);
   if (ctx.r3.u8 == 0 || before.guest_record_table == 0 ||
       before.count <= mp64::kLegacyCommandParticipantCapacity) {
     return;
@@ -10438,7 +10438,7 @@ extern "C" void sub_829F9418(PPCContext& ctx, uint8_t* base) {
 // schema already carries 32-bit public/private counts and needs no larger
 // allocation. The original routine performs all state/lock/callback work with
 // a <=32 proxy; patch the command before the queue sees it.
-extern "C" void sub_829F52E8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F4F30(PPCContext& ctx, uint8_t* base) {
   if (g_extended_slot_command.active && ctx.r3.u32 == g_extended_slot_command.guest_session &&
       ctx.r4.u32 != 0) {
     const uint32_t guest_command = ctx.r4.u32;
@@ -10455,10 +10455,10 @@ extern "C" void sub_829F52E8(PPCContext& ctx, uint8_t* base) {
       g_extended_slot_command.command_patched = true;
     }
   }
-  __imp__sub_829F52E8(ctx, base);
+  __imp__sub_829F4F30(ctx, base);
 }
 
-extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F5CD8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_inputs = ctx.r4.u32;
   const uint32_t input_count = ctx.r5.u32;
@@ -10466,7 +10466,7 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
   const mp64::SessionParticipantState participant_state = g_session_participants.Get(guest_session);
   if (participant_state.guest_record_table == 0 || input_count == 0 ||
       input_count > mp64::kExtendedPeerCapacity) {
-    __imp__sub_829F6080(ctx, base);
+    __imp__sub_829F5CD8(ctx, base);
     return;
   }
   const auto state_address = mp64::CheckedGuestAddress(guest_session, mp64::kSessionStateOffset);
@@ -10512,7 +10512,7 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
       const uint32_t guest_participant = REX_LOAD_U32(*input_address);
       PPCContext identity_ctx = ctx;
       identity_ctx.r3.u64 = guest_participant;
-      __imp__sub_829DBAA8(identity_ctx, base);
+      __imp__sub_825042F8(identity_ctx, base);
       const int32_t participant_index =
           FindSessionParticipant(ctx, base, participant_state, identity_ctx.r3.u32);
       if (participant_index < 0) {
@@ -10520,7 +10520,7 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext privacy_ctx = ctx;
       privacy_ctx.r3.u64 = guest_participant;
-      __imp__sub_829DB9C0(privacy_ctx, base);
+      __imp__sub_829DB4A8(privacy_ctx, base);
       const bool is_private = privacy_ctx.r3.u8 == 0;
       const uint32_t output_index =
           is_private ? mp64::kExtendedPeerCapacity - 1 - private_count : public_count;
@@ -10534,7 +10534,7 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
       std::memcpy(base + *output_record, base + *source_record, 8);
       PPCContext payload_ctx = ctx;
       payload_ctx.r3.u64 = guest_participant;
-      __imp__sub_829DBAB0(payload_ctx, base);
+      __imp__sub_829DB5A0(payload_ctx, base);
       const auto payload_destination = mp64::CheckedGuestAddress(*output_record, 8);
       if (!payload_destination || payload_ctx.r3.u32 == 0) {
         continue;
@@ -10542,7 +10542,7 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
       std::memcpy(base + *payload_destination, base + payload_ctx.r3.u32, 16);
       PPCContext value_ctx = ctx;
       value_ctx.r3.u64 = guest_participant;
-      __imp__sub_829DB9B8(value_ctx, base);
+      __imp__sub_829DB4A0(value_ctx, base);
       const auto value_destination = mp64::CheckedGuestAddress(*output_record, 24);
       if (!value_destination) {
         continue;
@@ -10588,7 +10588,7 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
   PPCContext construct_ctx = ctx;
   construct_ctx.r3.u64 = guest_command;
   construct_ctx.r4.u64 = guest_callback;
-  __imp__sub_829F5920(construct_ctx, base);
+  __imp__sub_829F5570(construct_ctx, base);
   REX_STORE_U32(guest_command + 20, public_count);
   REX_STORE_U32(guest_command + 24, private_count);
   const auto private_begin = mp64::CheckedGuestArrayAddress(guest_records, public_count,
@@ -10607,17 +10607,17 @@ extern "C" void sub_829F6080(PPCContext& ctx, uint8_t* base) {
   PPCContext queue_ctx = ctx;
   queue_ctx.r3.u64 = guest_session;
   queue_ctx.r4.u64 = guest_command;
-  sub_829F52E8(queue_ctx, base);
+  sub_829F4F30(queue_ctx, base);
   ctx.r3.u64 = 1;
 }
 
-extern "C" void sub_829F6AA8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F6700(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t public_slots = ctx.r4.u32;
   const uint32_t private_slots = ctx.r5.u32;
   const mp64::CapacityDecision decision = mp64::ClassifySlotRequest(public_slots, private_slots);
   if (decision.path == mp64::CapacityPath::kLegacy) {
-    __imp__sub_829F6AA8(ctx, base);
+    __imp__sub_829F6700(ctx, base);
     return;
   }
 
@@ -10627,7 +10627,7 @@ extern "C" void sub_829F6AA8(PPCContext& ctx, uint8_t* base) {
       g_extended_slot_command.active) {
     ctx.r4.u64 = mp64::kFirstUnsupportedLegacyParticipantCount;
     ctx.r5.u64 = 0;
-    __imp__sub_829F6AA8(ctx, base);
+    __imp__sub_829F6700(ctx, base);
     return;
   }
 
@@ -10647,7 +10647,7 @@ extern "C" void sub_829F6AA8(PPCContext& ctx, uint8_t* base) {
       !private_slots_address || decision.total < actual_participant_count) {
     ctx.r4.u64 = mp64::kFirstUnsupportedLegacyParticipantCount;
     ctx.r5.u64 = 0;
-    __imp__sub_829F6AA8(ctx, base);
+    __imp__sub_829F6700(ctx, base);
     return;
   }
 
@@ -10665,7 +10665,7 @@ extern "C" void sub_829F6AA8(PPCContext& ctx, uint8_t* base) {
   };
   ctx.r4.u64 = proxy.public_slots;
   ctx.r5.u64 = proxy.private_slots;
-  __imp__sub_829F6AA8(ctx, base);
+  __imp__sub_829F6700(ctx, base);
   const bool command_patched = g_extended_slot_command.command_patched;
   g_extended_slot_command = {};
   REX_STORE_U32(*participant_count_address, saved_participant_count);
@@ -10686,7 +10686,7 @@ extern "C" void sub_829F6AA8(PPCContext& ctx, uint8_t* base) {
 // The retail SetMaxSlots task stores its desired counts at +36/+40. Expanding
 // the verified Free Mode value here keeps the task's persistent desired state
 // and the queued session command consistent; other modes retain retail caps.
-extern "C" void sub_82802150(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82801C88(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   if (guest_task != 0 && REX_LOAD_U8(mp64::kNetworkPreferencesReadyAddress) != 0 &&
       REX_LOAD_U32(mp64::kNetworkPreferencesAddress) == mp64::kFreeRoamGameMode) {
@@ -10707,10 +10707,10 @@ extern "C" void sub_82802150(PPCContext& ctx, uint8_t* base) {
       }
     }
   }
-  __imp__sub_82802150(ctx, base);
+  __imp__sub_82801C88(ctx, base);
 }
 
-extern "C" void sub_829F8710(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F8368(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_participants = ctx.r4.u32;
   const uint32_t guest_flags = ctx.r5.u32;
@@ -10719,7 +10719,7 @@ extern "C" void sub_829F8710(PPCContext& ctx, uint8_t* base) {
   const mp64::SessionParticipantState participant_state = g_session_participants.Get(guest_session);
   if (participant_state.guest_record_table == 0 || input_count == 0 ||
       input_count > mp64::kExtendedPeerCapacity) {
-    __imp__sub_829F8710(ctx, base);
+    __imp__sub_829F8368(ctx, base);
     return;
   }
   const auto state_address = mp64::CheckedGuestAddress(guest_session, mp64::kSessionStateOffset);
@@ -10770,35 +10770,35 @@ extern "C" void sub_829F8710(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext privacy_ctx = ctx;
       privacy_ctx.r3.u64 = guest_participant;
-      __imp__sub_829DB9C0(privacy_ctx, base);
+      __imp__sub_829DB4A8(privacy_ctx, base);
       const bool public_group = privacy_ctx.r3.u8 != 0;
       PPCContext identity_ctx = ctx;
       identity_ctx.r3.u64 = guest_participant;
-      __imp__sub_829DBAA8(identity_ctx, base);
+      __imp__sub_825042F8(identity_ctx, base);
       if (FindSessionParticipant(ctx, base, participant_state, identity_ctx.r3.u32) >= 0) {
         continue;
       }
       if (public_group) {
         PPCContext validate_ctx = ctx;
         validate_ctx.r3.u64 = guest_participant;
-        __imp__sub_822BF360(validate_ctx, base);
+        __imp__sub_829DB580(validate_ctx, base);
         if (validate_ctx.r3.u8 == 0) {
           continue;
         }
         validate_ctx = ctx;
         validate_ctx.r3.u64 = guest_session;
-        __imp__sub_829F5050(validate_ctx, base);
+        __imp__sub_829F4C98(validate_ctx, base);
         if (validate_ctx.r3.u8 != 0) {
           validate_ctx = ctx;
           validate_ctx.r3.u64 = guest_session;
-          __imp__sub_829F5000(validate_ctx, base);
+          __imp__sub_829F4C48(validate_ctx, base);
           if (validate_ctx.r3.u32 == 0) {
             PPCContext value_ctx = ctx;
             value_ctx.r3.u64 = guest_participant;
-            __imp__sub_829DB9B8(value_ctx, base);
+            __imp__sub_829DB4A0(value_ctx, base);
             validate_ctx = ctx;
             validate_ctx.r3.u64 = value_ctx.r3.u32;
-            __imp__sub_829DB888(validate_ctx, base);
+            __imp__sub_829DB370(validate_ctx, base);
             if (validate_ctx.r3.u8 == 0) {
               continue;
             }
@@ -10880,16 +10880,16 @@ extern "C" void sub_829F8710(PPCContext& ctx, uint8_t* base) {
   PPCContext queue_ctx = ctx;
   queue_ctx.r3.u64 = guest_session;
   queue_ctx.r4.u64 = guest_command;
-  sub_829F52E8(queue_ctx, base);
+  sub_829F4F30(queue_ctx, base);
   ctx.r3.u64 = 1;
 }
 
-extern "C" void sub_829F7208(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F6E60(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_command = ctx.r4.u32;
   const mp64::ParticipantCommandState state = g_participant_commands.Get(guest_command);
   if (state.guest_record_table == 0) {
-    __imp__sub_829F7208(ctx, base);
+    __imp__sub_829F6E60(ctx, base);
     return;
   }
   std::vector<uint32_t> public_records;
@@ -10928,13 +10928,13 @@ extern "C" void sub_829F7208(PPCContext& ctx, uint8_t* base) {
   ctx.r3.u64 = success ? 1 : 0;
 }
 
-extern "C" void sub_829F8F40(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_829F8B98(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_session = ctx.r3.u32;
   const uint32_t guest_command = ctx.r4.u32;
   mp64::ParticipantCommandState command_state = g_participant_commands.Get(guest_command);
   const mp64::SessionParticipantState participant_state = g_session_participants.Get(guest_session);
   if (command_state.guest_record_table == 0 || participant_state.guest_record_table == 0) {
-    __imp__sub_829F8F40(ctx, base);
+    __imp__sub_829F8B98(ctx, base);
     return;
   }
 
@@ -10950,7 +10950,7 @@ extern "C" void sub_829F8F40(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext identity_ctx = ctx;
       identity_ctx.r3.u64 = REX_LOAD_U32(*record);
-      __imp__sub_829DBAA8(identity_ctx, base);
+      __imp__sub_825042F8(identity_ctx, base);
       if (FindSessionParticipant(ctx, base, participant_state, identity_ctx.r3.u32) >= 0) {
         continue;
       }
@@ -10966,7 +10966,7 @@ extern "C" void sub_829F8F40(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext identity_ctx = ctx;
       identity_ctx.r3.u64 = REX_LOAD_U32(*record);
-      __imp__sub_829DBAA8(identity_ctx, base);
+      __imp__sub_825042F8(identity_ctx, base);
       if (FindSessionParticipant(ctx, base, participant_state, identity_ctx.r3.u32) >= 0) {
         continue;
       }
@@ -11000,7 +11000,7 @@ extern "C" void sub_829F8F40(PPCContext& ctx, uint8_t* base) {
   PPCContext platform_ctx = ctx;
   platform_ctx.r3.u64 = guest_session;
   platform_ctx.r4.u64 = guest_command;
-  sub_829F7208(platform_ctx, base);
+  sub_829F6E60(platform_ctx, base);
   const bool success = platform_ctx.r3.u8 != 0;
   if (success) {
     for (uint32_t index = 0; index < command_state.public_count + command_state.private_count;
@@ -11014,19 +11014,19 @@ extern "C" void sub_829F8F40(PPCContext& ctx, uint8_t* base) {
       add_ctx.r3.u64 = guest_session;
       add_ctx.r4.u64 = REX_LOAD_U32(*record);
       add_ctx.r5.u64 = REX_LOAD_U8(*record + 4) != 0;
-      sub_829F5628(add_ctx, base);
+      sub_829F5270(add_ctx, base);
     }
   }
   ReleaseParticipantCommandSidecar(guest_command);
   ctx.r3.u64 = success ? 1 : 0;
 }
 
-extern "C" void sub_82801730(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82801268(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   const uint32_t guest_owner = ctx.r4.u32;
   if (!g_migration_snapshot_override.active ||
       g_migration_snapshot_override.guest_owner != guest_owner) {
-    __imp__sub_82801730(ctx, base);
+    __imp__sub_82801268(ctx, base);
     return;
   }
   rex::Runtime* runtime = rex::Runtime::instance();
@@ -11046,13 +11046,13 @@ extern "C" void sub_82801730(PPCContext& ctx, uint8_t* base) {
   uint32_t count = g_migration_snapshot_override.count;
   PPCContext local_ctx = ctx;
   local_ctx.r3.u64 = guest_owner;
-  __imp__sub_827C9998(local_ctx, base);
+  __imp__sub_827C9650(local_ctx, base);
   const uint32_t guest_local_record = local_ctx.r3.u32;
   bool contains_local = false;
   if (guest_local_record != 0) {
     PPCContext local_generation_ctx = ctx;
     local_generation_ctx.r3.u64 = guest_local_record;
-    __imp__sub_829ED378(local_generation_ctx, base);
+    __imp__sub_829ED088(local_generation_ctx, base);
     for (uint32_t index = 0; index < count; ++index) {
       const auto record =
           mp64::CheckedGuestArrayAddress(guest_records, index, mp64::kMigrationRecordSize);
@@ -11061,7 +11061,7 @@ extern "C" void sub_82801730(PPCContext& ctx, uint8_t* base) {
       }
       PPCContext generation_ctx = ctx;
       generation_ctx.r3.u64 = *record;
-      __imp__sub_829ED378(generation_ctx, base);
+      __imp__sub_829ED088(generation_ctx, base);
       if (generation_ctx.r3.u32 == local_generation_ctx.r3.u32) {
         contains_local = true;
         break;
@@ -11077,7 +11077,7 @@ extern "C" void sub_82801730(PPCContext& ctx, uint8_t* base) {
   }
   ctx.r5.u64 = guest_records;
   ctx.r6.u64 = std::min<uint32_t>(count, mp64::kLegacyCommandParticipantCapacity - 1);
-  __imp__sub_82801730(ctx, base);
+  __imp__sub_82801268(ctx, base);
   if (ctx.r3.u8 == 0 ||
       !g_migration_tasks.Set(
           guest_task, {.guest_record_table = guest_records, .count = count, .current = -1})) {
@@ -11087,12 +11087,12 @@ extern "C" void sub_82801730(PPCContext& ctx, uint8_t* base) {
   PrepareMigrationTaskAlias(base, guest_task, g_migration_tasks.Get(guest_task));
 }
 
-extern "C" void sub_828019F8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82801530(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   mp64::MigrationTaskState state = g_migration_tasks.Get(guest_task);
   if (state.guest_record_table == 0 ||
       state.current < static_cast<int32_t>(mp64::kLegacyCommandParticipantCapacity - 1)) {
-    __imp__sub_828019F8(ctx, base);
+    __imp__sub_82801530(ctx, base);
     if (state.guest_record_table != 0) {
       const int32_t current =
           static_cast<int32_t>(REX_LOAD_U32(guest_task + mp64::kMigrationTaskCurrentOffset));
@@ -11126,7 +11126,7 @@ extern "C" void sub_828019F8(PPCContext& ctx, uint8_t* base) {
                   mp64::kLegacyCommandParticipantCapacity - 2);
     REX_STORE_U32(guest_task + mp64::kMigrationTaskCountOffset,
                   mp64::kLegacyCommandParticipantCapacity);
-    __imp__sub_828019F8(ctx, base);
+    __imp__sub_82801530(ctx, base);
     ++state.current;
     g_migration_tasks.SetCurrent(guest_task, state.current);
     PrepareMigrationTaskAlias(base, guest_task, g_migration_tasks.Get(guest_task));
@@ -11145,7 +11145,7 @@ extern "C" void sub_828019F8(PPCContext& ctx, uint8_t* base) {
                 mp64::kLegacyCommandParticipantCapacity - 1);
   REX_STORE_U32(guest_task + mp64::kMigrationTaskCountOffset,
                 mp64::kLegacyCommandParticipantCapacity);
-  __imp__sub_828019F8(ctx, base);
+  __imp__sub_82801530(ctx, base);
   g_migration_tasks.SetCurrent(guest_task, static_cast<int32_t>(state.count));
   PrepareMigrationTaskAlias(base, guest_task, g_migration_tasks.Get(guest_task));
 }
@@ -11154,45 +11154,45 @@ extern "C" void sub_828019F8(PPCContext& ctx, uint8_t* base) {
 // task->current before it calls any of the task helpers. Refresh the rolling
 // alias here as well so current values 31..63 never reach the inline-table
 // expression.
-extern "C" void sub_828076C8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82807178(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   const mp64::MigrationTaskState state = g_migration_tasks.Get(guest_task);
   if (state.guest_record_table != 0) {
     PrepareMigrationTaskAlias(base, guest_task, state);
   }
-  __imp__sub_828076C8(ctx, base);
+  __imp__sub_82807178(ctx, base);
 }
 
-extern "C" void sub_82808720(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82808168(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   const mp64::MigrationTaskState state = g_migration_tasks.Get(guest_task);
   if (state.guest_record_table != 0) {
     PrepareMigrationTaskAlias(base, guest_task, state);
   }
-  __imp__sub_82808720(ctx, base);
+  __imp__sub_82808168(ctx, base);
 }
 
-extern "C" void sub_82807308(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_82806DB8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   const mp64::MigrationTaskState state = g_migration_tasks.Get(guest_task);
   if (state.guest_record_table != 0) {
     PrepareMigrationTaskAlias(base, guest_task, state);
   }
-  __imp__sub_82807308(ctx, base);
+  __imp__sub_82806DB8(ctx, base);
   ReleaseMigrationTaskSidecar(guest_task);
 }
 
 // snMigrateSessionTask's deleting destructor is the unconditional lifetime
 // endpoint. vfunc[4] normally releases the relocated table first, while this
 // hook covers cancellation, construction rollback and owner teardown paths.
-extern "C" void sub_828086B8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827CC2C0(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_task = ctx.r3.u32;
   ReleaseMigrationTaskSidecar(guest_task);
   ctx.r3.u64 = guest_task;
-  __imp__sub_828086B8(ctx, base);
+  __imp__sub_827CC2C0(ctx, base);
 }
 
-extern "C" void sub_827CD7B0(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827CD4D8(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_owner = ctx.r3.u32;
   const uint32_t guest_input = ctx.r4.u32;
   const int32_t input_count = ctx.r5.s32;
@@ -11200,11 +11200,11 @@ extern "C" void sub_827CD7B0(PPCContext& ctx, uint8_t* base) {
       g_migration_snapshot_override.guest_owner == guest_owner) {
     ctx.r4.u64 = guest_owner + 4152;
     ctx.r5.u64 = 1;
-    __imp__sub_827CD7B0(ctx, base);
+    __imp__sub_827CD4D8(ctx, base);
     return;
   }
   if (input_count <= static_cast<int32_t>(mp64::kLegacyCommandParticipantCapacity)) {
-    __imp__sub_827CD7B0(ctx, base);
+    __imp__sub_827CD4D8(ctx, base);
     return;
   }
   rex::Runtime* runtime = rex::Runtime::instance();
@@ -11224,7 +11224,7 @@ extern "C" void sub_827CD7B0(PPCContext& ctx, uint8_t* base) {
     if (record) {
       PPCContext initialize_ctx = ctx;
       initialize_ctx.r3.u64 = *record;
-      __imp__sub_829ED580(initialize_ctx, base);
+      __imp__sub_829ED290(initialize_ctx, base);
     }
   }
   uint32_t record_count = 0;
@@ -11237,11 +11237,11 @@ extern "C" void sub_827CD7B0(PPCContext& ctx, uint8_t* base) {
     }
     PPCContext generation_ctx = ctx;
     generation_ctx.r3.u64 = *source;
-    __imp__sub_829ED378(generation_ctx, base);
+    __imp__sub_829ED088(generation_ctx, base);
     PPCContext lookup_ctx = ctx;
     lookup_ctx.r3.u64 = guest_owner;
     lookup_ctx.r4.u64 = generation_ctx.r3.u32;
-    __imp__sub_827C9EF8(lookup_ctx, base);
+    __imp__sub_827C9BB0(lookup_ctx, base);
     if (lookup_ctx.r3.u32 == 0 || (static_cast<int32_t>(REX_LOAD_U32(lookup_ctx.r3.u32)) < 0 &&
                                    (REX_LOAD_U8(lookup_ctx.r3.u32 + 92) & 0x80) == 0)) {
       continue;
@@ -11264,16 +11264,16 @@ extern "C" void sub_827CD7B0(PPCContext& ctx, uint8_t* base) {
   };
   ctx.r4.u64 = guest_owner + 4152;
   ctx.r5.u64 = 1;
-  __imp__sub_827CD7B0(ctx, base);
+  __imp__sub_827CD4D8(ctx, base);
   g_migration_snapshot_override = {};
   runtime->memory()->SystemHeapFree(guest_records);
 }
 
-extern "C" void sub_827CFD20(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827CFA48(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_owner = ctx.r3.u32;
   if (!g_migration_snapshot_override.active ||
       g_migration_snapshot_override.guest_owner != guest_owner) {
-    __imp__sub_827CFD20(ctx, base);
+    __imp__sub_827CFA48(ctx, base);
     return;
   }
   const uint32_t guest_output = g_migration_snapshot_override.guest_records;
@@ -11305,28 +11305,28 @@ extern "C" void sub_827CFD20(PPCContext& ctx, uint8_t* base) {
       sort_ctx.r3.u64 = guest_output;
       sort_ctx.r4.u64 = *end;
       sort_ctx.r5.u64 = 0;
-      __imp__sub_827CFC98(sort_ctx, base);
+      __imp__sub_827CF9C0(sort_ctx, base);
     }
   }
   g_migration_snapshot_override.count = count;
   ctx.r3.u64 = count;
 }
 
-extern "C" void sub_827CFE18(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827CFB40(PPCContext& ctx, uint8_t* base) {
   const uint32_t guest_owner = ctx.r3.u32;
   if (g_migration_snapshot_override.active) {
-    __imp__sub_827CFE18(ctx, base);
+    __imp__sub_827CFB40(ctx, base);
     return;
   }
   rex::Runtime* runtime = rex::Runtime::instance();
   if (runtime == nullptr) {
-    __imp__sub_827CFE18(ctx, base);
+    __imp__sub_827CFB40(ctx, base);
     return;
   }
   const uint32_t guest_records =
       runtime->memory()->SystemHeapAlloc(mp64::kExtendedMigrationRecordTableSize);
   if (guest_records == 0) {
-    __imp__sub_827CFE18(ctx, base);
+    __imp__sub_827CFB40(ctx, base);
     return;
   }
   g_migration_snapshot_override = {
@@ -11335,15 +11335,15 @@ extern "C" void sub_827CFE18(PPCContext& ctx, uint8_t* base) {
       .guest_records = guest_records,
       .count = 0,
   };
-  __imp__sub_827CFE18(ctx, base);
+  __imp__sub_827CFB40(ctx, base);
   g_migration_snapshot_override = {};
   runtime->memory()->SystemHeapFree(guest_records);
 }
 
-extern "C" void sub_827D0D00(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827D0A28(PPCContext& ctx, uint8_t* base) {
   const int32_t input_count = ctx.r5.s32;
   if (input_count <= static_cast<int32_t>(mp64::kLegacyCommandParticipantCapacity)) {
-    __imp__sub_827D0D00(ctx, base);
+    __imp__sub_827D0A28(ctx, base);
     return;
   }
   const uint32_t guest_owner = ctx.r3.u32;
@@ -11365,10 +11365,10 @@ extern "C" void sub_827D0D00(PPCContext& ctx, uint8_t* base) {
   std::memset(base + guest_snapshot, 0xFF, 512);
   PPCContext ready_ctx = ctx;
   ready_ctx.r3.u64 = guest_owner + 2264;
-  __imp__sub_829F5110(ready_ctx, base);
+  __imp__sub_829F4D58(ready_ctx, base);
   PPCContext generation_ctx = ctx;
   generation_ctx.r3.u64 = guest_owner + 4152;
-  __imp__sub_829ED378(generation_ctx, base);
+  __imp__sub_829ED088(generation_ctx, base);
   if (ready_ctx.r3.u8 == 0 || generation_ctx.r3.u32 != REX_LOAD_U32(guest_owner + 4244)) {
     runtime->memory()->SystemHeapFree(guest_snapshot);
     CompleteSnapshotCallback(ctx, base, guest_callback, false);
@@ -11385,13 +11385,13 @@ extern "C" void sub_827D0D00(PPCContext& ctx, uint8_t* base) {
     PPCContext lookup_ctx = ctx;
     lookup_ctx.r3.u64 = guest_owner;
     lookup_ctx.r4.u64 = *input;
-    __imp__sub_827C9E78(lookup_ctx, base);
+    __imp__sub_827C9B30(lookup_ctx, base);
     if (lookup_ctx.r3.u32 == 0) {
       continue;
     }
     PPCContext valid_ctx = ctx;
     valid_ctx.r3.u64 = lookup_ctx.r3.u32;
-    __imp__sub_829DBA18(valid_ctx, base);
+    __imp__sub_829DB500(valid_ctx, base);
     if (valid_ctx.r3.u8 == 0) {
       continue;
     }
@@ -11414,15 +11414,15 @@ extern "C" void sub_827D0D00(PPCContext& ctx, uint8_t* base) {
   remove_ctx.r7.u64 = argument;
   remove_ctx.r8.u64 = 0;
   remove_ctx.r9.u64 = guest_callback;
-  sub_827D04D8(remove_ctx, base);
+  sub_827D0200(remove_ctx, base);
   runtime->memory()->SystemHeapFree(guest_snapshot);
   ctx.r3.u64 = remove_ctx.r3.u64;
 }
 
-extern "C" void sub_827D04D8(PPCContext& ctx, uint8_t* base) {
+extern "C" void sub_827D0200(PPCContext& ctx, uint8_t* base) {
   const int32_t record_count = ctx.r6.s32;
   if (record_count <= static_cast<int32_t>(mp64::kLegacyCommandParticipantCapacity)) {
-    __imp__sub_827D04D8(ctx, base);
+    __imp__sub_827D0200(ctx, base);
     return;
   }
   const uint32_t guest_owner = ctx.r3.u32;
@@ -11456,7 +11456,7 @@ extern "C" void sub_827D04D8(PPCContext& ctx, uint8_t* base) {
     batch_ctx.r8.u64 = 0;
     batch_ctx.r9.u64 =
         processed + batch_count == static_cast<uint32_t>(record_count) ? guest_callback : 0;
-    __imp__sub_827D04D8(batch_ctx, base);
+    __imp__sub_827D0200(batch_ctx, base);
     if (batch_ctx.r3.u8 == 0) {
       success = false;
       break;
@@ -11473,8 +11473,8 @@ extern "C" void sub_827D04D8(PPCContext& ctx, uint8_t* base) {
 // authoritative team at +1384. Mirror that value into a host-side atomic
 // cache so the UI thread can route Y/team chat without reading mutable guest
 // memory concurrently with the PPC thread.
-extern "C" void sub_825B4510(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_825B4510(ctx, base);
+extern "C" void sub_825DBF28(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_825DBF28(ctx, base);
   const uint32_t guest_player_info = ctx.r3.u32;
   if (!guest_player_info) return;
   const uint8_t peer_id =
@@ -11484,8 +11484,8 @@ extern "C" void sub_825B4510(PPCContext& ctx, uint8_t* base) {
       static_cast<int32_t>(REX_LOAD_U32(guest_player_info + 1384)));
 }
 
-extern "C" void sub_825B4560(PPCContext& ctx, uint8_t* base) {
-  __imp__sub_825B4560(ctx, base);
+extern "C" void sub_825DBF78(PPCContext& ctx, uint8_t* base) {
+  __imp__sub_825DBF78(ctx, base);
   const uint32_t guest_player_info = ctx.r3.u32;
   if (!guest_player_info) return;
   const uint8_t peer_id =

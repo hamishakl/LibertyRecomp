@@ -173,9 +173,9 @@ constexpr uint32_t kLastGta4AchievementId = 65;
 constexpr std::array<std::string_view, 2> kKnownGta4EpisodePackages = {"TLAD", "TBOGT"};
 constexpr size_t kQosChallengeBytes = 16;
 constexpr size_t kQosChallengeHexCharacters = 34;
-// Derived from retail GET_CURRENT_EPISODE (sub_825D4CC8) by
+// Derived from retail GET_CURRENT_EPISODE (sub_825FC5F0) by
 // tools/audit_gta_invite_accept_contract.py.
-constexpr uint32_t kGta4CurrentEpisodeAddress = 0x82B39504;
+constexpr uint32_t kGta4CurrentEpisodeAddress = 0x82B39384;
 
 struct HttpResponse {
   long status = 0;
