@@ -799,3 +799,7 @@ CMakeUserPresets.json
 !/tools/tests/test_metal_shader_archive.py
 !/tools/vulkan/*.py
 !/glue/rexglue-sdk-main/cmake/fidelityfx_shader_compiler.py
+
+# PAL port: local game-file symlink + raw codegen output (not committed yet)
+glue/rexglue-sdk-main/gta4-recomp/assets_pal
+glue/rexglue-sdk-main/gta4-recomp/generated_pal/
