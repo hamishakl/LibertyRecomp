@@ -580,29 +580,47 @@ bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>&
     return std::tie(a.vertex.hash,a.fragment.hash)<std::tie(b.vertex.hash,b.fragment.hash);
   });
   const uint32_t total=uint32_t(pending.size());
-  uint32_t done=0,compiled=0,skipped=0;
+  std::atomic<uint32_t> done{0},compiled{0},skipped{0};
   bool keep_going=!progress||progress(0,total);
-  for(const auto& recipe:pending){
-    if(!keep_going) break;
+  // Descriptors are resolved serially (the shader caches are single-owner), then each batch is
+  // compiled into the binary archive concurrently: Metal's compiler service runs them in parallel.
+  constexpr size_t kBatch=64;
+  for(size_t begin=0;begin<pending.size()&&keep_going;begin+=kBatch){
     @autoreleasepool {
-      std::string item_error;
-      id<MTLFunction> vertex=s.RecipeFunctionObject(recipe.vertex,item_error);
-      id<MTLFunction> fragment=vertex&&recipe.fragment.library!=RecipeLibrary::kNone?
-          s.RecipeFunctionObject(recipe.fragment,item_error):nil;
-      if(vertex&&(fragment||recipe.fragment.library==RecipeLibrary::kNone)&&
-         s.pipeline_store.Add(DescriptorFromRecipe(recipe,vertex,fragment),HashRecipe(recipe),item_error)) ++compiled;
-      else {
-        // A shader removed by a newer build, or a temporal recipe with temporal rendering off.
-        ++skipped;
-        s.pipeline_store.Skip(HashRecipe(recipe));
-        REXLOG_DEBUG("gta4-metal-pipeline-cache: skipped recipe vs={:016X} ps={:016X}: {}",
-                     recipe.vertex.hash,recipe.fragment.hash,item_error);
+      const size_t end=std::min(pending.size(),begin+kBatch);
+      std::vector<MTLRenderPipelineDescriptor*> descriptors(end-begin,nil);
+      for(size_t i=begin;i<end;++i){
+        const auto& recipe=pending[i];
+        std::string item_error;
+        id<MTLFunction> vertex=s.RecipeFunctionObject(recipe.vertex,item_error);
+        id<MTLFunction> fragment=vertex&&recipe.fragment.library!=RecipeLibrary::kNone?
+            s.RecipeFunctionObject(recipe.fragment,item_error):nil;
+        if(vertex&&(fragment||recipe.fragment.library==RecipeLibrary::kNone))
+          descriptors[i-begin]=DescriptorFromRecipe(recipe,vertex,fragment);
+        else REXLOG_DEBUG("gta4-metal-pipeline-cache: skipped recipe vs={:016X} ps={:016X}: {}",
+                          recipe.vertex.hash,recipe.fragment.hash,item_error);
       }
+      // Blocks copy captured C++ objects; capture plain pointers instead.
+      auto* store=&s.pipeline_store; const PipelineRecipe* recipes=pending.data()+begin;
+      MTLRenderPipelineDescriptor* __strong* batch=descriptors.data();
+      auto* compiled_count=&compiled; auto* skipped_count=&skipped; auto* done_count=&done;
+      dispatch_apply(descriptors.size(),dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^(size_t i){
+        const auto& recipe=recipes[i];
+        std::string item_error;
+        if(batch[i]&&store->Add(batch[i],HashRecipe(recipe),item_error)) ++*compiled_count;
+        else {
+          // A shader removed by a newer build, or a descriptor Metal rejects: not retried every launch.
+          ++*skipped_count;
+          store->Skip(HashRecipe(recipe));
+          if(batch[i]) REXLOG_DEBUG("gta4-metal-pipeline-cache: archive add failed vs={:016X} ps={:016X}: {}",
+                                    recipe.vertex.hash,recipe.fragment.hash,item_error);
+        }
+        ++*done_count;
+      });
     }
-    ++done;
-    if(progress) keep_going=progress(done,total);
+    if(progress) keep_going=progress(done.load(),total);
   }
-  REXLOG_INFO("gta4-metal-pipeline-cache: precompiled {} pipelines ({} skipped)",compiled,skipped);
+  REXLOG_INFO("gta4-metal-pipeline-cache: precompiled {} pipelines ({} skipped)",compiled.load(),skipped.load());
   return s.pipeline_store.Save(error);
 }
 void Renderer::State::FinishScopeProfile() {
