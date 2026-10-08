@@ -60,6 +60,7 @@ memmove = 0x82A01A40              # 40 xrefs — native rexcrt_memmove in memory
 "0x821A2EB8" = {}   # adjustor thunk: addi r3,-16; b
 "0x821A2EC8" = {}   # adjustor thunk: addi r3,-16; b
 "0x821A2ED0" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FED8" = {}   # mid-function vtable target (sub_8219FEC8+0x10: li r11,4 ...); second PAL boot aborted here
 # Cross-function branch targets: other functions branch directly to these
 # mid-function addresses. Required by codegen to resolve the call graph.
 "0x8217D5B8" = {}   # branch target from sub_8217DA58

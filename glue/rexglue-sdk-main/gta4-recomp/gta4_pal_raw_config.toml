@@ -39,3 +39,4 @@ large_function_threshold = 1048576
 "0x821A2EB8" = {}   # adjustor thunk: addi r3,-16; b
 "0x821A2EC8" = {}   # adjustor thunk: addi r3,-16; b
 "0x821A2ED0" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FED8" = {}   # mid-function vtable target (sub_8219FEC8+0x10: li r11,4 ...); second PAL boot aborted here
