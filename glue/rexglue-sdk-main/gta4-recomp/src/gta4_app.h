@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gta4_shader_precompile_screen.h"
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -49,6 +50,9 @@ class GTA4App final : public rex::ReXApp {
   bool RequiresSynchronizedInitialThreadResume() const override;
   void OnShutdown() override;
   bool OnWindowCloseRequested() override;
+  void OnConfigureFonts(ImFontAtlas* atlas) override;
+  void OnShaderPrecompileStarted(rex::system::IGraphicsSystem* graphics) override;
+  void OnShaderPrecompileFinished() override;
   void QueueAchievementUpload(uint32_t achievement_id);
   void AchievementSyncWorkerMain();
   void TitleProfileSyncWorkerMain();
@@ -91,6 +95,8 @@ class GTA4App final : public rex::ReXApp {
     }
   }
 
+  gta4::ui::LoadingScreenFonts loading_screen_fonts_;
+  gta4::ui::ShaderPrecompileScreen* shader_precompile_screen_ = nullptr;
   rex::system::AchievementListenerHandle achievement_listener_ = 0;
   rex::system::xam::IAchievementService* achievement_service_ = nullptr;
   rex::system::xam::IEntitlementService* entitlement_service_ = nullptr;

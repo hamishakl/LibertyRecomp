@@ -525,24 +525,43 @@ void ReXApp::LaunchModule() {
       }
     }
 
-    OnPostLaunchModule(main_thread.get());
-    const X_STATUS resume_status = RequiresSynchronizedInitialThreadResume()
-                                       ? main_thread->ResumeFromInitialSuspension()
-                                       : main_thread->Resume();
-    if (XFAILED(resume_status)) {
-      REXLOG_ERROR("Failed to resume the main guest thread: {:08X}", resume_status);
-      app_context().QuitFromUIThread();
+    // Shared so the resume step can wait for launch-time shader precompilation.
+    auto thread = std::make_shared<decltype(main_thread)>(std::move(main_thread));
+    auto resume = [this, thread]() {
+      if (shutting_down_.load(std::memory_order_acquire))
+        return;
+      auto& main_thread = *thread;
+      OnPostLaunchModule(main_thread.get());
+      const X_STATUS resume_status = RequiresSynchronizedInitialThreadResume()
+                                         ? main_thread->ResumeFromInitialSuspension()
+                                         : main_thread->Resume();
+      if (XFAILED(resume_status)) {
+        REXLOG_ERROR("Failed to resume the main guest thread: {:08X}", resume_status);
+        app_context().QuitFromUIThread();
+        return;
+      }
+
+      module_thread_ = std::thread([this, main_thread = std::move(main_thread)]() mutable {
+        main_thread->Wait(0, 0, 0, nullptr);
+        OnGuestThreadExit(main_thread.get());
+        REXLOG_INFO("Execution complete");
+        if (!shutting_down_.load(std::memory_order_acquire)) {
+          app_context().CallInUIThread([this]() { app_context().QuitFromUIThread(); });
+        }
+      });
+    };
+
+    if (graphics_system && graphics_system->BeginShaderPrecompile([this, resume]() {
+          app_context().CallInUIThread([this, resume]() {
+            OnShaderPrecompileFinished();
+            resume();
+          });
+        })) {
+      REXLOG_INFO("Precompiling recorded shader pipelines before launch...");
+      OnShaderPrecompileStarted(graphics_system);
       return;
     }
-
-    module_thread_ = std::thread([this, main_thread = std::move(main_thread)]() mutable {
-      main_thread->Wait(0, 0, 0, nullptr);
-      OnGuestThreadExit(main_thread.get());
-      REXLOG_INFO("Execution complete");
-      if (!shutting_down_.load(std::memory_order_acquire)) {
-        app_context().CallInUIThread([this]() { app_context().QuitFromUIThread(); });
-      }
-    });
+    resume();
   });
 }
 

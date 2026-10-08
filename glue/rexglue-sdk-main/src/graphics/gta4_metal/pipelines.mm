@@ -3,6 +3,7 @@
 #include "../gta4_native/native_fixed_function_policy.h"
 #include "../gta4_native/alpha_to_coverage_util.h"
 #include <algorithm>
+#include <chrono>
 #include <optional>
 #include <rex/logging.h>
 #include <rex/cvar.h>
@@ -206,6 +207,16 @@ Renderer::State::Pipeline* Renderer::State::DrawPipeline(const Targets& targets,
     if(attribute.format==MTLVertexFormatInvalid) {error="Unsupported Metal vertex format"; return nullptr;}
   }
   descriptor.vertexDescriptor=layout;
+  if (pipeline_store.is_open() && use_pipeline_archive) {
+    RecipeFunction vertex_ref{vs->hash,0,LibraryOf(vertex_cache),uint8_t(ShaderStage::kVertex),0,0};
+    RecipeFunction fragment_ref{};
+    if(ps) fragment_ref={ps->hash,specialization,LibraryOf(pixel_cache),uint8_t(ShaderStage::kPixel),
+                         uint8_t(late),uint8_t(targets.temporal_ui)};
+    else if(targets.temporal_motion) fragment_ref.library=RecipeLibrary::kDepthMotion;
+    pipeline_store.Record(RecipeFromDescriptor(descriptor,vertex_ref,fragment_ref));
+    // Archived pipelines are fetched instead of compiled (see launch precompile).
+    descriptor.binaryArchives=@[pipeline_store.archive()];
+  }
   if (rex::cvar::Query<bool>("gta4_metal_async_pipelines")) {
     auto build = std::make_shared<PipelineBuild>(); result.build = build;
     // The callback owns its result, never a renderer/map pointer. Eviction and
@@ -236,6 +247,21 @@ Renderer::State::Pipeline* Renderer::State::DrawPipeline(const Targets& targets,
   return pipeline;
 }
 
+id<MTLFunction> Renderer::State::RecipeFunctionObject(const RecipeFunction& function, std::string& error) {
+  using namespace gta4_native;
+  if(function.library==RecipeLibrary::kNone) return nil;
+  if(function.library==RecipeLibrary::kDepthMotion) {
+    auto result=temporal_scene.DepthMotionFunction();
+    if(!result) error="Depth-only temporal motion fragment is absent";
+    return result;
+  }
+  auto* cache=CacheOf(function.library);
+  if(!cache){error="Unknown recipe shader library";return nil;}
+  // Temporal archives are only loaded when a temporal mode is active.
+  return cache->Function(function.hash,ShaderStage(function.stage),function.specialization,function.late!=0,
+                         error,function.isolated_ui!=0);
+}
+
 bool Renderer::State::CompletePipeline(Pipeline& pipeline, std::string& error) {
   if (pipeline.state) return true;
   auto build = pipeline.build;
@@ -243,7 +269,13 @@ bool Renderer::State::CompletePipeline(Pipeline& pipeline, std::string& error) {
   {
     std::unique_lock lock(build->mutex);
     if (build->complete) ++pipeline_ready;
-    else { ++pipeline_waits; build->wake.wait(lock, [&] { return build->complete; }); }
+    else {
+      ++pipeline_waits;
+      const auto begin = std::chrono::steady_clock::now();
+      build->wake.wait(lock, [&] { return build->complete; });
+      pipeline_wait_ns += uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::steady_clock::now() - begin).count());
+    }
     pipeline.state = build->state;
     if (!pipeline.state) { error = build->error; return false; }
   }

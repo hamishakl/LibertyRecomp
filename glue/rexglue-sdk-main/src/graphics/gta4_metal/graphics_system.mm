@@ -145,7 +145,53 @@ bool Gta4MetalGraphicsSystem::ExecuteTitleCommand(uint32_t title_id, uint32_t ab
   return success;
 }
 
+void Gta4MetalGraphicsSystem::InitializeShaderStorage(const std::filesystem::path& cache_root,
+                                                      uint32_t title_id, bool blocking) {
+  (void)blocking;
+  std::lock_guard lock(renderer_mutex_);
+  if (!renderer_) return;
+  std::string error;
+  if (!renderer_->OpenPipelineStore(cache_root, title_id, error))
+    REXLOG_WARN("gta4-metal-pipeline-cache: disabled: {}", error);
+}
+
+bool Gta4MetalGraphicsSystem::BeginShaderPrecompile(std::function<void()> on_complete) {
+  size_t pending = 0;
+  {
+    std::lock_guard lock(renderer_mutex_);
+    if (renderer_) pending = renderer_->PendingPipelineCount();
+  }
+  if (!pending || precompile_thread_.joinable()) return false;
+  precompile_completed_ = 0;
+  precompile_total_ = uint32_t(pending);
+  precompile_active_ = true;
+  precompile_thread_ = std::thread([this, on_complete = std::move(on_complete)] {
+    {
+      // The title thread is still suspended; holding the producer lock keeps the renderer exclusive.
+      std::lock_guard lock(renderer_mutex_);
+      std::string error;
+      if (renderer_ && !renderer_->PrecompilePipelines(
+              [this](uint32_t done, uint32_t total) {
+                precompile_completed_ = done;
+                precompile_total_ = total;
+                return !precompile_cancel_.load();
+              },
+              error))
+        REXLOG_WARN("gta4-metal-pipeline-cache: precompile: {}", error);
+    }
+    precompile_active_ = false;
+    if (on_complete) on_complete();
+  });
+  return true;
+}
+
+system::IGraphicsSystem::ShaderPrecompileProgress Gta4MetalGraphicsSystem::GetShaderPrecompileProgress() const {
+  return {precompile_completed_.load(), precompile_total_.load(), precompile_active_.load()};
+}
+
 void Gta4MetalGraphicsSystem::Shutdown() {
+  precompile_cancel_ = true;
+  if (precompile_thread_.joinable()) precompile_thread_.join();
   // Wake publication waits before taking the producer lock during shutdown.
   if (presenter_) presenter_->CancelFramePacingWaits();
   {

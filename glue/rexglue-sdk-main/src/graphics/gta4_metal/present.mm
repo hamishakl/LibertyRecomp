@@ -163,9 +163,9 @@ bool Renderer::State::Present(const gta4_native::PresentCommand& present, std::s
     REXLOG_INFO("gta4-metal-constant-tracking frame={} skips={} audited={} mismatches={} fallback={}",
         present.submitted_frame, guest_constant_skips, guest_constant_audits,
         guest_constant_mismatches, guest_constant_tracking_failed);
-    REXLOG_INFO("gta4-metal-pipeline-lookup frame={} lookups={} memo-hits={} compiled={} ready={} waited={}",
+    REXLOG_INFO("gta4-metal-pipeline-lookup frame={} lookups={} memo-hits={} compiled={} ready={} waited={} wait-ms={:.1f}",
         present.submitted_frame, pipeline_lookups, pipeline_lookup_hits,
-        pipeline_creations, pipeline_ready, pipeline_waits);
+        pipeline_creations, pipeline_ready, pipeline_waits, double(pipeline_wait_ns) / 1e6);
     const auto texture_cache = resources.texture_cache_statistics();
     const auto vertex_cache = resources.vertex_conversion_statistics();
     REXLOG_INFO("gta4-metal-vertex-cache frame={} bytes={} charged={} budget={} entries={} hits={} misses={} evictions={}",

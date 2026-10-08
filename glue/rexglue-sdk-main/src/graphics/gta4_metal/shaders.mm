@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "shader_archive.h"
+#include <xxhash.h>
 #include "../../ui/metal/context.h"
 
 namespace rex::graphics::gta4_metal {
@@ -61,6 +62,7 @@ struct ShaderCache::Impl {
   std::shared_ptr<ui::metal::MetalContext> context;
   std::string resource_name;
   NSData* file = nil;
+  uint64_t identity = 0;
   MetalShaderArchive index;
   std::unordered_map<uint64_t,ShaderMetadata> metadata;
   std::list<FunctionKey> function_lru;
@@ -141,8 +143,13 @@ bool ShaderCache::InitializeFile(const std::string& path, std::string& error) {
     };
     if (!impl_->index.Open({static_cast<const std::byte*>(bytes.bytes), bytes.length}, digest, error)) return false;
     impl_->file = bytes;
+    impl_->identity = XXH3_64bits(bytes.bytes, bytes.length);
     return true;
   }
+}
+
+uint64_t ShaderCache::Identity() const {
+  return impl_->identity;
 }
 
 std::optional<ShaderMetadata> ShaderCache::Lookup(uint64_t hash,gta4_native::ShaderStage stage,std::string& error) {

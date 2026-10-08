@@ -1,3 +1,5 @@
+#include <xxhash.h>
+#include <tuple>
 #include "renderer_state.h"
 #include "../gta4_native/modern_shader_options.h"
 #include "metal_native_library.h"
@@ -22,6 +24,7 @@ REXCVAR_DEFINE_BOOL(gta4_metal_cache_pipeline_lookup, true, "GPU", "Reuse recent
 REXCVAR_DEFINE_BOOL(gta4_metal_cache_encoder_state, true, "GPU", "Reuse unchanged state in one Metal encoder");
 REXCVAR_DEFINE_BOOL(gta4_metal_foreground_qos, true, "GPU", "Bound recording work to foreground QoS");
 REXCVAR_DEFINE_BOOL(gta4_metal_fold_full_clears, true, "GPU", "Fold full clears into the next attachment use");
+REXCVAR_DEFINE_BOOL(gta4_metal_pipeline_archive, true, "GPU", "Record pipelines and precompile them into a Metal binary archive at launch");
 REXCVAR_DEFINE_BOOL(gta4_metal_async_pipelines, true, "GPU", "Overlap title pipeline creation with draw resource preparation");
 REXCVAR_DEFINE_BOOL(gta4_metal_prepare_textures, true, "GPU", "Decode owned texture snapshots on bounded workers");
 REXCVAR_DEFINE_STRING(gta4_metal_capture_path, "", "GPU/Diagnostics", "Optional Xcode .gputrace destination for one title submission");
@@ -551,6 +554,57 @@ Renderer::Statistics Renderer::statistics() const {
           state_->resources.material_statistics().hits,state_->resources.material_statistics().misses,state_->resolve_image_exchanges};
 }
 bool Renderer::Finish(std::string& error) {return state_->Flush(true,error);}
+
+bool Renderer::OpenPipelineStore(const std::filesystem::path& cache_root,uint32_t title_id,std::string& error) {
+  auto& s=*state_;
+  if(!s.ready){error="Renderer is not initialized";return false;}
+  s.use_pipeline_archive=rex::cvar::Query<bool>("gta4_metal_pipeline_archive");
+  if(!s.use_pipeline_archive) return true;
+  const uint64_t parts[4]={s.stock.Identity(),s.overrides.Identity(),s.temporal_stock.Identity(),s.temporal_overrides.Identity()};
+  return s.pipeline_store.Open(s.context->device,cache_root,title_id,XXH3_64bits(parts,sizeof(parts)),error);
+}
+
+size_t Renderer::PendingPipelineCount() const {
+  if(!state_->pipeline_store.is_open()) return 0;
+  auto pending=state_->pipeline_store.Pending();
+  return size_t(std::count_if(pending.begin(),pending.end(),[&](const auto& r){return state_->RecipeBuildable(r);}));
+}
+
+bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>& progress,std::string& error) {
+  auto& s=*state_;
+  if(!s.pipeline_store.is_open()) return true;
+  auto pending=s.pipeline_store.Pending();
+  std::erase_if(pending,[&](const PipelineRecipe& r){return !s.RecipeBuildable(r);});
+  // Group by shader so the bounded library/function caches are reused rather than thrashed.
+  std::sort(pending.begin(),pending.end(),[](const PipelineRecipe& a,const PipelineRecipe& b){
+    return std::tie(a.vertex.hash,a.fragment.hash)<std::tie(b.vertex.hash,b.fragment.hash);
+  });
+  const uint32_t total=uint32_t(pending.size());
+  uint32_t done=0,compiled=0,skipped=0;
+  bool keep_going=!progress||progress(0,total);
+  for(const auto& recipe:pending){
+    if(!keep_going) break;
+    @autoreleasepool {
+      std::string item_error;
+      id<MTLFunction> vertex=s.RecipeFunctionObject(recipe.vertex,item_error);
+      id<MTLFunction> fragment=vertex&&recipe.fragment.library!=RecipeLibrary::kNone?
+          s.RecipeFunctionObject(recipe.fragment,item_error):nil;
+      if(vertex&&(fragment||recipe.fragment.library==RecipeLibrary::kNone)&&
+         s.pipeline_store.Add(DescriptorFromRecipe(recipe,vertex,fragment),HashRecipe(recipe),item_error)) ++compiled;
+      else {
+        // A shader removed by a newer build, or a temporal recipe with temporal rendering off.
+        ++skipped;
+        s.pipeline_store.Skip(HashRecipe(recipe));
+        REXLOG_DEBUG("gta4-metal-pipeline-cache: skipped recipe vs={:016X} ps={:016X}: {}",
+                     recipe.vertex.hash,recipe.fragment.hash,item_error);
+      }
+    }
+    ++done;
+    if(progress) keep_going=progress(done,total);
+  }
+  REXLOG_INFO("gta4-metal-pipeline-cache: precompiled {} pipelines ({} skipped)",compiled,skipped);
+  return s.pipeline_store.Save(error);
+}
 void Renderer::State::FinishScopeProfile() {
   if(!scope_profile.active()) return;
   REXLOG_INFO("gta4-metal-profile-scope recording={} scope={} width={} height={} entries={} draws={} overflow={}",

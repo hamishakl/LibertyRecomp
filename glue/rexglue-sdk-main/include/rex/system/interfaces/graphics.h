@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 
 #include <rex/system/xtypes.h>
 
@@ -105,6 +106,20 @@ class IGraphicsSystem {
     (void)title_id;
     (void)blocking;
   }
+
+  // Launch-time shader/pipeline precompilation, run after InitializeShaderStorage and before the
+  // title's main thread resumes. Returns false when there is nothing to compile; otherwise the work
+  // runs off the UI thread and on_complete is invoked exactly once, from any thread, when it ends.
+  virtual bool BeginShaderPrecompile(std::function<void()> on_complete) {
+    (void)on_complete;
+    return false;
+  }
+  struct ShaderPrecompileProgress {
+    uint32_t completed = 0;
+    uint32_t total = 0;
+    bool active = false;
+  };
+  virtual ShaderPrecompileProgress GetShaderPrecompileProgress() const { return {}; }
 
   // One-shot convenience for callers that don't care about the split.
   X_STATUS Setup(runtime::FunctionDispatcher* function_dispatcher, KernelState* kernel_state,

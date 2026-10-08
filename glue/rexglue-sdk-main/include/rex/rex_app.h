@@ -170,6 +170,12 @@ class ReXApp : public ui::WindowedApp, public ui::WindowListener, public ui::Win
   /// graphics initialization has allowed the host thread to finish starting.
   virtual bool RequiresSynchronizedInitialThreadResume() const { return false; }
 
+  /// Launch-time shader precompilation (IGraphicsSystem::BeginShaderPrecompile). The title's main
+  /// thread stays suspended between these calls; both run on the UI thread. Override to show
+  /// progress (poll graphics->GetShaderPrecompileProgress()).
+  virtual void OnShaderPrecompileStarted(system::IGraphicsSystem* graphics) { (void)graphics; }
+  virtual void OnShaderPrecompileFinished() {}
+
   /// Called when the main guest thread exits. The runtime is still alive.
   /// Use for cleanup that depends on runtime resources.
   virtual void OnGuestThreadExit(system::XThread* thread) { (void)thread; }

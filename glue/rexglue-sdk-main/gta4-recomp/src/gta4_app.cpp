@@ -1097,6 +1097,22 @@ void GTA4App::OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) {
                         });
 }
 
+void GTA4App::OnConfigureFonts(ImFontAtlas* atlas) {
+  loading_screen_fonts_ = gta4::ui::LoadLoadingScreenFonts(atlas);
+}
+
+void GTA4App::OnShaderPrecompileStarted(rex::system::IGraphicsSystem* graphics) {
+  if (imgui_drawer() && !shader_precompile_screen_)
+    shader_precompile_screen_ = new gta4::ui::ShaderPrecompileScreen(imgui_drawer(), graphics, loading_screen_fonts_);
+}
+
+void GTA4App::OnShaderPrecompileFinished() {
+  if (shader_precompile_screen_) {
+    shader_precompile_screen_->Finish();  // self-deleting dialog
+    shader_precompile_screen_ = nullptr;
+  }
+}
+
 bool GTA4App::RequiresSynchronizedInitialThreadResume() const {
   auto* graphics_system = runtime() ? runtime()->graphics_system() : nullptr;
   return graphics_system &&

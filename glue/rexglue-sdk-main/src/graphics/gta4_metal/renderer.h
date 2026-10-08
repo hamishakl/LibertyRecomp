@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <span>
 #include <string>
@@ -39,6 +40,12 @@ class Renderer {
               const gta4_native::FireTraceContext* trace = nullptr);
   bool Execute(std::span<const std::byte> command, std::span<std::byte> result, std::string& error);
   bool Finish(std::string& error);
+  // Launch-time pipeline cache (PipelineStore). Call after Initialize, before the title submits commands.
+  bool OpenPipelineStore(const std::filesystem::path& cache_root, uint32_t title_id, std::string& error);
+  size_t PendingPipelineCount() const;
+  // Compiles recorded-but-unarchived pipelines into the binary archive. progress(done, total) returns
+  // false to stop early; work done so far is still saved.
+  bool PrecompilePipelines(const std::function<bool(uint32_t, uint32_t)>& progress, std::string& error);
  private:
   bool SubmitImpl(std::span<const std::byte> command, std::string& error);
   struct State;

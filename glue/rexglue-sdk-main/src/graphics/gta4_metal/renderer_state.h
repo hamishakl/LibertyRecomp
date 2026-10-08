@@ -29,6 +29,7 @@
 #include <vector>
 #include <xxhash.h>
 #include "pipeline_lookup_memo.h"
+#include "pipeline_store.h"
 
 namespace rex::graphics::gta4_metal {
 struct Renderer::State {
@@ -82,6 +83,9 @@ struct Renderer::State {
   ui::Presenter* presenter=nullptr;
   ResourceStore resources;
   ShaderCache stock,overrides,temporal_stock,temporal_overrides;
+  // Recipes of every built pipeline + a binary archive of their compiled forms (launch precompile).
+  PipelineStore pipeline_store;
+  bool use_pipeline_archive = true;
   temporal::Live temporal_scene;
   bool temporal_enabled=false,temporal_upscale=false,temporal_generation=false;
   PostProcessing post_processing;
@@ -115,7 +119,7 @@ struct Renderer::State {
   uint32_t vertex_shader=0,pixel_shader=0,declaration=0,index_buffer=0,device=0;
   uint64_t next_declaration=1,submitted=0,draws=0,resolves=0,clears=0;
   uint64_t pipeline_creations = 0, declaration_definitions = 0, declaration_reuses = 0;
-  uint64_t pipeline_ready = 0, pipeline_waits = 0;
+  uint64_t pipeline_ready = 0, pipeline_waits = 0, pipeline_wait_ns = 0;
   uint64_t render_passes_created = 0;
   // Bounded diagnostics: color slots, depth, extent, or an external pass break.
   std::array<uint64_t, 128> pass_breaks{};
@@ -200,6 +204,24 @@ struct Renderer::State {
   bool BeginRender(const Targets&,std::string& error);
   Pipeline* DrawPipeline(const Targets&,const FixedState&,const VertexDeclaration&,bool up,uint32_t stride,std::string&);
   bool CompletePipeline(Pipeline&, std::string&);
+  RecipeLibrary LibraryOf(const ShaderCache& cache) const {
+    return &cache==&stock?RecipeLibrary::kStock:&cache==&overrides?RecipeLibrary::kOverride:
+        &cache==&temporal_stock?RecipeLibrary::kTemporalStock:RecipeLibrary::kTemporalOverride;
+  }
+  ShaderCache* CacheOf(RecipeLibrary library) {
+    switch(library){case RecipeLibrary::kStock:return &stock;case RecipeLibrary::kOverride:return &overrides;
+      case RecipeLibrary::kTemporalStock:return &temporal_stock;case RecipeLibrary::kTemporalOverride:return &temporal_overrides;
+      default:return nullptr;}
+  }
+  id<MTLFunction> RecipeFunctionObject(const RecipeFunction& function, std::string& error);
+  // Temporal archives load only while TAA/MetalFX is active; their recipes wait until then.
+  bool RecipeBuildable(const PipelineRecipe& recipe) {
+    for(const auto* f:{&recipe.vertex,&recipe.fragment}){
+      if(f->library==RecipeLibrary::kDepthMotion&&!temporal_enabled) return false;
+      if(auto* cache=CacheOf(f->library);cache&&!cache->Identity()) return false;
+    }
+    return true;
+  }
   id<MTLDepthStencilState> DepthState(const FixedState&,bool attachment,std::string&);
   ui::metal::UploadSlice Upload(std::span<const uint8_t>,bool swap,std::string&);
   bool Draw(const gta4_native::CommandHeader&,std::span<const std::byte>,std::string&);

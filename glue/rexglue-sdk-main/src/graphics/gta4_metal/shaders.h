@@ -49,6 +49,8 @@ class ShaderCache {
   id<MTLFunction> Function(uint64_t hash, gta4_native::ShaderStage stage,
                           uint32_t specialization, bool late, std::string& error, bool isolated_ui = false);
   void Clear();
+  // Content identity of the mapped archive (0 when not initialized); keys the pipeline binary archive.
+  uint64_t Identity() const;
 
  private:
   struct Impl;

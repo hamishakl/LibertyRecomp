@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <rex/system/interfaces/graphics.h>
 
 namespace rex::ui::metal { class MetalProvider; }
@@ -24,6 +26,9 @@ class Gta4MetalGraphicsSystem final : public system::IGraphicsSystem {
   bool ExecuteTitleCommand(uint32_t title_id, uint32_t abi, const void* command, size_t size,
                            void* result, size_t result_size) override;
   void Shutdown() override;
+  void InitializeShaderStorage(const std::filesystem::path& cache_root, uint32_t title_id, bool blocking) override;
+  bool BeginShaderPrecompile(std::function<void()> on_complete) override;
+  ShaderPrecompileProgress GetShaderPrecompileProgress() const override;
 
  private:
   std::mutex renderer_mutex_;
@@ -32,5 +37,8 @@ class Gta4MetalGraphicsSystem final : public system::IGraphicsSystem {
   std::unique_ptr<Renderer> renderer_;
   ui::WindowedAppContext* app_context_ = nullptr;
   uint64_t failures_ = 0;
+  std::thread precompile_thread_;
+  std::atomic<uint32_t> precompile_completed_{0}, precompile_total_{0};
+  std::atomic<bool> precompile_active_{false}, precompile_cancel_{false};
 };
 }  // namespace rex::graphics::gta4_metal
