@@ -47,12 +47,25 @@ memmove = 0x82A01A40              # 40 xrefs — native rexcrt_memmove in memory
 "0x8219FFF0" = {}   # b from 0x8219FEBC
 "0x82731E70" = {}   # b from 0x82731F24
 "0x827323B8" = {}   # b from 0x8273246C
+"0x82198150" = {}   # getter: lbz r11,156(r3)
+"0x82199C80" = {}   # adjustor thunk: addi r3,-4; b
+"0x8219A778" = {}   # adjustor thunk: addi r3,-4; b
+"0x8219AD08" = {}   # getter: lbz r10,60(r3)
+"0x8219FE58" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FE60" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FE88" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FEA0" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FEB0" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FED0" = {}   # adjustor thunk: addi r3,-16; b
+"0x821A2EB8" = {}   # adjustor thunk: addi r3,-16; b
+"0x821A2EC8" = {}   # adjustor thunk: addi r3,-16; b
+"0x821A2ED0" = {}   # adjustor thunk: addi r3,-16; b
 # Cross-function branch targets: other functions branch directly to these
 # mid-function addresses. Required by codegen to resolve the call graph.
 "0x8217D5B8" = {}   # branch target from sub_8217DA58
 "0x82A77A28" = {}   # tail-call thunk: b sub_82811D50
-"0x8219FFE8" = {}   # branch target from sub_821A2EEC
-"0x8219AC78" = {}   # vtable slot +0x20 target in the original GTA IV .rdata tables
+"0x8219FFE8" = {}   # branch target from sub_821A2EDC
+"0x8219ACC0" = {}   # vtable slot +0x20 target in the original GTA IV .rdata tables
 "0x821947E0" = {}   # address-taken vtable thunk: addi r3,r3,-4; b sub_82194540
 "0x82893CC8" = {}   # address-taken vtable slot +0x54 callback thunk
 "0x827AE060" = {}   # address-taken vtable slot +0x50 callback thunk

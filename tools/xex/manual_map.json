@@ -6,8 +6,8 @@
       "branch target of adjustor thunk: US sub_821A2ED8 (addi r3,-4; b 0x8219e410) == PAL sub_821A2E88 (addi r3,-4; b 0x8219ffe8)"
     ],
     "0x8219ACA0": [
-      "0x8219AC78",
-      "18-insn body, 0.944 similarity, nearest same-size candidate"
+      "0x8219ACC0",
+      "vtable slot +0x20 target. Local code shift (+0x20) agrees; first PAL boot aborted calling 0x8219ACC0 while the earlier guess (0x8219AC78, nearest same-size body) was forced instead"
     ],
     "0x82A692C8": [
       "0x82A68ED8",
@@ -23,7 +23,7 @@
     ],
     "0x82A69328": [
       "0x82A68F38",
-      "CRT ctor table[0x82A90F64] (PAL image)"
+      "CRT ctor table[0x82A90F64] (PAL image) - kept over local shift 0x82A68F58: table read is direct evidence; small ctor stubs are near-identical so auto pairing can slip by one"
     ],
     "0x82A69428": [
       "0x82A69038",
@@ -47,7 +47,7 @@
     ],
     "0x82A03EB8": [
       "0x82A03AC0",
-      "ppc_free: all 25 US call sites' PAL twins call 0x82a03ac0"
+      "ppc_free: all 25 US call sites' PAL twins call 0x82a03ac0 - kept over local shift 0x82A03AB8 (call-site votes are direct evidence)"
     ]
   },
   "data": {

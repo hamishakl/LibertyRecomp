@@ -22,3 +22,20 @@ large_function_threshold = 1048576
 "0x82731E70" = {}   # b from 0x82731F24
 "0x827323B8" = {}   # b from 0x8273246C
 "0x82A77A28" = {}   # b from 0x827BA8F8
+
+# Vtable / callback entry points the analysis never discovered (found by
+# tools/xex/find_unregistered_targets.py on the patched PAL image; each starts with valid code).
+# Calling an unregistered one aborts: first PAL boot died on 0x8219ACC0.
+"0x82198150" = {}   # getter: lbz r11,156(r3)
+"0x82199C80" = {}   # adjustor thunk: addi r3,-4; b
+"0x8219A778" = {}   # adjustor thunk: addi r3,-4; b
+"0x8219AD08" = {}   # getter: lbz r10,60(r3)
+"0x8219FE58" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FE60" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FE88" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FEA0" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FEB0" = {}   # adjustor thunk: addi r3,-16; b
+"0x8219FED0" = {}   # adjustor thunk: addi r3,-16; b
+"0x821A2EB8" = {}   # adjustor thunk: addi r3,-16; b
+"0x821A2EC8" = {}   # adjustor thunk: addi r3,-16; b
+"0x821A2ED0" = {}   # adjustor thunk: addi r3,-16; b
