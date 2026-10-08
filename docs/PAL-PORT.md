@@ -71,7 +71,14 @@ small varying amounts. Every guest address the project hard-codes has to be rema
      `lis`/lo immediates → `fix_guest_immediates.py` (388 lines);
   4. loads + renders the world on `gta4-native` until **MoltenVK device lost**;
   5. **`--gpu_plugin=gta4-metal`: plays the opening cutscene.** 24 PAL shaders missing from the Metal archive
-     (121 draws skipped so far) — next task.
+     (121 draws skipped so far).
+- [x] **PAL executable-embedded shaders** — the 24 misses are the "runtime_captured" shaders (Bink video etc.)
+      that live inside default.xex, not in any .fxc; all 1,332 PAL .fxc shaders were already in the US cache.
+      Extracted the 24 containers from the patched PAL image, compiled with XenosRecomp, merged with
+      `tools/xex/merge_shader_cache.py` (existing 1,356 entries + blobs byte-identical; 1,380 total).
+      Verified: 0 archive misses, 0 rejected draws.
+  - Follow-up: `shader_overrides/manifest.json` keys the Bink overrides by US hashes (`9E76B68B60127349`,
+    `A6C9E2B8B2A59D7A`, `156BAD4A9EE62726`); PAL Bink shaders currently use the stock translation.
 
 ### Known gaps (left as US values, see `tools/xex/manual_map.json` "unresolved")
 | US address | Used by | Impact |
