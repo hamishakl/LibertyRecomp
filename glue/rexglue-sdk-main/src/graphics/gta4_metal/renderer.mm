@@ -1,3 +1,4 @@
+#include <ctime>
 #include <chrono>
 #include <xxhash.h>
 #include <tuple>
@@ -28,7 +29,7 @@ REXCVAR_DEFINE_BOOL(gta4_metal_foreground_qos, true, "GPU", "Bound recording wor
 REXCVAR_DEFINE_BOOL(gta4_metal_fold_full_clears, true, "GPU", "Fold full clears into the next attachment use");
 REXCVAR_DEFINE_BOOL(gta4_metal_retain_ignore_address, true, "GPU", "Keep colour-masked draws in the current render pass when only the guest surface address differs");
 REXCVAR_DEFINE_STRING(gta4_metal_gpu_pass_log, "", "GPU/Diagnostics", "Append average GPU ms per render-pass category to this CSV every 300 frames (empty = off)");
-REXCVAR_DEFINE_STRING(gta4_metal_frame_log, "", "GPU/Diagnostics", "Write per-frame Metal timing CSV here at shutdown (empty = off)");
+REXCVAR_DEFINE_STRING(gta4_metal_frame_log, "", "GPU/Diagnostics", "Per-frame Metal timing CSV, appended every 600 frames; {session} = launch time (empty = off)");
 REXCVAR_DEFINE_BOOL(gta4_metal_pipeline_archive, true, "GPU", "Record pipelines and precompile them into a Metal binary archive at launch");
 REXCVAR_DEFINE_BOOL(gta4_metal_async_pipelines, true, "GPU", "Overlap title pipeline creation with draw resource preparation");
 REXCVAR_DEFINE_BOOL(gta4_metal_prepare_textures, true, "GPU", "Decode owned texture snapshots on bounded workers");
@@ -118,6 +119,13 @@ bool Renderer::Initialize(std::string& error,const std::filesystem::path& direct
     gpu_pass_timer::Initialize(s.context->device,rex::cvar::GetFlagByName("gta4_metal_gpu_pass_log"));
     s.retain_ignore_address=rex::cvar::Query<bool>("gta4_metal_retain_ignore_address");
     s.frame_log_path=rex::cvar::GetFlagByName("gta4_metal_frame_log");
+    // "{session}" in the path becomes the launch time, so every play session keeps its own CSV.
+    if(auto at=s.frame_log_path.find("{session}");at!=std::string::npos){
+      const std::time_t now=std::time(nullptr); char stamp[32];
+      std::strftime(stamp,sizeof(stamp),"%Y%m%d-%H%M%S",std::localtime(&now));
+      s.frame_log_path.replace(at,9,stamp);
+      std::error_code ec; std::filesystem::create_directories(std::filesystem::path(s.frame_log_path).parent_path(),ec);
+    }
     if(!s.frame_log_path.empty()) s.frame_samples.reserve(1u<<16);
     s.ready=true;
     REXLOG_INFO("gta4-metal: title renderer initialized; device={} bindings=direct-resource-ids",s.context->device.name.UTF8String);
