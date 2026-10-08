@@ -15,3 +15,9 @@ Python tools need `pip install cryptography` (use a venv).
 - Project target: US 1.00 + TU, version `0x805`, image `0x1300000`.
 - Patched PAL image vs generated US code: **7.4%** of `bl` sites have a `bl` at the same address (≈ chance);
   targets drift by -0x548, -0x400, +0x10… → **different compile**. Every hook/address would need remapping.
+
+## Result 2026-10-08 — Games-on-Demand copy on the 360 HDD (`Hdd1/GAMES/545407F2`)
+- media `0x4A53F9F6`, version `0x6` (no TU installed). Same file size as the PAL disc XEX but 55% of image words differ.
+- vs generated US code: 5.6% `bl` sites line up (≈ chance) → also a **different compile**.
+- Version pattern so far: TU target = `(TU# << 8) | base`: US `0x805` = base 5 + TU8, PAL disc `0x507` = base 7 + TU5.
+  So the project needs a **base-version-5 (US 1.00) disc**; base 6 and 7 builds won't match.
