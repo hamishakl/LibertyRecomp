@@ -3,6 +3,7 @@
 #include "gta4_streaming_hooks.h"
 
 #include <array>
+#include <cstdlib>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -75,6 +76,9 @@ REXCVAR_DEFINE_BOOL(install_dlc, false, "GTA IV/Installation",
 REXCVAR_DEFINE_BOOL(install_check, false, "GTA IV/Installation",
                     "Verify the installed game and episode layouts before launch")
     .lifecycle(rex::cvar::Lifecycle::kInitOnly);
+REXCVAR_DEFINE_BOOL(gta4_performance_hud, false, "GTA IV/Graphics/Display",
+                    "Show Apple's Metal Performance HUD (FPS, GPU time, frame-time graph); applies on restart")
+    .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
 REXCVAR_DEFINE_BOOL(gta4_diagnostics_skip_user_music, false, "GTA IV/Diagnostics",
                     "Skip the host user-music player during isolated diagnostics")
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
@@ -644,6 +648,9 @@ std::optional<rex::PathConfig> GTA4App::OnFinalizePaths(
 }
 
 void GTA4App::OnPreSetup(rex::RuntimeConfig& config) {
+  // Apple's Metal Performance HUD (FPS, GPU time, frame-interval graph). Metal reads the variable
+  // when the device is created, so it must be set before the GPU plugin loads below.
+  if (REXCVAR_GET(gta4_performance_hud)) setenv("MTL_HUD_ENABLED", "1", 1);
   rex::input::mnk::SetNativeControllerCompatibilityBindings(
       gta4::input::KeyboardControllerBindings());
   if (!config.graphics && config.gpu_plugin.empty()) {
