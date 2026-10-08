@@ -148,3 +148,17 @@ Undocumented build deps: `brew install cmake ninja llvm spirv-cross glslang` + `
 - `docs/MOD_SUPPORT.md`'s FusionFix overlay priority table isn't implemented — only `update:` is mounted.
 - `sub_821200D0` "slow world init" note in BUILDING.md is from the legacy build (below `CODE_BASE` on Mac).
 - Unverified: macOS VFS never mounts `common:`/`platform:`/`audio:` (legacy did) — check on first boot if file opens fail.
+
+## 11. Other docs in `docs/` worth knowing (missed in the first pass)
+
+| Doc | Why it matters |
+|---|---|
+| `GTA_IV_ASSET_STREAMING_SYSTEM.md` | Retail streaming path reconstructed with evidence; 39 US guest addresses (map with `tools/xex/` for PAL) |
+| `GTA4_COLLISION_VPKUWUS_ALIASING_FIX.md` | Fall-through-world bug was a **codegen** bug (`vpkuwus` register aliasing) fixed in `SDK/src/codegen/builders/vector.cpp` — any regenerated tree (incl. PAL) inherits the fix. Good model for debugging recompiler bugs |
+| `RPF_EXTRACTION_DESIGN.md` | VFS + RPF archive loading design |
+| `INSTALLATION_ARCHITECTURE.md` | Installer flow, staging/publish, XEX/XEXP validation rules (what PAL phase 4 must change) |
+| `NATIVE_MEMORY_PROFILING.md` | Enabling native-renderer memory captures |
+| `uaf-handle-investigation/` | 15-part use-after-free investigation around `sub_8227F2E8` (US addresses) — worked example of tracing a guest bug |
+| `unleashed-rendering-study/`, `reflection-rendering-study/` | Rendering design studies (Unleashed Recomp comparison, reflections) |
+
+`DUMPING-en.md` assumes the 2-disc **Complete Edition** and HDD-cable + Velocity (Windows). Our route: Aurora FTP.
