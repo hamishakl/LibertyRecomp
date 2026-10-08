@@ -803,3 +803,4 @@ CMakeUserPresets.json
 # PAL port: local game-file symlink + raw codegen output (not committed yet)
 glue/rexglue-sdk-main/gta4-recomp/assets_pal
 glue/rexglue-sdk-main/gta4-recomp/generated_pal/
+glue/rexglue-sdk-main/gta4-recomp/generated_pal_raw/

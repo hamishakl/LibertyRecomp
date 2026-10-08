@@ -1,0 +1,126 @@
+{
+  "_doc": "Hand-verified US->PAL entries consulted before the automatic map. Each has its evidence. 'unresolved' entries are known gaps: remap_sources.py leaves them untouched and reports them.",
+  "code": {
+    "0x8219E410": [
+      "0x8219FFE8",
+      "branch target of adjustor thunk: US sub_821A2ED8 (addi r3,-4; b 0x8219e410) == PAL sub_821A2E88 (addi r3,-4; b 0x8219ffe8)"
+    ],
+    "0x8219ACA0": [
+      "0x8219AC78",
+      "18-insn body, 0.944 similarity, nearest same-size candidate"
+    ],
+    "0x82A692C8": [
+      "0x82A68ED8",
+      "CRT ctor table[0x82A90F58] read from patched PAL image"
+    ],
+    "0x82A692E8": [
+      "0x82A68EF8",
+      "CRT ctor table[0x82A90F5C] (PAL image)"
+    ],
+    "0x82A69308": [
+      "0x82A68F18",
+      "CRT ctor table[0x82A90F60] (PAL image)"
+    ],
+    "0x82A69328": [
+      "0x82A68F38",
+      "CRT ctor table[0x82A90F64] (PAL image)"
+    ],
+    "0x82A69428": [
+      "0x82A69038",
+      "CRT ctor table[0x82A90F84] (PAL image)"
+    ],
+    "0x82A69C68": [
+      "0x82A69878",
+      "CRT ctor table[0x82A90FE4] (PAL image)"
+    ],
+    "0x82A69CA8": [
+      "0x82A698B8",
+      "CRT ctor table[0x82A90FEC] (PAL image)"
+    ],
+    "0x82A69CC8": [
+      "0x82A698D8",
+      "CRT ctor table[0x82A90FF0] (PAL image)"
+    ],
+    "0x82A6C218": [
+      "0x82A6BE28",
+      "CRT ctor table[0x82A912D8] (PAL image)"
+    ],
+    "0x82A03EB8": [
+      "0x82A03AC0",
+      "ppc_free: all 25 US call sites' PAL twins call 0x82a03ac0"
+    ]
+  },
+  "data": {
+    "0x82001450": [
+      "0x82001450",
+      "unchanged: 3 independent base+offset groups agree (41/23/7 refs)"
+    ],
+    "0x831DAEF8": [
+      "0x831D6AF0",
+      "base+0xD0 in 37 exact-pair references"
+    ],
+    "0x831DAEFC": [
+      "0x831D6AF4",
+      "base+0xD4 in 37 exact-pair references"
+    ],
+    "0x831DAEFE": [
+      "0x831D6AF6",
+      "base+0xD6 in 37 exact-pair references"
+    ],
+    "0x83109D10": [
+      "0x83109B98",
+      "base+0x88 in 159 exact-pair references"
+    ],
+    "0x82A94754": [
+      "0x82A957F4",
+      "base+0x4 in 129 exact-pair references"
+    ],
+    "0x82A9AA9C": [
+      "0x82A9AD20",
+      "base+0x20 in 49 exact-pair references (runtime-written; 0 in static image)"
+    ],
+    "0x82A9AAA8": [
+      "0x82A9AD2C",
+      "base+0x2C in 49 exact-pair references (runtime-written; 0 in static image)"
+    ],
+    "0x82AA0A88": [
+      "0x82AA0BD0",
+      "base+0x20 in 90 exact-pair references (runtime-filled)"
+    ],
+    "0x82BEFA54": [
+      "0x82B8E444",
+      "base+0x14 in 150 exact-pair references"
+    ],
+    "0x82BAFA84": [
+      "0x82BF0E54",
+      "near evidence (47 refs) overrides neighbour inference 0x82BF0E34"
+    ],
+    "0x82B2AD64": [
+      "0x82B2ABE4",
+      "UNVERIFIED: neighbour inference only (both neighbours agree on shift); no direct references"
+    ],
+    "0x82B39E88": [
+      "0x82B39D08",
+      "UNVERIFIED: neighbour inference only (both neighbours agree on shift); no direct references"
+    ],
+    "0x82B3A0F0": [
+      "0x82B39F70",
+      "UNVERIFIED: neighbour inference only (both neighbours agree on shift); no direct references"
+    ],
+    "0x82B99D90": [
+      "0x82BDC820",
+      "UNVERIFIED: neighbour inference only (both neighbours agree on shift); no direct references"
+    ],
+    "0x82B99F84": [
+      "0x82BDCA14",
+      "UNVERIFIED: neighbour inference only (both neighbours agree on shift); no direct references"
+    ]
+  },
+  "unresolved": {
+    "0x82B307A0": "cloud double-buffer producer index (gta4_native_hooks.cpp) - no direct references; reached via pointer",
+    "0x82B307A4": "postfx timecycle / cloud double-buffer index (gta4_native_hooks.cpp, bulb trace) - no direct references",
+    "0x82013C9C": "radar render-phase vtable (touch hooks) - near-inference pointed at float data, rejected",
+    "0x82055F8C": "MP proximity weight threshold - inference gave implausible floats, rejected",
+    "0x82055F7C": "MP proximity weight threshold - inference gave implausible floats, rejected"
+  }
+}

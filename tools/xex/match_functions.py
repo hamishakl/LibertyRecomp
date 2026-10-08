@@ -13,6 +13,7 @@ import collections, difflib, glob, hashlib, json, re, sys
 FUNC = re.compile(r'^DEFINE_REX_FUNC\(sub_([0-9A-F]{8})\)', re.M)
 INSN = re.compile(r'^\t// (.+)$', re.M)
 ADDR = re.compile(r'0x8[0-9a-fA-F]{7}')
+LABEL = re.compile(r'^loc_([0-9A-F]{8}):')
 LR = re.compile(r'ctx\.lr = 0x([0-9A-F]{8});')
 
 
@@ -55,10 +56,17 @@ def load(gen_dir):
         starts = [(m.start(), int(m.group(1), 16)) for m in FUNC.finditer(text)]
         for i, (pos, addr) in enumerate(starts):
             body = text[pos:starts[i + 1][0] if i + 1 < len(starts) else len(text)]
-            insns = INSN.findall(body)
+            insns, addrs, cur = [], [], addr
+            for line in body.split('\n'):
+                lab = LABEL.match(line)
+                if lab:
+                    cur = int(lab.group(1), 16)
+                elif line.startswith('\t// '):
+                    insns.append(line[4:]); addrs.append(cur); cur += 4
             norm = normalise(insns)
             funcs[addr] = {
                 'insns': insns,
+                'addrs': addrs,
                 'hash': hashlib.sha1('\n'.join(norm).encode()).hexdigest()[:16],
                 'lrs': [int(x, 16) for x in LR.findall(body)],
             }
@@ -91,11 +99,10 @@ def data_refs(insns):
     return out
 
 
-def main():
-    us_dir, pal_dir, out_path = sys.argv[1:4]
+def build_map(us_dir, pal_dir, log=print):
     us, pal = load(us_dir), load(pal_dir)
     us_order, pal_order = sorted(us), sorted(pal)
-    print(f'functions: US {len(us)}, PAL {len(pal)}')
+    log(f'functions: US {len(us)}, PAL {len(pal)}')
 
     sm = difflib.SequenceMatcher(None, [us[a]['hash'] for a in us_order],
                                  [pal[a]['hash'] for a in pal_order], autojunk=False)
@@ -142,7 +149,7 @@ def main():
                     fmap[x] = y; conf[x] = round(similarity(us[x], pal[y]), 3) or 0.01; taken.add(y); changed = True
 
     exact = sum(1 for v in conf.values() if v == 1.0)
-    print(f'mapped functions: {len(fmap)}/{len(us)} ({exact} exact, {len(fmap) - exact} fuzzy)')
+    log(f'mapped functions: {len(fmap)}/{len(us)} ({exact} exact, {len(fmap) - exact} fuzzy)')
 
     # Data addresses + lr return addresses voted from exact matches with identical instruction counts.
     dvotes = collections.defaultdict(collections.Counter)
@@ -159,17 +166,43 @@ def main():
     dmap, dconflict = {}, 0
     for x, c in dvotes.items():
         (y, n), = c.most_common(1)
-        if n == sum(c.values()):
+        total = sum(c.values())
+        if n == total or (n >= 3 and n >= 0.75 * total):
             dmap[x] = y
         else:
             dconflict += 1
-    print(f'data addresses: {len(dmap)} unanimous, {dconflict} conflicting; lr return addresses: {len(lrmap)}')
 
+    # Branch/call targets: in exact pairs every code address operand corresponds pairwise. Covers code
+    # addresses that are not separate functions on one side (CRT natives, forced boundaries, thunks).
+    tvotes = collections.defaultdict(collections.Counter)
+    for ua, pa in fmap.items():
+        if conf[ua] != 1.0:
+            continue
+        ut = [int(x, 16) for s_ in us[ua]['insns'] for x in ADDR.findall(s_)]
+        pt = [int(x, 16) for s_ in pal[pa]['insns'] for x in ADDR.findall(s_)]
+        if len(ut) == len(pt):
+            for x, y in zip(ut, pt):
+                tvotes[x][y] += 1
+    tmap = {}
+    for x, c in tvotes.items():
+        (y, n), = c.most_common(1)
+        if n == sum(c.values()):
+            tmap[x] = y
+    log(f'branch/call targets: {len(tmap)}')
+    log(f'data addresses: {len(dmap)} unanimous, {dconflict} conflicting; lr return addresses: {len(lrmap)}')
+
+    return {'us': us, 'pal': pal, 'us_order': us_order, 'fmap': fmap, 'conf': conf, 'dmap': dmap, 'lrmap': lrmap,
+            'tmap': tmap}
+
+
+def main():
+    us_dir, pal_dir, out_path = sys.argv[1:4]
+    m = build_map(us_dir, pal_dir)
     hexd = lambda d: {f'0x{k:08X}': f'0x{v:08X}' for k, v in sorted(d.items())}
-    json.dump({'functions': hexd(fmap),
-               'function_confidence': {f'0x{k:08X}': v for k, v in sorted(conf.items()) if v < 1.0},
-               'data': hexd(dmap), 'lr': hexd(lrmap),
-               'unmapped_us_functions': [f'0x{a:08X}' for a in us_order if a not in fmap]},
+    json.dump({'functions': hexd(m['fmap']),
+               'function_confidence': {f'0x{k:08X}': v for k, v in sorted(m['conf'].items()) if v < 1.0},
+               'data': hexd(m['dmap']), 'lr': hexd(m['lrmap']),
+               'unmapped_us_functions': [f'0x{a:08X}' for a in m['us_order'] if a not in m['fmap']]},
               open(out_path, 'w'), indent=1)
     print('wrote', out_path)
 

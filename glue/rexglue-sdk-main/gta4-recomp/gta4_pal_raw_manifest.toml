@@ -1,0 +1,10 @@
+# PAL port REFERENCE build (fork-local, matching input only): PAL disc default.xex + TU5 default.xexp sibling (codegen applies it).
+# assets_pal/ is a gitignored symlink to the user's own dump. See docs/PAL-PORT.md.
+[project]
+name = "gta4"
+sdk_version = "0.9.0"
+
+[entrypoint]
+file_path = "assets_pal/default.xex"
+out_directory_path = "generated_pal_raw"
+includes = ["gta4_pal_raw_config.toml"]
