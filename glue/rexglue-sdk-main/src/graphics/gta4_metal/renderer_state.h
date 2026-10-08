@@ -23,6 +23,7 @@
 #include <rex/graphics/gta4_native/fire_escape_trace.h>
 #include <rex/ui/presenter.h>
 #include <array>
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <unordered_map>
@@ -85,6 +86,24 @@ struct Renderer::State {
   ShaderCache stock,overrides,temporal_stock,temporal_overrides;
   // Recipes of every built pipeline + a binary archive of their compiled forms (launch precompile).
   PipelineStore pipeline_store;
+  // Opt-in per-frame timing (gta4_metal_frame_log): kept in memory, written once at shutdown so the
+  // measurement itself adds no per-frame I/O.
+  struct FrameSample {
+    uint32_t frame;
+    uint64_t at_ns, interval_ns, submit_ns, present_ns;
+    uint32_t draws, pipelines_built, pipeline_waits, texture_waits;
+    uint64_t pipeline_wait_ns, gpu_ns;
+  };
+  std::string frame_log_path;
+  std::vector<FrameSample> frame_samples;
+  uint64_t frame_submit_ns = 0, frame_present_ns = 0, frame_log_origin_ns = 0, frame_last_present_ns = 0;
+  // GPU busy time summed by command-buffer completion handlers (shared: handlers may outlive State).
+  std::shared_ptr<std::atomic<uint64_t>> frame_gpu_ns = std::make_shared<std::atomic<uint64_t>>(0);
+  uint64_t frame_prev_gpu_ns = 0;
+  uint64_t frame_prev_draws = 0, frame_prev_pipelines = 0, frame_prev_waits = 0, frame_prev_wait_ns = 0,
+           frame_prev_texture_waits = 0;
+  void RecordFrameSample(uint32_t frame);
+  void WriteFrameLog();
   bool use_pipeline_archive = true;
   temporal::Live temporal_scene;
   bool temporal_enabled=false,temporal_upscale=false,temporal_generation=false;

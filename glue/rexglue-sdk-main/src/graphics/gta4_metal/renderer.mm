@@ -1,3 +1,4 @@
+#include <chrono>
 #include <xxhash.h>
 #include <tuple>
 #include "renderer_state.h"
@@ -24,6 +25,7 @@ REXCVAR_DEFINE_BOOL(gta4_metal_cache_pipeline_lookup, true, "GPU", "Reuse recent
 REXCVAR_DEFINE_BOOL(gta4_metal_cache_encoder_state, true, "GPU", "Reuse unchanged state in one Metal encoder");
 REXCVAR_DEFINE_BOOL(gta4_metal_foreground_qos, true, "GPU", "Bound recording work to foreground QoS");
 REXCVAR_DEFINE_BOOL(gta4_metal_fold_full_clears, true, "GPU", "Fold full clears into the next attachment use");
+REXCVAR_DEFINE_STRING(gta4_metal_frame_log, "", "GPU/Diagnostics", "Write per-frame Metal timing CSV here at shutdown (empty = off)");
 REXCVAR_DEFINE_BOOL(gta4_metal_pipeline_archive, true, "GPU", "Record pipelines and precompile them into a Metal binary archive at launch");
 REXCVAR_DEFINE_BOOL(gta4_metal_async_pipelines, true, "GPU", "Overlap title pipeline creation with draw resource preparation");
 REXCVAR_DEFINE_BOOL(gta4_metal_prepare_textures, true, "GPU", "Decode owned texture snapshots on bounded workers");
@@ -47,7 +49,7 @@ Renderer::State::State(std::shared_ptr<ui::metal::MetalContext> c,memory::Memory
        rex::cvar::Query<uint32_t>("gta4_native_frames_in_flight")) {}
 Renderer::Renderer(std::shared_ptr<ui::metal::MetalContext> context,memory::Memory* memory,ui::Presenter* presenter)
     :state_(std::make_unique<State>(std::move(context),memory,presenter)) {}
-Renderer::~Renderer() {std::string error; if(!Finish(error)) REXLOG_ERROR("gta4-metal: shutdown: {}",error);}
+Renderer::~Renderer() {std::string error; if(!Finish(error)) REXLOG_ERROR("gta4-metal: shutdown: {}",error); state_->WriteFrameLog();}
 
 bool Renderer::Initialize(std::string& error,const std::filesystem::path& directory) {
   @autoreleasepool {
@@ -110,6 +112,8 @@ bool Renderer::Initialize(std::string& error,const std::filesystem::path& direct
       REXLOG_INFO("gta4-metal-temporal: enabled method={} upscale={} frame-generation={}",gta4_native::AntiAliasingModeName(s.anti_aliasing),s.temporal_upscale,s.temporal_generation);
     }
     if (!s.post_processing.Initialize(s.context, error)) return false;
+    s.frame_log_path=rex::cvar::GetFlagByName("gta4_metal_frame_log");
+    if(!s.frame_log_path.empty()) s.frame_samples.reserve(1u<<16);
     s.ready=true;
     REXLOG_INFO("gta4-metal: title renderer initialized; device={} bindings=direct-resource-ids",s.context->device.name.UTF8String);
     return true;
@@ -193,6 +197,13 @@ bool Renderer::State::Flush(bool wait,std::string& error) {
             uint32_t(completed.status),ui::metal::MetalError(completed.error,"GPU submission failed"));
     }];
   }
+  if(!frame_log_path.empty()) {
+    auto gpu_total=frame_gpu_ns;
+    [committed addCompletedHandler:^(id<MTLCommandBuffer> completed) {
+      const double seconds=completed.GPUEndTime-completed.GPUStartTime;
+      if(seconds>0) gpu_total->fetch_add(uint64_t(seconds*1e9));
+    }];
+  }
   if(!frames.Commit(*frame,committed)) {frame_qos.End(); error="Metal frame submission failed"; return false;}
   if (capture_active) {
     [[MTLCaptureManager sharedCaptureManager] stopCapture]; capture_active = false;
@@ -261,7 +272,11 @@ bool Renderer::Submit(std::span<const std::byte> bytes,std::string& error,
   state_->diagnostic_texture_stage = UINT32_MAX;
   state_->diagnostic_texture_handle = 0;
   state_->fire_context = trace ? *trace : gta4_native::FireTraceContext{};
+  const bool timed = !state_->frame_log_path.empty();
+  const auto submit_begin = timed ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
   const bool ok = SubmitImpl(bytes, error);
+  if (timed) state_->frame_submit_ns += uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now() - submit_begin).count());
   if (!ok) state_->TraceCommandFailure(bytes,error);
   if (state_->sky_visibility) { state_->EndRender(); state_->sky_visibility=nil; }
   if (!ok && state_->fire_active) gta4_native::FireTraceLog("metal-command-error",
@@ -623,6 +638,36 @@ bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>&
   REXLOG_INFO("gta4-metal-pipeline-cache: precompiled {} pipelines ({} skipped)",compiled.load(),skipped.load());
   return s.pipeline_store.Save(error);
 }
+void Renderer::State::RecordFrameSample(uint32_t frame) {
+  const uint64_t now=uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count());
+  if(!frame_log_origin_ns) frame_log_origin_ns=now;
+  const auto prep=resources.preparation_statistics();
+  if(frame_samples.size()<frame_samples.capacity()){
+    frame_samples.push_back({frame,now-frame_log_origin_ns,frame_last_present_ns?now-frame_last_present_ns:0,
+        frame_submit_ns,frame_present_ns,uint32_t(draws-frame_prev_draws),uint32_t(pipeline_creations-frame_prev_pipelines),
+        uint32_t(pipeline_waits-frame_prev_waits),uint32_t(prep.waited-frame_prev_texture_waits),pipeline_wait_ns-frame_prev_wait_ns,
+        frame_gpu_ns->load()-frame_prev_gpu_ns});
+  }
+  frame_last_present_ns=now; frame_submit_ns=0; frame_present_ns=0;
+  // Hard process exit can skip destructors: flush in rare, small batches instead of only at shutdown.
+  if(frame_samples.size()>=600) WriteFrameLog();
+  frame_prev_draws=draws; frame_prev_pipelines=pipeline_creations; frame_prev_waits=pipeline_waits;
+  frame_prev_wait_ns=pipeline_wait_ns; frame_prev_texture_waits=prep.waited; frame_prev_gpu_ns=frame_gpu_ns->load();
+}
+
+void Renderer::State::WriteFrameLog() {
+  if(frame_log_path.empty()||frame_samples.empty()) return;
+  static bool header_written=false;
+  std::ofstream out(frame_log_path,header_written?std::ios::app:std::ios::trunc);
+  if(!header_written) out<<"frame,at_ms,interval_ms,submit_ms,present_ms,draws,pipelines_built,pipeline_waits,pipeline_wait_ms,texture_waits,gpu_ms\n";
+  header_written=true;
+  for(const auto& f:frame_samples)
+    out<<f.frame<<','<<f.at_ns/1e6<<','<<f.interval_ns/1e6<<','<<f.submit_ns/1e6<<','<<f.present_ns/1e6<<','
+       <<f.draws<<','<<f.pipelines_built<<','<<f.pipeline_waits<<','<<f.pipeline_wait_ns/1e6<<','<<f.texture_waits<<','<<f.gpu_ns/1e6<<'\n';
+  frame_samples.clear();
+}
+
 void Renderer::State::FinishScopeProfile() {
   if(!scope_profile.active()) return;
   REXLOG_INFO("gta4-metal-profile-scope recording={} scope={} width={} height={} entries={} draws={} overflow={}",

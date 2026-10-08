@@ -5,10 +5,20 @@
 #include <rex/logging.h>
 
 #include <bit>
+#include <chrono>
 
 namespace rex::graphics::gta4_metal {
 
 bool Renderer::State::Present(const gta4_native::PresentCommand& present, std::string& error) {
+  struct PresentTimer {
+    State& s; uint32_t frame; std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    ~PresentTimer() {
+      if (s.frame_log_path.empty()) return;
+      s.frame_present_ns += uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::steady_clock::now() - begin).count());
+      s.RecordFrameSample(frame);
+    }
+  } present_timer{*this, present.submitted_frame};
   if (!present.frontbuffer_texture || !present.width || !present.height ||
       present.width > 16384 || present.height > 16384) {
     error = "Invalid title frontbuffer publication"; return false;
