@@ -39,8 +39,8 @@ static void ClassifyWorldEntityImpl(PPCContext& ctx, uint8_t* base) {
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r31.u32 + 36);
 	// rlwinm r28,r9,29,31,31
 	ctx.r28.u64 = __builtin_rotateleft64(ctx.r9.u32 | (ctx.r9.u64 << 32), 29) & 0x1;
-	// lfs f28,3596(r11)
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 3596);
+	// lfs f28,3592(r11)
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 3592);
 	ctx.f28.f64 = double(temp.f32);
 	// lwz r30,76(r31)
 	ctx.r30.u64 = REX_LOAD_U32(ctx.r31.u32 + 76);
@@ -67,15 +67,15 @@ static void ClassifyWorldEntityImpl(PPCContext& ctx, uint8_t* base) {
 	// bctrl 
 	ctx.lr = 0x821EEA50;
 	REX_CALL_INDIRECT_FUNC(ctx.ctr.u32);
-	// lis r11,-32073
-	ctx.r11.s64 = -2101936128;
+	// lis r11,-32070
+	ctx.r11.s64 = -2101739520;
 	// fmuls f0,f30,f31
 	ctx.fpscr.disableFlushMode();
 	ctx.f0.f64 = double(float(ctx.f30.f64 * ctx.f31.f64));
 	// cmplwi cr6,r30,0
 	ctx.cr6.compare<uint32_t>(ctx.r30.u32, 0, ctx.xer);
-	// lfs f13,-2616(r11)
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + -2616);
+	// lfs f13,17192(r11)
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 17192);
 	ctx.f13.f64 = double(temp.f32);
 	// fadds f13,f1,f13
 	ctx.f13.f64 = double(float(ctx.f1.f64 + ctx.f13.f64));
@@ -94,8 +94,8 @@ static void ClassifyWorldEntityImpl(PPCContext& ctx, uint8_t* base) {
 	ctx.f13.f64 = double(float(ctx.f0.f64 - ctx.f31.f64));
 	// fsel f0,f13,f31,f0
 	ctx.f0.f64 = ctx.f13.f64 >= 0.0 ? ctx.f31.f64 : ctx.f0.f64;
-	// lfs f13,9496(r11)
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 9496);
+	// lfs f13,14688(r11)
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 14688);
 	ctx.f13.f64 = double(temp.f32);
 	// fcmpu cr6,f0,f13
 	ctx.cr6.compare(ctx.f0.f64, ctx.f13.f64);
@@ -103,13 +103,13 @@ static void ClassifyWorldEntityImpl(PPCContext& ctx, uint8_t* base) {
 	if (!ctx.cr6.gt) goto loc_821D8900;
 	// lis r11,-32256
 	ctx.r11.s64 = -2113929216;
-	// lfs f13,9500(r11)
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 9500);
+	// lfs f13,14692(r11)
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 14692);
 	ctx.f13.f64 = double(temp.f32);
 	// lis r11,-32254
 	ctx.r11.s64 = -2113798144;
-	// lfs f12,-27024(r11)
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + -27024);
+	// lfs f12,-22900(r11)
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + -22900);
 	ctx.f12.f64 = double(temp.f32);
 	// fmadds f29,f0,f13,f12
 	ctx.f29.f64 = double(float(std::fma(ctx.f0.f64, ctx.f13.f64, ctx.f12.f64)));
@@ -124,9 +124,9 @@ loc_821D8900:
 	if (ctx.cr6.eq) goto loc_821D891C;
 	// lis r11,-32087
 	ctx.r11.s64 = -2102853632;
-	// lfs f0,12728(r11)
+	// lfs f0,16756(r11)
 	ctx.fpscr.disableFlushMode();
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 12728);
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 16756);
 	ctx.f0.f64 = double(temp.f32);
 	// fmuls f31,f0,f31
 	ctx.f31.f64 = double(float(ctx.f0.f64 * ctx.f31.f64));
@@ -471,8 +471,8 @@ loc_821D8B14:
 	// fadds f0,f31,f28
 	ctx.fpscr.disableFlushMode();
 	ctx.f0.f64 = double(float(ctx.f31.f64 + ctx.f28.f64));
-	// lis r10,-32256
-	ctx.r10.s64 = -2113929216;
+	// lis r10,-32254
+	ctx.r10.s64 = -2113798144;
 	// lwz r11,76(r31)
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r31.u32 + 76);
 	// cmpwi cr6,r11,0
@@ -481,8 +481,8 @@ loc_821D8B14:
 	ctx.f0.f64 = double(float(ctx.f0.f64 - ctx.f27.f64));
 	// fdivs f13,f0,f29
 	ctx.f13.f64 = double(float(ctx.f0.f64 / ctx.f29.f64));
-	// lfs f0,3400(r10)
-	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + 3400);
+	// lfs f0,-22868(r10)
+	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + -22868);
 	ctx.f0.f64 = double(temp.f32);
 	// fsubs f12,f13,f0
 	ctx.f12.f64 = double(float(ctx.f13.f64 - ctx.f0.f64));
@@ -492,22 +492,22 @@ loc_821D8B14:
 	if (ctx.cr6.eq) goto loc_821D8BF8;
 	// lis r10,-32256
 	ctx.r10.s64 = -2113929216;
-	// lfs f12,3444(r10)
-	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + 3444);
+	// lfs f12,3440(r10)
+	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + 3440);
 	ctx.f12.f64 = double(temp.f32);
 	// lis r10,-32244
 	ctx.r10.s64 = -2113142784;
 	// fcmpu cr6,f13,f12
 	ctx.cr6.compare(ctx.f13.f64, ctx.f12.f64);
-	// lfs f12,-4652(r10)
-	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + -4652);
+	// lfs f12,-4820(r10)
+	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + -4820);
 	ctx.f12.f64 = double(temp.f32);
 	// bge cr6,0x821eed68
 	if (!ctx.cr6.lt) goto loc_821D8BC8;
 	// lis r11,-32256
 	ctx.r11.s64 = -2113929216;
-	// lfs f0,3528(r11)
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 3528);
+	// lfs f0,3524(r11)
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 3524);
 	ctx.f0.f64 = double(temp.f32);
 	// fmuls f0,f13,f0
 	ctx.f0.f64 = double(float(ctx.f13.f64 * ctx.f0.f64));
@@ -525,8 +525,8 @@ loc_821D8BC8:
 	ctx.r9.s64 = ctx.r1.s64 + 80;
 	// fmuls f0,f0,f12
 	ctx.f0.f64 = double(float(ctx.f0.f64 * ctx.f12.f64));
-	// lfs f13,3528(r10)
-	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + 3528);
+	// lfs f13,3524(r10)
+	temp.u32 = REX_LOAD_U32(ctx.r10.u32 + 3524);
 	ctx.f13.f64 = double(temp.f32);
 	// fmuls f13,f11,f13
 	ctx.f13.f64 = double(float(ctx.f11.f64 * ctx.f13.f64));
@@ -547,9 +547,9 @@ loc_821D8BF8:
 	ctx.r11.s64 = -2113142784;
 	// lbz r10,99(r31)
 	ctx.r10.u64 = REX_LOAD_U8(ctx.r31.u32 + 99);
-	// lfs f0,-4652(r11)
+	// lfs f0,-4820(r11)
 	ctx.fpscr.disableFlushMode();
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + -4652);
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + -4820);
 	ctx.f0.f64 = double(temp.f32);
 	// mr r11,r10
 	ctx.r11.u64 = ctx.r10.u64;
@@ -630,9 +630,9 @@ loc_821D8C60:
 loc_821D8C88:
 	// lis r11,-32256
 	ctx.r11.s64 = -2113929216;
-	// lfs f0,2604(r11)
+	// lfs f0,2608(r11)
 	ctx.fpscr.disableFlushMode();
-	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 2604);
+	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + 2608);
 	ctx.f0.f64 = EntityPreloadMargin(base, ctx.r31.u32, ctx.r29.u32,
                                           ctx.f27.f64, ctx.f31.f64, temp.f32);
 	// fsubs f0,f27,f0
@@ -726,8 +726,8 @@ extern "C" void sub_8259BC90(PPCContext& ctx, uint8_t* base) {
 	ctx.r20.s64 = 0;
 	// ori r26,r10,65535
 	ctx.r26.u64 = ctx.r10.u64 | 65535;
-	// lis r25,-31997
-	ctx.r25.s64 = -2096955392;
+	// lis r25,-31992
+	ctx.r25.s64 = -2096627712;
 	// mr r16,r26
 	ctx.r16.u64 = ctx.r26.u64;
 	// lhz r11,16(r11)
@@ -747,8 +747,8 @@ loc_82513320:
 	ctx.r10.u64 = __builtin_rotateleft64(ctx.r11.u32 | (ctx.r11.u64 << 32), 1) & 0xFFFFFFFE;
 	// add r11,r11,r10
 	ctx.r11.u64 = ctx.r11.u64 + ctx.r10.u64;
-	// lwz r10,10052(r25)
-	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 10052);
+	// lwz r10,19220(r25)
+	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 19220);
 	// rlwinm r11,r11,3,0,28
 	ctx.r11.u64 = __builtin_rotateleft64(ctx.r11.u32 | (ctx.r11.u64 << 32), 3) & 0xFFFFFFF8;
 	// add r27,r11,r10
@@ -760,16 +760,16 @@ loc_82513334:
 	ctx.cr6.compare<uint32_t>(ctx.r27.u32, ctx.r11.u32, ctx.xer);
 	// beq cr6,0x8259C020
 	if (ctx.cr6.eq) goto loc_82513660;
-	// lis r11,-32044
-	ctx.r11.s64 = -2100035584;
-	// clrlwi r14,r5,24
-	ctx.r14.u64 = ctx.r5.u32 & 0xFF;
-	// addi r22,r11,30272
-	ctx.r22.s64 = ctx.r11.s64 + 30272;
 	// lis r11,-32043
 	ctx.r11.s64 = -2099970048;
-	// addi r21,r11,5560
-	ctx.r21.s64 = ctx.r11.s64 + 5560;
+	// clrlwi r14,r5,24
+	ctx.r14.u64 = ctx.r5.u32 & 0xFF;
+	// addi r22,r11,-712
+	ctx.r22.s64 = ctx.r11.s64 + -712;
+	// lis r11,-32042
+	ctx.r11.s64 = -2099904512;
+	// addi r21,r11,-25424
+	ctx.r21.s64 = ctx.r11.s64 + -25424;
 	// lis r11,10922
 	ctx.r11.s64 = 715784192;
 	// ori r23,r11,43691
@@ -803,8 +803,8 @@ loc_82513388:
 	ctx.r10.u64 = __builtin_rotateleft64(ctx.r11.u32 | (ctx.r11.u64 << 32), 1) & 0xFFFFFFFE;
 	// add r11,r11,r10
 	ctx.r11.u64 = ctx.r11.u64 + ctx.r10.u64;
-	// lwz r10,10052(r25)
-	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 10052);
+	// lwz r10,19220(r25)
+	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 19220);
 	// rlwinm r11,r11,3,0,28
 	ctx.r11.u64 = __builtin_rotateleft64(ctx.r11.u32 | (ctx.r11.u64 << 32), 3) & 0xFFFFFFF8;
 	// add r24,r11,r10
@@ -1001,8 +1001,8 @@ loc_825134E0:
 	ctx.r9.u64 = __builtin_rotateleft64(ctx.r9.u32 | (ctx.r9.u64 << 32), 3) & 0xFFFFFFF8;
 	// add r7,r28,r10
 	ctx.r7.u64 = ctx.r28.u64 + ctx.r10.u64;
-	// lwz r10,10052(r25)
-	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 10052);
+	// lwz r10,19220(r25)
+	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 19220);
 	// add r10,r9,r10
 	ctx.r10.u64 = ctx.r9.u64 + ctx.r10.u64;
 	// rlwinm r9,r7,3,0,28
@@ -1019,8 +1019,8 @@ loc_825134E0:
 	ctx.r10.u64 = ctx.r10.u64 + ctx.r8.u64;
 	// rlwinm r8,r10,3,0,28
 	ctx.r8.u64 = __builtin_rotateleft64(ctx.r10.u32 | (ctx.r10.u64 << 32), 3) & 0xFFFFFFF8;
-	// lwz r10,10052(r25)
-	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 10052);
+	// lwz r10,19220(r25)
+	ctx.r10.u64 = REX_LOAD_U32(ctx.r25.u32 + 19220);
 	// add r10,r8,r10
 	ctx.r10.u64 = ctx.r8.u64 + ctx.r10.u64;
 	// sth r7,16(r10)
