@@ -1,4 +1,5 @@
 #include "depth_of_field.h"
+#include "gpu_pass_timer.h"
 #include "../../ui/metal/context.h"
 #include <algorithm>
 #include <cstring>
@@ -85,6 +86,7 @@ id<MTLTexture> DepthOfField::Record(const std::shared_ptr<ui::metal::MetalContex
     descriptor.colorAttachments[0].texture = destination;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+    gpu_pass_timer::Tag(descriptor,"depth-of-field");
     auto encoder = [commands renderCommandEncoderWithDescriptor:descriptor];
     if (!encoder) { error = "DoF render encoder failed"; return nil; }
     encoder.label = [NSString stringWithFormat:@"Liberty DoF pass %u", pass];

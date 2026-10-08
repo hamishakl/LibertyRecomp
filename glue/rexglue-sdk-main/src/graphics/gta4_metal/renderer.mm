@@ -2,6 +2,7 @@
 #include <xxhash.h>
 #include <tuple>
 #include "renderer_state.h"
+#include "gpu_pass_timer.h"
 #include "../gta4_native/modern_shader_options.h"
 #include "metal_native_library.h"
 #include <rex/graphics/gta4_native/lighting_semantics.h>
@@ -25,6 +26,8 @@ REXCVAR_DEFINE_BOOL(gta4_metal_cache_pipeline_lookup, true, "GPU", "Reuse recent
 REXCVAR_DEFINE_BOOL(gta4_metal_cache_encoder_state, true, "GPU", "Reuse unchanged state in one Metal encoder");
 REXCVAR_DEFINE_BOOL(gta4_metal_foreground_qos, true, "GPU", "Bound recording work to foreground QoS");
 REXCVAR_DEFINE_BOOL(gta4_metal_fold_full_clears, true, "GPU", "Fold full clears into the next attachment use");
+REXCVAR_DEFINE_BOOL(gta4_metal_retain_ignore_address, true, "GPU", "Keep colour-masked draws in the current render pass when only the guest surface address differs");
+REXCVAR_DEFINE_STRING(gta4_metal_gpu_pass_log, "", "GPU/Diagnostics", "Append average GPU ms per render-pass category to this CSV every 300 frames (empty = off)");
 REXCVAR_DEFINE_STRING(gta4_metal_frame_log, "", "GPU/Diagnostics", "Write per-frame Metal timing CSV here at shutdown (empty = off)");
 REXCVAR_DEFINE_BOOL(gta4_metal_pipeline_archive, true, "GPU", "Record pipelines and precompile them into a Metal binary archive at launch");
 REXCVAR_DEFINE_BOOL(gta4_metal_async_pipelines, true, "GPU", "Overlap title pipeline creation with draw resource preparation");
@@ -112,6 +115,8 @@ bool Renderer::Initialize(std::string& error,const std::filesystem::path& direct
       REXLOG_INFO("gta4-metal-temporal: enabled method={} upscale={} frame-generation={}",gta4_native::AntiAliasingModeName(s.anti_aliasing),s.temporal_upscale,s.temporal_generation);
     }
     if (!s.post_processing.Initialize(s.context, error)) return false;
+    gpu_pass_timer::Initialize(s.context->device,rex::cvar::GetFlagByName("gta4_metal_gpu_pass_log"));
+    s.retain_ignore_address=rex::cvar::Query<bool>("gta4_metal_retain_ignore_address");
     s.frame_log_path=rex::cvar::GetFlagByName("gta4_metal_frame_log");
     if(!s.frame_log_path.empty()) s.frame_samples.reserve(1u<<16);
     s.ready=true;
@@ -177,7 +182,11 @@ bool Renderer::State::Begin(std::string& error) {
   for (auto& bank : constant_banks) { bank.size = 0; bank.upload = {};bank.source_view=nullptr; }
   return true;
 }
-void Renderer::State::EndRender() {
+void Renderer::State::EndRender(std::source_location caller) {
+  if(render && gpu_pass_timer::enabled()) {
+    const char* file=caller.file_name(); if(const char* slash=std::strrchr(file,'/')) file=slash+1;
+    gpu_pass_timer::Count(fmt::format("end-pass@{}:{}",file,caller.line()));
+  }
   if(render) { FinishScopeProfile(); [render endEncoding]; render=nil; bindings.Reset(cache_encoder_state); }
   active_targets={};
 }
@@ -204,6 +213,7 @@ bool Renderer::State::Flush(bool wait,std::string& error) {
       if(seconds>0) gpu_total->fetch_add(uint64_t(seconds*1e9));
     }];
   }
+  gpu_pass_timer::Commit(committed);
   if(!frames.Commit(*frame,committed)) {frame_qos.End(); error="Metal frame submission failed"; return false;}
   if (capture_active) {
     [[MTLCaptureManager sharedCaptureManager] stopCapture]; capture_active = false;

@@ -1,4 +1,5 @@
 #include "post_processing.h"
+#include "gpu_pass_timer.h"
 #include "../../ui/metal/context.h"
 #include <postfx/smaa/AreaTex.h>
 #include <postfx/smaa/SearchTex.h>
@@ -107,6 +108,7 @@ bool PostProcessing::Record(id<MTLCommandBuffer> commands, id<MTLTexture> source
         // Edge detection discards non-edges; zero is meaningful input to weights.
         pass.colorAttachments[0].loadAction = MTLLoadActionClear;
         pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+        gpu_pass_timer::Tag(pass,"post-processing");
         auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
         if (!encoder) { error = "SMAA encoder creation failed"; return false; }
         encoder.label = [NSString stringWithFormat:@"Liberty SMAA pass %zu", i];
@@ -131,6 +133,7 @@ bool PostProcessing::Record(id<MTLCommandBuffer> commands, id<MTLTexture> source
     pass.colorAttachments[0].texture = destination;
     pass.colorAttachments[0].loadAction = MTLLoadActionDontCare;
     pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+    gpu_pass_timer::Tag(pass,"post-processing");
     auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
     if (!encoder) { error = "Output-transfer encoder creation failed"; return false; }
     encoder.label = @"Liberty final title image";

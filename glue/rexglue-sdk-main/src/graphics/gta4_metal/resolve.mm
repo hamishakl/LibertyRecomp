@@ -1,5 +1,6 @@
 #include <rex/cvar.h>
 #include "renderer_state.h"
+#include "gpu_pass_timer.h"
 #include "../gta4_native/native_msaa_policy.h"
 #include "pass_contracts.h"
 #include <rex/graphics/gta4_native/surface_view.h>
@@ -200,6 +201,7 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
       pass.colorAttachments[0].storeAction = MTLStoreActionStore;
       pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
     }
+    gpu_pass_timer::Tag(pass,"resolve-draw");
     auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
     if (!encoder) { error = "Resolve destination initialization failed"; return false; }
     [encoder endEncoding];
@@ -264,6 +266,7 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
       pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
       pass.colorAttachments[0].storeAction = MTLStoreActionStore;
     }
+    gpu_pass_timer::Tag(pass,"resolve-draw");
     auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
     if (!encoder) { error = "Resolve conversion encoder creation failed"; return false; }
     encoder.label = depth ? @"Liberty depth and stencil resolve" : @"Liberty color resolve";

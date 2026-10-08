@@ -23,6 +23,7 @@
 #include <rex/graphics/gta4_native/fire_escape_trace.h>
 #include <rex/ui/presenter.h>
 #include <array>
+#include <source_location>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -105,6 +106,7 @@ struct Renderer::State {
   void RecordFrameSample(uint32_t frame);
   void WriteFrameLog();
   bool use_pipeline_archive = true;
+  bool retain_ignore_address = true;
   temporal::Live temporal_scene;
   bool temporal_enabled=false,temporal_upscale=false,temporal_generation=false;
   PostProcessing post_processing;
@@ -217,7 +219,7 @@ struct Renderer::State {
 
   State(std::shared_ptr<ui::metal::MetalContext>,memory::Memory*,ui::Presenter*);
   bool Begin(std::string& error);
-  void EndRender();
+  void EndRender(std::source_location caller = std::source_location::current());
   bool Flush(bool wait,std::string& error);
   bool CaptureTargets(std::span<const uint8_t>,uint32_t color_mask,bool depth,Targets&,std::string&);
   bool BeginRender(const Targets&,std::string& error);

@@ -1,4 +1,5 @@
 #include "renderer_state.h"
+#include "gpu_pass_timer.h"
 #include "pass_contracts.h"
 
 #include <bit>
@@ -47,6 +48,7 @@ std::shared_ptr<TextureResource> Renderer::State::PrepareTexture(uint32_t handle
   pass.colorAttachments[0].texture = destination->image;
   pass.colorAttachments[0].loadAction = MTLLoadActionDontCare;
   pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+  gpu_pass_timer::Tag(pass,"depth-pass");
   auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
   if (!encoder) { error = "Packed depth alias encoder creation failed"; return {}; }
   encoder.label = @"Liberty packed depth snapshot";
@@ -103,6 +105,7 @@ bool Renderer::State::Handoff(const gta4_native::DepthSurfaceHandoffCommand& han
   pass.stencilAttachment.loadAction = rebuild || !destination->initialized ? MTLLoadActionClear : MTLLoadActionLoad;
   pass.stencilAttachment.clearStencil = rebuild ? kForwardEmptySceneStencil : 0;
   pass.depthAttachment.storeAction = pass.stencilAttachment.storeAction = MTLStoreActionStore;
+  gpu_pass_timer::Tag(pass,"depth-pass");
   auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
   if (!encoder) { error = "Explicit depth handoff encoder creation failed"; return false; }
   encoder.label = rebuild ? @"Liberty scene coverage rebuild" : @"Liberty depth handoff preserving stencil";

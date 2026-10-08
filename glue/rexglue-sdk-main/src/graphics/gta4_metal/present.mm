@@ -1,4 +1,5 @@
 #include "renderer_state.h"
+#include "gpu_pass_timer.h"
 #include "../../ui/metal/guest_output_context.h"
 #include <rex/cvar.h>
 #include <rex/diagnostics/policy.h>
@@ -19,6 +20,7 @@ bool Renderer::State::Present(const gta4_native::PresentCommand& present, std::s
       s.RecordFrameSample(frame);
     }
   } present_timer{*this, present.submitted_frame};
+  gpu_pass_timer::FrameEnd();
   if (!present.frontbuffer_texture || !present.width || !present.height ||
       present.width > 16384 || present.height > 16384) {
     error = "Invalid title frontbuffer publication"; return false;

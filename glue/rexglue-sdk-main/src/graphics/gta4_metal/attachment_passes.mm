@@ -1,4 +1,5 @@
 #include "renderer_state.h"
+#include "gpu_pass_timer.h"
 #include "pass_contracts.h"
 
 #include <algorithm>
@@ -109,6 +110,7 @@ bool Renderer::State::ClearSurface(const std::shared_ptr<SurfaceResource>& surfa
         MTLClearColorMake(0, 0, 0, 0);
     pass.colorAttachments[0].storeAction = MTLStoreActionStore;
   }
+  gpu_pass_timer::Tag(pass,"attachment-pass");
   auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
   if (!encoder) { error = "Native attachment clear encoder creation failed"; return false; }
   encoder.label = full ? @"Liberty attachment load clear" : @"Liberty partial attachment clear";
@@ -175,6 +177,7 @@ bool Renderer::State::MaterializePendingClears(std::string& error, const Surface
       attachment.storeAction = MTLStoreActionStore;
       attachment.clearColor = MTLClearColorMake(value.color[0], value.color[1], value.color[2], value.color[3]);
     }
+    gpu_pass_timer::Tag(pass,"attachment-pass");
     auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
     if (!encoder) { error = "Pending clear materialization failed"; return false; }
     encoder.label = @"Liberty materialize pending clear";
@@ -238,6 +241,7 @@ bool Renderer::State::CopyColor(id<MTLTexture> source, id<MTLTexture> destinatio
   pass.colorAttachments[0].texture = destination;
   pass.colorAttachments[0].loadAction = MTLLoadActionDontCare;
   pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+  gpu_pass_timer::Tag(pass,"attachment-pass");
   auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
   if (!encoder) { error = "Color conversion encoder creation failed"; return false; }
   encoder.label = @"Liberty color conversion";

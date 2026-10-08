@@ -1,6 +1,7 @@
 #include "material_binding.h"
 #include <rex/graphics/gta4_native/fusion_tone_lut.h>
 #include "renderer_state.h"
+#include "gpu_pass_timer.h"
 #include "../gta4_native/modern_shader_options.h"
 #include <rex/diagnostics/policy.h>
 #include <rex/logging.h>
@@ -96,8 +97,19 @@ bool Renderer::State::CaptureTargets(std::span<const uint8_t> guest,uint32_t col
       target.height == active_targets.height && target.samples == active_targets.samples &&
       target.logical_width == active_targets.logical_width && target.logical_height == active_targets.logical_height) {
     const auto retained = [&](const std::shared_ptr<SurfaceResource>& previous, const SurfaceDescriptor& binding) {
+      // The binding must still resolve to this exact host surface. Its guest `address` is not part
+      // of that identity: GTA IV re-points it between draws (e.g. 03F30001 <-> 03FC0001) on the same
+      // handle/base/format/extent, and comparing it dropped the colour attachment for every
+      // colour-masked draw - a full-resolution tile store + reload, ~250-400 times per frame.
+      const auto& stored = previous ? previous->descriptor : SurfaceDescriptor{};
+      if (!retain_ignore_address)  // A/B switch: the original exact-descriptor comparison.
+        return previous && !resources.IsReflection(binding.handle) &&
+            NativeProducerResolveDescriptorsEqual(stored, binding) && resources.FindSurface(binding.handle) == previous;
       return previous && !resources.IsReflection(binding.handle) &&
-          NativeProducerResolveDescriptorsEqual(previous->descriptor, binding) &&
+          stored.handle == binding.handle && stored.flags == binding.flags && stored.base == binding.base &&
+          stored.packed_dimensions == binding.packed_dimensions && stored.format == binding.format &&
+          stored.width == binding.width && stored.height == binding.height &&
+          stored.sample_type == binding.sample_type &&
           resources.FindSurface(binding.handle) == previous;
     };
     for (size_t i = 0; i < target.colors.size(); ++i) {
@@ -118,6 +130,15 @@ bool Renderer::State::BeginRender(const Targets& target,std::string& error) {
       active_targets.temporal_motion==target.temporal_motion&&active_targets.temporal_reactive==target.temporal_reactive&&active_targets.temporal_ui==target.temporal_ui;
   for(size_t i=0;i<target.colors.size();++i) same&=active_targets.colors[i]==target.colors[i];
   if(same) return true;
+  if (gpu_pass_timer::enabled() && render) {
+    uint32_t why = 0;
+    for (size_t i = 0; i < target.colors.size(); ++i)
+      if (active_targets.colors[i] != target.colors[i]) why |= 1u << i;
+    if (active_targets.depth != target.depth) why |= 16;
+    if (active_targets.width != target.width || active_targets.height != target.height ||
+        active_targets.samples != target.samples) why |= 32;
+    gpu_pass_timer::Count(fmt::format("target-switch mask={:02X} (1-8=color0-3 16=depth 32=size)", why));
+  }
   if (rex::diagnostics::IsEnabled(rex::diagnostics::Category::kNativeTrace)) {
     size_t reason = render ? 0 : 64;
     if (render) {
@@ -171,6 +192,12 @@ bool Renderer::State::BeginRender(const Targets& target,std::string& error) {
   if(target.temporal_ui){extra(6,temporal_scene.ui_add);extra(7,temporal_scene.ui_transmit);}
   pass.renderTargetWidth=target.width; pass.renderTargetHeight=target.height;
   pass.defaultRasterSampleCount=target.samples;
+  if(gpu_pass_timer::enabled()){
+    static const char* kPhase[]={"unknown","gbuffer","lights-to-screen","light-setup","light-draw","radar","composite-postfx"};
+    const auto phase=uint32_t(Phase());
+    gpu_pass_timer::Tag(pass,fmt::format("scene/{} {}x{}{}",phase<7?kPhase[phase]:"other",target.width,target.height,
+        target.samples>1?fmt::format(" msaa{}",target.samples):std::string()));
+  }
   render=[commands renderCommandEncoderWithDescriptor:pass];
   if(!render) {error="Metal render pass creation failed"; return false;}
   ++render_passes_created;

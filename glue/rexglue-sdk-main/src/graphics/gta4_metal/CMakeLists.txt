@@ -25,7 +25,7 @@ set_target_properties(rex-gta4-metal-temporal PROPERTIES CXX_VISIBILITY_PRESET h
 target_include_directories(rex-gta4-metal-temporal PUBLIC "${REXGLUE_ROOT}/src" PRIVATE "${METAL_RENDERER_GENERATED}")
 target_link_libraries(rex-gta4-metal-temporal PUBLIC "-framework Metal" "-framework MetalFX" "-framework Foundation")
 
-set(METAL_RENDERER_SOURCES renderer.mm pipelines.mm pipeline_store.mm draw.mm attachment_passes.mm modern_sky_probe.mm
+set(METAL_RENDERER_SOURCES renderer.mm pipelines.mm pipeline_store.mm gpu_pass_timer.mm draw.mm attachment_passes.mm modern_sky_probe.mm
     resolve.mm depth_passes.mm readback.mm present.mm post_processing.mm depth_of_field.mm sun_shafts.mm shaders.mm
     resources.mm resource_buffers.mm resource_textures.mm resource_samplers.mm resource_fonts.mm
     texture_preparation.mm temporal/live.mm)

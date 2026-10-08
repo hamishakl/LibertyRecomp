@@ -1,4 +1,5 @@
 #include "resource_state.h"
+#include "gpu_pass_timer.h"
 #include <rex/graphics/pipeline/texture/util.h>
 #include <rex/graphics/pipeline/texture/conversion.h>
 #include <algorithm>
@@ -61,6 +62,7 @@ bool ResourceStore::InitializeTextureStorage(const std::shared_ptr<TextureResour
         attachment.loadAction = MTLLoadActionClear; attachment.storeAction = MTLStoreActionStore;
         attachment.clearColor = MTLClearColorMake(0, 0, 0, 0);
       }
+      gpu_pass_timer::Tag(pass,"texture-prep");
       auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
       if (!encoder) { error = "Texture storage initialization failed"; return false; }
       encoder.label = @"Liberty initialize unwritten texture storage";
