@@ -162,6 +162,22 @@ std::vector<PipelineRecipe> PipelineStore::Pending() const {
   return pending;
 }
 
+std::vector<PipelineRecipe> PipelineStore::All() const {
+  std::lock_guard lock(mutex_);
+  return recipes_;
+}
+
+bool PipelineStore::Reset(std::string& error) {
+  std::lock_guard lock(mutex_);
+  NSError* native_error = nil;
+  auto fresh = [device_ newBinaryArchiveWithDescriptor:[MTLBinaryArchiveDescriptor new] error:&native_error];
+  if (!fresh) { error = ui::metal::MetalError(native_error, "Metal binary archive creation failed"); return false; }
+  archive_ = fresh;
+  archived_.clear();
+  dirty_ = true;
+  return true;
+}
+
 bool PipelineStore::Add(MTLRenderPipelineDescriptor* descriptor, uint64_t recipe_hash, std::string& error) {
   NSError* native_error = nil;
   if (![archive_ addRenderPipelineFunctionsWithDescriptor:descriptor error:&native_error]) {

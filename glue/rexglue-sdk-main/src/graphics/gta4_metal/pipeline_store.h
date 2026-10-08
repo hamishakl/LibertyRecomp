@@ -66,6 +66,10 @@ class PipelineStore {
   void Record(const PipelineRecipe& recipe);
   // Recorded recipes the archive does not contain yet.
   std::vector<PipelineRecipe> Pending() const;
+  std::vector<PipelineRecipe> All() const;
+  // Starts a fresh, empty archive. Metal cannot re-serialize an archive loaded from disk
+  // ("expecting 'fragment' stage"), so new pipelines are added by rebuilding from every recipe.
+  bool Reset(std::string& error);
   // Compiles one descriptor into the archive. Not thread-safe with Save().
   bool Add(MTLRenderPipelineDescriptor* descriptor, uint64_t recipe_hash, std::string& error);
   // Marks a recipe that cannot be built with this build's shaders, so it is not retried every launch.

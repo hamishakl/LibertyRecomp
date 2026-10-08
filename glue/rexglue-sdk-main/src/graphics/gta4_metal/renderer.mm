@@ -588,8 +588,19 @@ size_t Renderer::PendingPipelineCount() const {
 bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>& progress,std::string& error) {
   auto& s=*state_;
   if(!s.pipeline_store.is_open()) return true;
-  auto pending=s.pipeline_store.Pending();
+  // Anything new means a full rebuild into a fresh archive (see PipelineStore::Reset).
+  if(s.pipeline_store.Pending().empty()) return true;
+  if(!s.pipeline_store.Reset(error)) return false;
+  auto pending=s.pipeline_store.All();
   std::erase_if(pending,[&](const PipelineRecipe& r){return !s.RecipeBuildable(r);});
+  // Depth-only (no fragment stage) pipelines cannot be serialized into a binary archive: one of
+  // them makes the whole archive fail to save ("expecting 'fragment' stage"). They compile quickly
+  // at runtime, so mark them handled instead of archiving them.
+  std::erase_if(pending,[&](const PipelineRecipe& r){
+    if(r.fragment.library!=RecipeLibrary::kNone) return false;
+    s.pipeline_store.Skip(HashRecipe(r));
+    return true;
+  });
   // Group by shader so the bounded library/function caches are reused rather than thrashed.
   std::sort(pending.begin(),pending.end(),[](const PipelineRecipe& a,const PipelineRecipe& b){
     return std::tie(a.vertex.hash,a.fragment.hash)<std::tie(b.vertex.hash,b.fragment.hash);
@@ -600,6 +611,12 @@ bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>&
   // Descriptors are resolved serially (the shader caches are single-owner), then each batch is
   // compiled into the binary archive concurrently: Metal's compiler service runs them in parallel.
   constexpr size_t kBatch=64;
+  // The archive serializer re-reads every added function's AIR at Save(). The shader caches evict
+  // functions (LRU, 512), and an evicted specialized function frees that AIR, so Save() faulted in
+  // a loop (rex's signal handler resumes it) and the loading screen never finished. Keep every
+  // descriptor - and with it every function - alive until the archive is saved.
+  std::vector<MTLRenderPipelineDescriptor*> keep_alive;
+  keep_alive.reserve(pending.size());
   for(size_t begin=0;begin<pending.size()&&keep_going;begin+=kBatch){
     @autoreleasepool {
       const size_t end=std::min(pending.size(),begin+kBatch);
@@ -615,6 +632,7 @@ bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>&
         else REXLOG_DEBUG("gta4-metal-pipeline-cache: skipped recipe vs={:016X} ps={:016X}: {}",
                           recipe.vertex.hash,recipe.fragment.hash,item_error);
       }
+      for(auto* descriptor:descriptors) if(descriptor) keep_alive.push_back(descriptor);
       // Blocks copy captured C++ objects; capture plain pointers instead.
       auto* store=&s.pipeline_store; const PipelineRecipe* recipes=pending.data()+begin;
       MTLRenderPipelineDescriptor* __strong* batch=descriptors.data();
@@ -636,7 +654,11 @@ bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>&
     if(progress) keep_going=progress(done.load(),total);
   }
   REXLOG_INFO("gta4-metal-pipeline-cache: precompiled {} pipelines ({} skipped)",compiled.load(),skipped.load());
-  return s.pipeline_store.Save(error);
+  const auto save_begin=std::chrono::steady_clock::now();
+  const bool saved=s.pipeline_store.Save(error);
+  REXLOG_INFO("gta4-metal-pipeline-cache: archive save {} in {} ms",saved?"ok":"FAILED",
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-save_begin).count());
+  return saved;
 }
 void Renderer::State::RecordFrameSample(uint32_t frame) {
   const uint64_t now=uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(

@@ -411,6 +411,23 @@ static void ExceptionHandlerCallback(int signal_number, siginfo_t* signal_info,
       return;
     }
   }
+
+  // Not a guest/MMIO fault. Returning here would re-execute the faulting instruction forever, which
+  // turned host crashes into silent 100% CPU hangs (e.g. Metal's binary-archive serializer). Chain
+  // to whatever handler was installed before ours; with none, restore the default action so the
+  // re-executed fault terminates the process with a normal crash report.
+  const struct sigaction* original = signal_number == SIGSEGV  ? &original_sigsegv_handler_
+                                     : signal_number == SIGBUS ? &original_sigbus_handler_
+                                                               : &original_sigill_handler_;
+  if ((original->sa_flags & SA_SIGINFO) && original->sa_sigaction) {
+    original->sa_sigaction(signal_number, signal_info, signal_context);
+    return;
+  }
+  if (original->sa_handler != SIG_DFL && original->sa_handler != SIG_IGN && original->sa_handler) {
+    original->sa_handler(signal_number);
+    return;
+  }
+  signal(signal_number, SIG_DFL);
 }
 
 void ExceptionHandler::Install(Handler fn, void* data) {

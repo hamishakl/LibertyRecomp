@@ -214,6 +214,7 @@ Renderer::State::Pipeline* Renderer::State::DrawPipeline(const Targets& targets,
                          uint8_t(late),uint8_t(targets.temporal_ui)};
     else if(targets.temporal_motion) fragment_ref.library=RecipeLibrary::kDepthMotion;
     pipeline_store.Record(RecipeFromDescriptor(descriptor,vertex_ref,fragment_ref));
+    // (Depth-only recipes are recorded for completeness but never archived; see PrecompilePipelines.)
     // Archived pipelines are fetched instead of compiled (see launch precompile).
     descriptor.binaryArchives=@[pipeline_store.archive()];
   }
