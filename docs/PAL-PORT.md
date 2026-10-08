@@ -43,6 +43,13 @@ small varying amounts. Every guest address the project hard-codes has to be rema
 
 ## Status
 - [x] PAL XEX + TU5 obtained and verified (TU blocks SHA-1 checked)
-- [ ] Disc mirror
-- [ ] `rexglue` codegen tool built
-- [ ] Phase 1 …
+- [ ] Disc mirror (running; ~1 MB/s over the 360's network)
+- [x] `rexglue` codegen tool built (`out/build/codegen`; needs `-DCMAKE_OSX_DEPLOYMENT_TARGET=26.0` and libc++
+      on `CMAKE_SHARED_LINKER_FLAGS`/`CMAKE_MODULE_LINKER_FLAGS` as well as the documented exe flags)
+- [x] **Phase 1** — PAL codegen succeeds (`gta4_pal_manifest.toml`; 5 cross-function branch targets added).
+      US 38,060 functions / 2,398,670 insns vs PAL 38,062 / 2,398,230 — same program, small edits shift addresses.
+- [x] **Phase 2** — `tools/xex/match_functions.py` (in-order alignment + unique-hash + call-graph propagation):
+      37,318/38,060 functions mapped (37,156 exact), 37,255 data addresses, 151,885 return addresses.
+      `tools/xex/hook_coverage.py`: of 2,280 guest addresses the hooks/config reference, **2,178 (95.5%) resolve**;
+      102 unmapped (mostly .data/.bss globals not reached via `lis` pairs) — next: infer from neighbouring mapped data.
+- [ ] Phase 3 …
