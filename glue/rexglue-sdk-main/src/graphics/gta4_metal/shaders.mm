@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <list>
@@ -156,7 +157,13 @@ const ShaderMetadata* ShaderCache::Metadata(uint64_t hash,gta4_native::ShaderSta
     return &existing->second;
   }
   const auto* record = impl_->index.Find(hash, MetalArchiveStage(uint32_t(stage)));
-  if (!record) { error = "Metal shader hash or stage is not present in the archive"; return nullptr; }
+  if (!record) {
+    char detail[96];
+    std::snprintf(detail, sizeof(detail), " (hash=%016llX stage=%u)", static_cast<unsigned long long>(hash),
+                  static_cast<unsigned>(stage));
+    error = std::string("Metal shader hash or stage is not present in the archive") + detail;
+    return nullptr;
+  }
   ShaderMetadata result;
   result.hash = record->hash;
   result.stage = stage;

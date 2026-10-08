@@ -62,7 +62,16 @@ small varying amounts. Every guest address the project hard-codes has to be rema
 - [x] **Phase 4** — installer/inspector accept PAL: media `0x7CF4679F`, region `XEX_REGION_PAL`, base version 7,
       base XXH3 `15674128280634689956`, RSA-signature SHA-1 = TU5 `digest_source` (`24bdc3d4…`),
       TU5 target `0x507`, TU5 XEXP SHA-256 `602f1c58…`. The US pre-patched-v8 shortcut is inert.
-- [ ] Disc mirror complete → install → first boot
+- [x] Disc mirrored (169 files / 6.47 GiB, sizes verified), installed through the PAL installer.
+- [x] **First boots (2026-10-09)**
+  1. abort at unregistered vtable target `0x8219ACC0` (bad manual guess) → fixed, plus 13 undiscovered entry points
+     found by `find_unregistered_targets.py`;
+  2. abort at `0x8219FED8` → registered;
+  3. legal screen forever: streaming hook copy spun on access violations — copied guest code still had US
+     `lis`/lo immediates → `fix_guest_immediates.py` (388 lines);
+  4. loads + renders the world on `gta4-native` until **MoltenVK device lost**;
+  5. **`--gpu_plugin=gta4-metal`: plays the opening cutscene.** 24 PAL shaders missing from the Metal archive
+     (121 draws skipped so far) — next task.
 
 ### Known gaps (left as US values, see `tools/xex/manual_map.json` "unresolved")
 | US address | Used by | Impact |
