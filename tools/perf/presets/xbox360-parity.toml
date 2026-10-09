@@ -1,6 +1,6 @@
-# Xbox 360 parity: world/population/reflection settings back to the original game's values.
-# The port's defaults raise these well above the 360 (draw distance 3x, shadows 2x, population 1.25x,
-# 1080p reflections), which drives draw counts (4-7k/frame in the city) and GPU time.
+# Xbox 360 parity: world/population/reflection settings at the original game's values.
+# Since 2026-10-10 these ARE the fork's defaults; the preset remains so a native.toml that raised
+# them can be A/B'd back. Upstream's raised values: tools/perf/presets/upstream-defaults.toml.
 # Launch with:  tools/perf/play_preset.sh xbox360-parity   (your native.toml is left untouched)
 gta4_draw_distance_scale = 1.0
 gta4_shadow_distance_scale = 1.0

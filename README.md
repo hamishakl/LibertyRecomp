@@ -48,6 +48,7 @@ recompilation tooling in this space was directly inspired by
 | Shader cache | US shaders | US cache plus the 24 PAL executable-embedded shaders (Bink video etc.); pipelines are recorded and precompiled into a Metal binary archive at launch |
 | Installer | US media ID and TU8 hashes | PAL media ID, region, base hash and TU5 hashes; the US pre-patched shortcut is inert |
 | UI | Green Xenia-style ImGui | GTA IV-style theme: black panels, DIN type, amber accent, across the installer, chat and overlays |
+| World settings | Draw distance 3×, shadows 2×, population 1.25×, 1080p reflections | Xbox 360 parity by default (measured faster and busier on the M4); upstream values as a preset |
 | Diagnostics | Native profiler | Per-frame Metal timing CSV, GPU pass profiler, presenter trace, stutter capture tooling in `tools/perf/` |
 | Mouse / trackpad | Hold-RMB aim; camera re-centres after mouse look | Trackpad-aware input: mouse look holds the camera, tap-to-toggle aim on a trackpad, a keyboard aim key (Option), all in the pause-menu settings |
 
@@ -110,9 +111,11 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   GPU time per frame from 33 ms to 20 ms.
 - **Anti-aliasing is cheap.** SMAA costs about 2.5 ms per frame at full size; it is not the
   bottleneck.
-- **Xbox 360 parity preset.** The port raises draw distance, shadows, population and reflections
-  above the original. `tools/perf/play_preset.sh xbox360-parity` launches with the original values
-  without touching your config.
+- **World settings default to Xbox 360 parity.** Upstream raises draw distance (3×), shadows (2×),
+  population (1.25×), reflections and the streaming budget. On the M4 that ran at 34 fps with 70 ms
+  spikes; parity ran at 50 fps with a flat 33 ms p99 and visibly more traffic (the raised budgets
+  starved spawning). `tools/perf/play_preset.sh upstream-defaults` brings the raised values back
+  for a session without touching your config.
 - **Capturing a stutter.** `tools/perf/capture_stutter.sh` launches with diagnostics on and writes a
   per-frame CSV, a GPU pass CSV and the game log into one folder per session under `perf/`.
   `tools/perf/summarize_frames.py <frames.csv>` prints fps, percentiles and 5-second windows.

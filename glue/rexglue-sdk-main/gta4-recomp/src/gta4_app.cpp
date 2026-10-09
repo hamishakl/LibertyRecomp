@@ -125,11 +125,11 @@ REXCVAR_DEFINE_UINT32(gta4_shadow_map_base_size, 512, "GTA IV/Graphics/Shadows",
                       "Base shadow-map size (512 creates a 4096x4096 point-shadow cache)")
     .range(256, 1024)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
-REXCVAR_DEFINE_DOUBLE(gta4_shadow_distance_scale, 2.0, "GTA IV/Graphics/Shadows",
+REXCVAR_DEFINE_DOUBLE(gta4_shadow_distance_scale, 1.0, "GTA IV/Graphics/Shadows",
                       "Multiplier applied to GTA IV's directional shadow range")
     .range(1.0, 4.0)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
-REXCVAR_DEFINE_STRING(gta4_reflection_resolution, "1080p", "GTA IV/Graphics/Reflections",
+REXCVAR_DEFINE_STRING(gta4_reflection_resolution, "original", "GTA IV/Graphics/Reflections",
                       "Reflection resolution preset: original, 1080p, or full")
     .allowed({"original", "1080p", "full"})
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
@@ -202,7 +202,11 @@ REXCVAR_DEFINE_DOUBLE(gta4_fsr1_sharpness_reduction, 0.2, "GTA IV/Graphics/Upsca
 // distance bypasses transitions as soon as a new drawable becomes resident.
 REXCVAR_DEFINE_BOOL(gta4_force_highest_lod, false, "GTA IV/Graphics/LOD",
                     "Prefer the highest resident model LOD regardless of distance");
-REXCVAR_DEFINE_DOUBLE(gta4_draw_distance_scale, 3.0, "GTA IV/Graphics/LOD",
+// Fork default is Xbox 360 parity (1x). Measured 2026-10-10 on an M4 at 1440p, same route:
+// 3x/2x/1.25x = 34 fps with 70 ms spikes and 23 ms of CPU submit per frame; parity = 50 fps with
+// a flat 33 ms p99, and it was also the run that felt alive (more traffic actually spawned).
+// The raised values remain available as tools/perf/presets/upstream-defaults.toml.
+REXCVAR_DEFINE_DOUBLE(gta4_draw_distance_scale, 1.0, "GTA IV/Graphics/LOD",
                       "Multiplier applied through GTA IV's built-in world-distance input")
     .range(1.0, 4.0);
 REXCVAR_DEFINE_UINT32(gta4_drawable_reference_limit, 20000, "GTA IV/Graphics/LOD",

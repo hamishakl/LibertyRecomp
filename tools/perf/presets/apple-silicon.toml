@@ -1,5 +1,5 @@
-# Candidate Apple Silicon defaults: halfway between the port's defaults (draw distance 3x,
-# shadows 2x, population 1.25x) and Xbox 360 parity (1x). For the draw-distance A/B in
+# Halfway between upstream's raised settings (draw distance 3x, shadows 2x, population 1.25x) and
+# Xbox 360 parity (1x, the fork default since 2026-10-10). Measured 39 fps vs 50 at parity. For the draw-distance A/B in
 # docs/BACKLOG.md item 2: drive the same route with each of
 #   tools/perf/play_preset.sh xbox360-parity
 #   tools/perf/play_preset.sh apple-silicon

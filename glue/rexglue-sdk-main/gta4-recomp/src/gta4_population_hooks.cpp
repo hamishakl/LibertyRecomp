@@ -10,19 +10,19 @@
 
 #include "gta4_init.h"
 
-REXCVAR_DEFINE_DOUBLE(gta4_traffic_density_scale, 1.25, "GTA IV/Population",
+REXCVAR_DEFINE_DOUBLE(gta4_traffic_density_scale, 1.0, "GTA IV/Population",
                       "Scale GTA IV's requested ambient traffic density")
     .range(0.0, 4.0)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
-REXCVAR_DEFINE_DOUBLE(gta4_parked_car_density_scale, 1.25, "GTA IV/Population",
+REXCVAR_DEFINE_DOUBLE(gta4_parked_car_density_scale, 1.0, "GTA IV/Population",
                       "Scale GTA IV's requested parked-car density")
     .range(0.0, 4.0)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
-REXCVAR_DEFINE_DOUBLE(gta4_ped_density_scale, 1.25, "GTA IV/Population",
+REXCVAR_DEFINE_DOUBLE(gta4_ped_density_scale, 1.0, "GTA IV/Population",
                       "Scale GTA IV's requested ambient pedestrian density")
     .range(0.0, 4.0)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
-REXCVAR_DEFINE_DOUBLE(gta4_scenario_ped_density_scale, 1.25, "GTA IV/Population",
+REXCVAR_DEFINE_DOUBLE(gta4_scenario_ped_density_scale, 1.0, "GTA IV/Population",
                       "Scale GTA IV's requested scenario-pedestrian density")
     .range(0.0, 4.0)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);

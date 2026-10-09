@@ -25,7 +25,7 @@ REXCVAR_DEFINE_BOOL(gta4_streaming_modern, true, "GTA IV/Streaming",
 REXCVAR_DEFINE_BOOL(gta4_streaming_deadline_order, true, "GTA IV/Streaming",
                     "Select eligible requests by readiness deadline, keeping dependency and priority gates")
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
-REXCVAR_DEFINE_DOUBLE(gta4_streaming_budget_scale, 1.5, "GTA IV/Streaming",
+REXCVAR_DEFINE_DOUBLE(gta4_streaming_budget_scale, 1.0, "GTA IV/Streaming",
                       "Scale nonzero requested budgets; retain original allocator capacity clamps")
     .range(1.0, 4.0).lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
 REXCVAR_DEFINE_UINT32(gta4_streaming_physical_reserve_mb, 16, "GTA IV/Streaming",
