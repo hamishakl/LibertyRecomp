@@ -1,0 +1,13 @@
+# Candidate Apple Silicon defaults: halfway between the port's defaults (draw distance 3x,
+# shadows 2x, population 1.25x) and Xbox 360 parity (1x). For the draw-distance A/B in
+# docs/BACKLOG.md item 2: drive the same route with each of
+#   tools/perf/play_preset.sh xbox360-parity
+#   tools/perf/play_preset.sh apple-silicon
+#   (no preset = the port's defaults)
+# and compare tools/perf/summarize_frames.py output for the three sessions.
+gta4_draw_distance_scale = 2.0
+gta4_shadow_distance_scale = 1.5
+gta4_traffic_density_scale = 1.0
+gta4_parked_car_density_scale = 1.0
+gta4_ped_density_scale = 1.25
+gta4_scenario_ped_density_scale = 1.0

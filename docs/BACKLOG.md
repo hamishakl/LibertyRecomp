@@ -7,7 +7,7 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 1 | Cap the automatic render size at the panel's native pixel size instead of the 2x backing store | done | `gta4_native_panel_resolution_cap` (default on); verified: automatic 3840x2486 → 2880x1864. An explicit preset still wins |
-| 2 | Draw-distance / population defaults for Apple Silicon (A/B 1x, 2x, 3x on the same route) | needs play test | `tools/perf/play_preset.sh xbox360-parity` exists; needs a driven route per variant |
+| 2 | Draw-distance / population defaults for Apple Silicon (A/B 1x, 2x, 3x on the same route) | needs play test | three runs on one route: default, `play_preset.sh apple-silicon` (2x/1.5x), `play_preset.sh xbox360-parity` (1x); compare with summarize_frames.py, then change the defaults |
 | 3 | Make the GPU pass timer additive per category | done | `exclusive_ms_per_frame` column shares overlapped intervals between active passes; verified: exclusive sum 7.3 ms vs 6.4 ms measured GPU (inclusive sum said 15.6) |
 
 ## Stability and diagnosability
