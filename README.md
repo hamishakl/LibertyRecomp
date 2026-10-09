@@ -140,6 +140,8 @@ Two things made that awkward on a MacBook trackpad and were fixed on 2026-10-10:
   (`gta4_keyboard_aim_key`, default **Option**; Tab, Caps Lock, Z, X or none). Fire stays on click
   or tap. Settings: **Trackpad Aim**, **Keyboard Aim Key**, plus the existing **Mouse Aim**
   hold/toggle for a mouse.
+- **Trackpad sensitivity** defaults to 2× (`mnk_trackpad_sensitivity`; a mouse uses
+  `mnk_sensitivity`), chosen by feel on a MacBook. Setting: **Trackpad Sensitivity**, 0.5×–4×.
 
 Mouse and trackpad aim is free aim with no target lock, as on the PC release; the toggle engages
 only for weapons that free-aim (fists and melee stay held lock-on). All of these are rows on the

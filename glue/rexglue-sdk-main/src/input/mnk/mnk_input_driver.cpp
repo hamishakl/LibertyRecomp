@@ -32,7 +32,8 @@ REXCVAR_DEFINE_BOOL(mnk_controller_emulation, false, "Input",
                     "Use legacy Xbox controller translation instead of native input");
 REXCVAR_DEFINE_INT32(mnk_user_index, 0, "Input", "Controller slot (0-3) for MnK").range(0, 3);
 REXCVAR_DEFINE_DOUBLE(mnk_sensitivity, 1.0, "Input", "Native mouse sensitivity").range(0.01, 10.0);
-REXCVAR_DEFINE_DOUBLE(mnk_trackpad_sensitivity, 1.0, "Input", "Native trackpad sensitivity")
+// 2.0 chosen by feel on a MacBook trackpad (2026-10-10); 1.0 is the raw macOS-accelerated delta.
+REXCVAR_DEFINE_DOUBLE(mnk_trackpad_sensitivity, 2.0, "Input", "Native trackpad sensitivity")
     .range(0.01, 10.0);
 REXCVAR_DEFINE_BOOL(mnk_invert_y, false, "Input", "Invert native mouse Y axis");
 

@@ -21,7 +21,7 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 ## Input feel
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 8 | Trackpad sensitivity curve / default | needs play test | only `mnk_trackpad_sensitivity` scales macOS-accelerated deltas |
+| 8 | Trackpad sensitivity curve / default | done | 2.0 chosen by feel (was 1.0); default changed and a **Trackpad Sensitivity** row (0.5x–4x) added to the pause-menu settings. Delayed swing-back after 2 s hold judged fine |
 | 9 | Trackpad gestures: two-finger scroll for weapon cycle / radar zoom | done | already mapped: two-finger scroll arrives as the wheel, which cycles weapons on foot and the radio while driving (gta4_input_hooks.cpp `wheel_route`). Nothing to add |
 | 10 | Mouse-look hold for the two cameras still on retail idle logic | needs play test | which mode drifts decides which function |
 

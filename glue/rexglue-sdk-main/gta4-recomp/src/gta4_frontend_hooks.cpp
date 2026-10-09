@@ -3,6 +3,7 @@
 #include "gta4_frontend_hooks.h"
 
 #include <array>
+#include <cstdio>
 #include <cstdlib>
 #include <bit>
 #include <cstdint>
@@ -219,6 +220,13 @@ enum class TextId : uint8_t {
   kTwoSeconds,
   kFourSeconds,
   kEightSeconds,
+  kTrackpadSensitivityLabel,
+  kHalfSpeed,
+  kNormalSpeed,
+  kOneAndHalfSpeed,
+  kDoubleSpeed,
+  kTripleSpeed,
+  kQuadSpeed,
   kCount,
 };
 
@@ -291,6 +299,14 @@ constexpr std::array kAimKeyChoices = {
     Choice{"CapsLock", TextId::kCapsLockKey},
     Choice{"Z", TextId::kZKey},
     Choice{"X", TextId::kXKey},
+};
+constexpr std::array kTrackpadSensitivityChoices = {
+    Choice{"0.5", TextId::kHalfSpeed},
+    Choice{"1", TextId::kNormalSpeed},
+    Choice{"1.5", TextId::kOneAndHalfSpeed},
+    Choice{"2", TextId::kDoubleSpeed},
+    Choice{"3", TextId::kTripleSpeed},
+    Choice{"4", TextId::kQuadSpeed},
 };
 constexpr std::array kLookHoldChoices = {
     Choice{"0", TextId::kOff},
@@ -489,6 +505,8 @@ constexpr std::array kSettings = {
             kAimKeyChoices.data(), kAimKeyChoices.size()},
     Setting{"LR_LOOK_HOLD", TextId::kLookHoldLabel, "gta4_mouse_look_hold_seconds",
             kLookHoldChoices.data(), kLookHoldChoices.size()},
+    Setting{"LR_TRACKPAD_SENS", TextId::kTrackpadSensitivityLabel, "mnk_trackpad_sensitivity",
+            kTrackpadSensitivityChoices.data(), kTrackpadSensitivityChoices.size()},
     Setting{"LR_TOUCH", TextId::kTouchControlsLabel, "touch_controls",
             kTouchControlsChoices.data(), kTouchControlsChoices.size()},
     Setting{"LR_TOUCH_EDIT", TextId::kEditTouchLayoutLabel, "", nullptr, 0, false,
@@ -644,6 +662,13 @@ constexpr std::array<std::string_view, static_cast<size_t>(TextId::kCount)> kStr
     "2 s",
     "4 s",
     "8 s",
+    "Trackpad Sensitivity",
+    "0.5x",
+    "1x",
+    "1.5x",
+    "2x",
+    "3x",
+    "4x",
 };
 
 struct NativePageState {
@@ -1198,6 +1223,16 @@ std::string CurrentSettingValue(const Setting& source) {
     char* end = nullptr;
     const double seconds = std::strtod(value.c_str(), &end);
     if (end != value.c_str()) value = std::to_string(static_cast<int>(seconds + 0.5));
+  }
+  if (std::string_view(setting.cvar) == "mnk_trackpad_sensitivity") {
+    // "2.000000" -> "2", "1.500000" -> "1.5", to match the choice values.
+    char* end = nullptr;
+    const double scale = std::strtod(value.c_str(), &end);
+    if (end != value.c_str()) {
+      char buffer[32];
+      std::snprintf(buffer, sizeof buffer, "%g", scale);
+      value = buffer;
+    }
   }
   return value;
 }
