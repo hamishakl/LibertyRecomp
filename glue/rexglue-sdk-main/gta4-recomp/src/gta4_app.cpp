@@ -969,11 +969,17 @@ void GTA4App::TitleProfileSyncWorkerMain() {
   if (!state || !user_profile || !live)
     return;
 
+  // Back off from 5 s to 5 min: without a network this used to log a warning every 5 s for
+  // the whole session.
+  constexpr std::chrono::seconds kMaxRetryDelay = std::chrono::minutes(5);
+  std::chrono::seconds retry_delay = kRetryDelay;
   auto wait_for_retry = [&] {
     std::unique_lock lock(state->mutex);
-    state->condition.wait_for(lock, kRetryDelay, [&] { return state->stopping; });
+    state->condition.wait_for(lock, retry_delay, [&] { return state->stopping; });
+    retry_delay = std::min(retry_delay * 2, kMaxRetryDelay);
     return state->stopping;
   };
+  int fetch_failures = 0;
 
   const uint64_t startup_generation = state->startup_generation;
   std::optional<int64_t> known_revision;
@@ -1016,7 +1022,12 @@ void GTA4App::TitleProfileSyncWorkerMain() {
       break;
     }
 
-    REXLOG_WARN("GTA IV community title-profile fetch failed; retrying");
+    if (++fetch_failures == 1) {
+      REXLOG_WARN("GTA IV community title-profile fetch failed; retrying with back-off");
+    } else {
+      REXLOG_INFO("GTA IV community title-profile fetch failed ({}); next retry in {} s",
+                  fetch_failures, retry_delay.count());
+    }
     if (wait_for_retry())
       return;
   }
