@@ -3,6 +3,7 @@
 #include "gta4_frontend_hooks.h"
 
 #include <array>
+#include <cstdlib>
 #include <bit>
 #include <cstdint>
 #include <cstring>
@@ -206,6 +207,18 @@ enum class TextId : uint8_t {
   kUltraPerformance,
   kFsr3FrameGeneration,
   kDlssFrameGeneration,
+  kTrackpadAimLabel,
+  kAimKeyLabel,
+  kLookHoldLabel,
+  kOptionKey,
+  kTabKey,
+  kCapsLockKey,
+  kZKey,
+  kXKey,
+  kOneSecond,
+  kTwoSeconds,
+  kFourSeconds,
+  kEightSeconds,
   kCount,
 };
 
@@ -270,6 +283,21 @@ constexpr std::array kToggleChoices = {
 constexpr std::array kMouseAimChoices = {
     Choice{"false", TextId::kHold},
     Choice{"true", TextId::kToggle},
+};
+constexpr std::array kAimKeyChoices = {
+    Choice{"none", TextId::kOff},
+    Choice{"Alt", TextId::kOptionKey},
+    Choice{"Tab", TextId::kTabKey},
+    Choice{"CapsLock", TextId::kCapsLockKey},
+    Choice{"Z", TextId::kZKey},
+    Choice{"X", TextId::kXKey},
+};
+constexpr std::array kLookHoldChoices = {
+    Choice{"0", TextId::kOff},
+    Choice{"1", TextId::kOneSecond},
+    Choice{"2", TextId::kTwoSeconds},
+    Choice{"4", TextId::kFourSeconds},
+    Choice{"8", TextId::kEightSeconds},
 };
 constexpr std::array kTouchControlsChoices = {
     Choice{"off", TextId::kOff},
@@ -455,6 +483,12 @@ constexpr std::array kSettings = {
             kToggleChoices.data(), kToggleChoices.size()},
     Setting{"LR_MOUSE_AIM", TextId::kMouseAimLabel, "gta4_mouse_aim_toggle",
             kMouseAimChoices.data(), kMouseAimChoices.size()},
+    Setting{"LR_TRACKPAD_AIM", TextId::kTrackpadAimLabel, "gta4_trackpad_aim_toggle",
+            kToggleChoices.data(), kToggleChoices.size()},
+    Setting{"LR_AIM_KEY", TextId::kAimKeyLabel, "gta4_keyboard_aim_key",
+            kAimKeyChoices.data(), kAimKeyChoices.size()},
+    Setting{"LR_LOOK_HOLD", TextId::kLookHoldLabel, "gta4_mouse_look_hold_seconds",
+            kLookHoldChoices.data(), kLookHoldChoices.size()},
     Setting{"LR_TOUCH", TextId::kTouchControlsLabel, "touch_controls",
             kTouchControlsChoices.data(), kTouchControlsChoices.size()},
     Setting{"LR_TOUCH_EDIT", TextId::kEditTouchLayoutLabel, "", nullptr, 0, false,
@@ -598,6 +632,18 @@ constexpr std::array<std::string_view, static_cast<size_t>(TextId::kCount)> kStr
     "Ultra Performance",
     "FSR 2x",
     "DLSS 2x",
+    "Trackpad Aim",
+    "Keyboard Aim Key",
+    "Mouse Look Hold",
+    "Option (Alt)",
+    "Tab",
+    "Caps Lock",
+    "Z",
+    "X",
+    "1 s",
+    "2 s",
+    "4 s",
+    "8 s",
 };
 
 struct NativePageState {
@@ -1147,6 +1193,12 @@ std::string CurrentSettingValue(const Setting& source) {
     value = "vsync";  // Legacy auto/FIFO/mailbox settings all synchronize.
   if (std::string_view(setting.cvar) == "gta4_aspect_ratio" && value == "original")
     value = "16:9";
+  if (std::string_view(setting.cvar) == "gta4_mouse_look_hold_seconds") {
+    // A double prints with a fraction; the choices are whole seconds.
+    char* end = nullptr;
+    const double seconds = std::strtod(value.c_str(), &end);
+    if (end != value.c_str()) value = std::to_string(static_cast<int>(seconds + 0.5));
+  }
   return value;
 }
 

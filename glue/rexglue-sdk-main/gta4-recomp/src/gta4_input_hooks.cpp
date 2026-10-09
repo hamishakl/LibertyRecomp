@@ -15,6 +15,7 @@
 #include "input/user_music_player.h"
 
 #include <rex/cvar.h>
+#include <rex/ui/keybinds.h>
 #include <rex/input/input.h>
 #include <rex/input/absolute_pointer.h>
 #include <rex/input/input_system.h>
@@ -38,6 +39,11 @@ REXCVAR_DEFINE_BOOL(gta4_native_input_trace, false, "GTA IV/Input",
                     "Trace native keyboard/mouse poll epochs and action injection");
 REXCVAR_DEFINE_BOOL(gta4_mouse_aim_toggle, false, "GTA IV/Input",
                     "Toggle firearm mouse aiming with RMB instead of holding it");
+REXCVAR_DEFINE_BOOL(gta4_trackpad_aim_toggle, true, "GTA IV/Input",
+                    "When the look input is a trackpad, tap to toggle aim even if mouse aim is set to hold");
+REXCVAR_DEFINE_STRING(gta4_keyboard_aim_key, "Alt", "GTA IV/Input",
+                      "Keyboard key that aims like RMB (Option on a Mac keyboard); none to disable")
+    .allowed({"none", "Alt", "Tab", "CapsLock", "Z", "X"});
 REXCVAR_DEFINE_DOUBLE(gta4_mouse_look_hold_seconds, 2.0, "GTA IV/Input",
                       "After mouse/trackpad look, keep the camera from re-centring for this long "
                       "(the retail cameras otherwise treat the idle stick as released)")
@@ -1576,10 +1582,22 @@ InputEpoch CaptureEpoch(const PPCContext& entry_context, uint8_t* base,
       }
     }
   }
-  const bool toggle_aim = REXCVAR_GET(gta4_mouse_aim_toggle) &&
+  // A keyboard aim key (Option by default) aims like RMB, so a trackpad hand can track while the
+  // other hand holds aim. A trackpad cannot hold a secondary click and move, so trackpad look
+  // selects tap-to-toggle aim unless that is switched off.
+  const VirtualKey aim_key = rex::ui::ParseVirtualKey(REXCVAR_GET(gta4_keyboard_aim_key));
+  const bool aim_key_down = aim_key != VirtualKey::kNone &&
+      state.keys[static_cast<size_t>(aim_key)] != 0;
+  const bool aim_key_pressed = aim_key != VirtualKey::kNone &&
+      g_epoch.pressed_keys[static_cast<size_t>(aim_key)] != 0;
+  const bool trackpad_look =
+      g_last_mouse_source == rex::ui::MouseEvent::MotionSource::kSystemAccelerated;
+  const bool toggle_aim = (REXCVAR_GET(gta4_mouse_aim_toggle) ||
+                           (REXCVAR_GET(gta4_trackpad_aim_toggle) && trackpad_look)) &&
       g_epoch.mouse_free_aim && !vehicle.vehicle && !phone.visible;
   g_epoch.mouse_aim = g_mouse_aim_latch.Update(mouse_gameplay, toggle_aim,
-      physical_rmb, g_epoch.pressed_keys[static_cast<size_t>(VirtualKey::kRButton)] != 0,
+      physical_rmb || aim_key_down,
+      g_epoch.pressed_keys[static_cast<size_t>(VirtualKey::kRButton)] != 0 || aim_key_pressed,
       state.mouse_reset_generation, vehicle.vehicle ? vehicle.vehicle : vehicle.ped);
   g_epoch.mouse_camera_candidate = mouse_gameplay &&
       !(helicopter_controls && !physical_rmb);
@@ -1601,7 +1619,7 @@ InputEpoch CaptureEpoch(const PPCContext& entry_context, uint8_t* base,
         last_mouse_motion != std::chrono::steady_clock::time_point{} &&
         std::chrono::duration<double>(now - last_mouse_motion).count() <= hold;
   }
-  const bool aiming = g_epoch.mouse_aim || IsDown(g_epoch.state, VirtualKey::kRButton) ||
+  const bool aiming = g_epoch.mouse_aim || IsDown(g_epoch.state, VirtualKey::kRButton) || aim_key_down ||
       (gamepad_valid && gamepad_state.gamepad.left_trigger > 30);
   const bool gyro_allowed = REXCVAR_GET(gta4_motion_aim) && aiming && !frontend_active &&
       !phone.visible && !vehicle.vehicle && !GTA4_TouchTitleInputOwned() &&
