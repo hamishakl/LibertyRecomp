@@ -2,6 +2,14 @@
 
 This guide explains how to extract Grand Theft Auto IV game files from your Xbox 360 for use with Liberty Recompiled.
 
+> [!IMPORTANT]
+> **This fork recompiles the PAL (NZ/AU/EU) release.** The installer checks the disc's media ID
+> (`0x7CF4679F`) and region and rejects the USA release that upstream targets. You also need
+> **Title Update 5** (`default.xexp`), which lives on the console at
+> `Content/0000000000000000/545407F2/000B0000/`; copy that folder along with the game in step 11
+> below, or point the installer at the title-update package separately. A disc-only dump is
+> rejected. See [PAL-PORT.md](PAL-PORT.md) for the hashes the installer pins.
+
 ### Pre-requisites
 - Xbox 360 (modifications not necessary)
 - Xbox 360 Hard Drive (20 GB minimum)
@@ -55,7 +63,7 @@ This guide explains how to extract Grand Theft Auto IV game files from your Xbox
 8. Right-click `Velocity.exe` and click **Properties**, then under the **Compatibility** tab, tick **Run this program as an administrator** and click **OK**. This is required in order for the program to recognize the hard drive. You can now launch `Velocity.exe`.
 9. You should see a **Device Detected** message appear on launch asking if you would like to open the **Device Content Viewer**. Click **Yes**.
 10. You should now see a tree view of your hard drive's contents. Expand the tree nodes for `/Shared Items/Games/`.
-11. Hold the CTRL key and click on **Grand Theft Auto IV** under the `Games` node. If you have Episodes from Liberty City installed, select that as well.
+11. Hold the CTRL key and click on **Grand Theft Auto IV** under the `Games` node. If you have Episodes from Liberty City installed, select that as well. Also select the GTA IV **title update** under `/Content/0000000000000000/545407F2/000B0000/` (Title Update 5 for the PAL release).
 12. Right-click any of the selected items and click **Copy Selected to Local Disk**, then navigate to the folder you created in step 7 and select it. Velocity will now begin copying the game files to your PC.
 13. Once the transfer is complete, close the **Device Content Viewer** window.
 14. You should now have all of the necessary files for installation. [Return to the readme and proceed to the next step](/README.md#how-to-install).

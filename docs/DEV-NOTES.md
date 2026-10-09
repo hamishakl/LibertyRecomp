@@ -115,11 +115,13 @@ Paths are repo-relative; `SDK` = `glue/rexglue-sdk-main`, `APP` = `SDK/gta4-reco
 Installer: `APP/src/install/` (folder, `.iso`, or STFS/SVOD package input). Installs to
 `~/Library/Application Support/LibertyRecomp/{game,dlc,saves,shader_cache}`.
 
-- Title ID `0x545407F2`, **USA** media ID `0x6AC07221` (`gta4_source_inspector.cpp:38-39`).
-- Base `default.xex` must hash-match **USA retail 1.00** (`gta4_installer.cpp:48`).
-- **Title update required**: exactly one `default.xexp` (TU, target version `0x805`), SHA-256 checked
-  (`gta4_installer.cpp:46-51,659,874`). → When dumping, also grab the TU from the 360's
-  `Content/0000000000000000/545407F2/000B0000/`. A disc-only dump will be rejected.
+- Title ID `0x545407F2`. **This fork is PAL**: media ID `0x7CF4679F`, region `XEX_REGION_PAL`, base
+  version 7 (`gta4_source_inspector.cpp`). Upstream's USA values (`0x6AC07221`, TU8 → `0x805`) no
+  longer match and the US pre-patched-v8 shortcut is inert (`gta4_installer.cpp`).
+- Base `default.xex` must hash-match the **PAL retail disc** (XXH3 pinned in the installer).
+- **Title Update 5 required**: exactly one `default.xexp` targeting `0x507`, SHA-256 checked. → When
+  dumping, also grab the TU from the 360's `Content/0000000000000000/545407F2/000B0000/`. A
+  disc-only dump will be rejected. Hashes and the port history: `docs/PAL-PORT.md`.
 - Episodes (TLAD/TBOGT) optional. Needs `aes_key.bin` (tracked in `LibertyRecompLib/`).
 
 ## 8. Tests & tools
