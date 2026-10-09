@@ -158,6 +158,7 @@ class FramePublicationGate {
   uint64_t Publish(uint32_t fps,bool paired=false) {
     std::lock_guard lock(mutex_);
     limited_ = fps != 0 || paired;
+    fps_ = fps;
     const auto result = ++published_;
     condition_.notify_all();
     return result;
@@ -176,10 +177,18 @@ class FramePublicationGate {
     std::unique_lock lock(mutex_);
     const uint64_t epoch = epoch_;
     // A minimized/occluded window or missing callback must not hang the title.
-    // This is a watchdog, never a frame-rate target.
-    return condition_.wait_for(lock, std::chrono::milliseconds(250), [&] {
+    // This is a watchdog, never a frame-rate target. It also sets the title's pace
+    // while the host is not presenting (window hidden, display link stopped):
+    // three periods at the title's own limit keeps that at a third of the limit
+    // (20 fps at 60) rather than 4 fps, while staying far above any foreground
+    // handoff wait (measured p99 17 ms, max 61 ms at a 60 fps limit).
+    return condition_.wait_for(lock, std::chrono::nanoseconds(WatchdogNs(fps_)), [&] {
       return stopped_ || !available_ || !limited_ || epoch_ != epoch || admitted_ >= serial;
     });
+  }
+  static constexpr uint64_t WatchdogNs(uint32_t fps) noexcept {
+    constexpr uint64_t kFloor = 50'000'000, kCeiling = 250'000'000;
+    return fps ? std::clamp<uint64_t>(3 * FramePacer::kSecond / fps, kFloor, kCeiling) : kCeiling;
   }
   void SetAvailable(bool value) {
     std::lock_guard lock(mutex_);
@@ -196,6 +205,7 @@ class FramePublicationGate {
   std::mutex mutex_;
   std::condition_variable condition_;
   uint64_t published_ = 0, accepted_ = 0, admitted_=0, epoch_ = 0;
+  uint32_t fps_ = 0;
   bool limited_ = false, available_ = false, stopped_ = false;
 };
 

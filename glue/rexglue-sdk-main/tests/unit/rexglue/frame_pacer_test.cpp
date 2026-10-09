@@ -103,6 +103,19 @@ TEST_CASE("Producer handoff cancels on surface loss, shutdown, and unlocked mode
     REQUIRE(wait.wait_for(100ms)==std::future_status::ready);REQUIRE(wait.get());
   }
 }
+TEST_CASE("Producer watchdog scales with the frame limit and never drops below 50 ms", "[frame-pacer]") {
+  REQUIRE(FramePublicationGate::WatchdogNs(60)==50'000'000);
+  REQUIRE(FramePublicationGate::WatchdogNs(120)==50'000'000);
+  REQUIRE(FramePublicationGate::WatchdogNs(30)==100'000'000);
+  REQUIRE(FramePublicationGate::WatchdogNs(10)==250'000'000);
+  REQUIRE(FramePublicationGate::WatchdogNs(0)==250'000'000);
+  // An unadmitted publication (hidden window) releases after the watchdog, not 250 ms.
+  FramePublicationGate g;g.SetAvailable(true);auto serial=g.Publish(60);
+  const auto begin=std::chrono::steady_clock::now();
+  REQUIRE_FALSE(g.Wait(serial));
+  const auto waited=std::chrono::steady_clock::now()-begin;
+  REQUIRE(waited>=45ms);REQUIRE(waited<150ms);
+}
 TEST_CASE("Paint wake tickets preempt delayed timers without consuming newer work", "[frame-pacer]") {
   PaintWakeupState s;
   auto deferred=s.Request(1000);REQUIRE(deferred!=0);
