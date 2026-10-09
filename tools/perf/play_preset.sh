@@ -17,4 +17,8 @@ while IFS= read -r line; do
 done < "$preset"
 app="$repo/out/build/macos-release/LibertyRecomp/Liberty Recompiled.app/Contents/MacOS/Liberty Recompiled"
 echo "Preset $(basename "$preset"): ${args[*]} $*"
+# macOS refuses programmatic activation from a terminal-launched process, so bring the game
+# forward through LaunchServices once it is up; otherwise it sits behind the terminal and runs
+# at the hidden-window pace until clicked.
+( sleep 4; osascript -e 'tell application "Liberty Recompiled" to activate' >/dev/null 2>&1 ) &
 exec "$app" "${args[@]}" "$@"

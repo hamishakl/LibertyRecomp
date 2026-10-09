@@ -16,7 +16,7 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 | 4 | Always-on warnings/errors log in the user directory | todo | logging is off without `--diagnostics`; a crash leaves only "abort() called" |
 | 5 | "Resolve source has no produced content" rejections (64 per run) | todo | a rejected renderer command is a dropped draw |
 | 6 | Remaining PAL gaps: two US data addresses (cloud/timecycle), hooks on TU5-changed functions, data-table scan | todo | `tools/xex/manual_map.json` "unresolved"; `find_unregistered_targets.py` lists 4 pointers in a table at 0x82106Dxx |
-| 7 | Game Center "title-profile fetch failed; retrying" every 5 s all session | todo | back off, or skip without network |
+| 7 | Game Center "title-profile fetch failed; retrying" every 5 s all session | done | exponential back-off 5 s → 5 min, later failures at info level |
 
 ## Input feel
 | # | Item | Status | Notes |
@@ -28,6 +28,6 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 ## Polish
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 11 | Bring the game window to the front on launch | todo | launched from a terminal it sits behind until clicked |
+| 11 | Bring the game window to the front on launch | done | macOS ignores `activateIgnoringOtherApps` from a terminal-launched process; the launch scripts activate via LaunchServices (`osascript ... activate`) instead |
 | 12 | Verify console / settings / achievements overlays under the GTA IV theme | needs play test | F4, backtick, F7; only the installer was screenshotted |
-| 13 | Stale docs: DEV-NOTES installer section (USA/TU8), dumping guide (PAL/TU5) | todo | |
+| 13 | Stale docs: DEV-NOTES installer section (USA/TU8), dumping guide (PAL/TU5) | done | |
