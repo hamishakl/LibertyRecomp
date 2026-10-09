@@ -33,6 +33,7 @@ recompilation tooling in this space was directly inspired by
 - [Status](#status)
 - [Installation](#installation)
 - [Settings and performance](#settings-and-performance)
+- [Mouse and trackpad](#mouse-and-trackpad)
 - [Building on macOS](#building-on-macos)
 - [Mod Support](#mod-support)
 - [Documentation](#documentation)
@@ -48,6 +49,7 @@ recompilation tooling in this space was directly inspired by
 | Installer | US media ID and TU8 hashes | PAL media ID, region, base hash and TU5 hashes; the US pre-patched shortcut is inert |
 | UI | Green Xenia-style ImGui | GTA IV-style theme: black panels, DIN type, amber accent, across the installer, chat and overlays |
 | Diagnostics | Native profiler | Per-frame Metal timing CSV, GPU pass profiler, presenter trace, stutter capture tooling in `tools/perf/` |
+| Mouse / trackpad | Hold-RMB aim; camera re-centres after mouse look | Trackpad-aware input: mouse look holds the camera, tap-to-toggle aim on a trackpad, a keyboard aim key (Option), all in the pause-menu settings |
 
 Address matching, remapping and the XEX/TU tooling that made the PAL port possible live in
 `tools/xex/` (see its README).
@@ -113,6 +115,27 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   per-frame CSV, a GPU pass CSV and the game log into one folder per session under `perf/`.
   `tools/perf/summarize_frames.py <frames.csv>` prints fps, percentiles and 5-second windows.
 - **Hotkeys.** F3 debug overlay, backtick console, F4 settings, F7 achievements, Y / U text chat.
+
+## Mouse and trackpad
+
+The port drives the retail cameras directly with mouse displacement rather than emulating a stick.
+Two things made that awkward on a MacBook trackpad and were fixed on 2026-10-10:
+
+- **Camera no longer drifts back to centre after looking around.** The retail cameras decide
+  "stick released" from the stick's dead-zone test before the mouse rotation is applied, so with a
+  mouse they always re-centred as if the stick had just been let go. Recent mouse or trackpad
+  motion now counts as a held stick for that decision (on foot, gameplay, aim and vehicle follow
+  cameras) for `gta4_mouse_look_hold_seconds` (default 2 s). Setting: **Mouse Look Hold**.
+- **Aiming without holding a secondary click.** A trackpad can't hold a two-finger click and move,
+  so aim is tap-to-toggle whenever the last look input came from a trackpad
+  (`gta4_trackpad_aim_toggle`, on by default), and a keyboard key aims like RMB
+  (`gta4_keyboard_aim_key`, default **Option**; Tab, Caps Lock, Z, X or none). Fire stays on click
+  or tap. Settings: **Trackpad Aim**, **Keyboard Aim Key**, plus the existing **Mouse Aim**
+  hold/toggle for a mouse.
+
+Mouse and trackpad aim is free aim with no target lock, as on the PC release; the toggle engages
+only for weapons that free-aim (fists and melee stay held lock-on). All of these are rows on the
+pause menu's Liberty settings page and in the F4 overlay under GTA IV / Input.
 
 ## Building on macOS
 
