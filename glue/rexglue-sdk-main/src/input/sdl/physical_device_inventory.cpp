@@ -54,8 +54,18 @@ bool NumberEquals(CFTypeRef value, int expected) {
       actual == expected;
 }
 
-bool HasUsage(CFDictionaryRef properties, int page, int usage) {
-  const auto pairs_value = CFDictionaryGetValue(properties, CFSTR(kIOHIDDeviceUsagePairsKey));
+// One registry property, released on scope exit.
+struct RegistryProperty {
+  CFTypeRef value = nullptr;
+  RegistryProperty(io_registry_entry_t device, CFStringRef key)
+      : value(IORegistryEntryCreateCFProperty(device, key, kCFAllocatorDefault, 0)) {}
+  ~RegistryProperty() { if (value) CFRelease(value); }
+  RegistryProperty(const RegistryProperty&) = delete;
+  RegistryProperty& operator=(const RegistryProperty&) = delete;
+};
+
+bool HasUsage(CFTypeRef pairs_value, CFTypeRef primary_page, CFTypeRef primary_usage,
+              int page, int usage) {
   if (pairs_value && CFGetTypeID(pairs_value) == CFArrayGetTypeID()) {
     const auto pairs = static_cast<CFArrayRef>(pairs_value);
     for (CFIndex index = 0; index < CFArrayGetCount(pairs); ++index) {
@@ -66,8 +76,7 @@ bool HasUsage(CFDictionaryRef properties, int page, int usage) {
           NumberEquals(CFDictionaryGetValue(pair, CFSTR(kIOHIDDeviceUsageKey)), usage)) return true;
     }
   }
-  return NumberEquals(CFDictionaryGetValue(properties, CFSTR(kIOHIDPrimaryUsagePageKey)), page) &&
-      NumberEquals(CFDictionaryGetValue(properties, CFSTR(kIOHIDPrimaryUsageKey)), usage);
+  return NumberEquals(primary_page, page) && NumberEquals(primary_usage, usage);
 }
 
 std::optional<PointerKeyboardInventory> QueryCocoaPhysicalDevices() {
@@ -82,30 +91,36 @@ std::optional<PointerKeyboardInventory> QueryCocoaPhysicalDevices() {
   PointerKeyboardInventory result;
   bool succeeded = true;
   while (const io_registry_entry_t device = IOIteratorNext(iterator)) {
-    CFMutableDictionaryRef properties = nullptr;
+    // Read only the keys this needs. IORegistryEntryCreateCFProperties serialises the
+    // whole dictionary, and one internal keyboard/trackpad entry takes ~140 ms to do so
+    // (measured on a MacBook Pro, macOS 26). This runs on the UI thread every second,
+    // which showed up as a once-per-second 150 ms frame stall. Per-key reads cost ~0.03 ms.
     uint64_t id = 0;
-    if (IORegistryEntryCreateCFProperties(device, &properties, kCFAllocatorDefault, 0) !=
-            KERN_SUCCESS || !properties ||
-        IORegistryEntryGetRegistryEntryID(device, &id) != KERN_SUCCESS) {
+    if (IORegistryEntryGetRegistryEntryID(device, &id) != KERN_SUCCESS) {
       succeeded = false;
     } else {
-      const auto virtual_device = CFDictionaryGetValue(properties, CFSTR(kIOHIDVirtualHIDevice));
-      const auto transport_value = CFDictionaryGetValue(properties, CFSTR(kIOHIDTransportKey));
-      const bool virtual_transport = transport_value &&
-          CFGetTypeID(transport_value) == CFStringGetTypeID() &&
-          CFStringFind(static_cast<CFStringRef>(transport_value), CFSTR("virtual"),
+      const RegistryProperty virtual_device(device, CFSTR(kIOHIDVirtualHIDevice));
+      const RegistryProperty transport(device, CFSTR(kIOHIDTransportKey));
+      const RegistryProperty pairs(device, CFSTR(kIOHIDDeviceUsagePairsKey));
+      const RegistryProperty primary_page(device, CFSTR(kIOHIDPrimaryUsagePageKey));
+      const RegistryProperty primary_usage(device, CFSTR(kIOHIDPrimaryUsageKey));
+      const bool virtual_transport = transport.value &&
+          CFGetTypeID(transport.value) == CFStringGetTypeID() &&
+          CFStringFind(static_cast<CFStringRef>(transport.value), CFSTR("virtual"),
                        kCFCompareCaseInsensitive).location != kCFNotFound;
-      if (id && virtual_device != kCFBooleanTrue && !NumberEquals(virtual_device, 1) &&
+      if (id && virtual_device.value != kCFBooleanTrue && !NumberEquals(virtual_device.value, 1) &&
           !virtual_transport) {
-        if (HasUsage(properties, kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard) ||
-            HasUsage(properties, kHIDPage_GenericDesktop, kHIDUsage_GD_Keypad))
+        const auto has_usage = [&](int page, int usage) {
+          return HasUsage(pairs.value, primary_page.value, primary_usage.value, page, usage);
+        };
+        if (has_usage(kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard) ||
+            has_usage(kHIDPage_GenericDesktop, kHIDUsage_GD_Keypad))
           result.keyboards.push_back(id);
-        if (HasUsage(properties, kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse) ||
-            HasUsage(properties, kHIDPage_Digitizer, kHIDUsage_Dig_TouchPad))
+        if (has_usage(kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse) ||
+            has_usage(kHIDPage_Digitizer, kHIDUsage_Dig_TouchPad))
           result.mice.push_back(id);
       }
     }
-    if (properties) CFRelease(properties);
     IOObjectRelease(device);
   }
   succeeded = succeeded && IOIteratorIsValid(iterator);
