@@ -165,8 +165,9 @@ upstream's design.
 
 This fork, free-roam driving on a **MacBook Air (Apple M4, 16 GB, macOS 26.6)** with the native Metal
 renderer, `resolution = "1440p"` and the port's default draw-distance/population settings. The
-overlay is Apple's Metal Performance HUD (`gta4_performance_hud = true`); the display is a 2880×1864
-panel in a scaled mode, hence the 3840×2486 drawable.
+overlay is Apple's Metal Performance HUD (`gta4_performance_hud = true`). Its resolution line is the
+Metal layer the frame is presented on (the display's 3840×2486 backing store, a 2880×1864 panel in a
+scaled mode), not the render size: the game renders at 2224×1440 and the presenter upscales it.
 
 ![Liberty Recompiled on Apple M4, native Metal, 30 fps](docs/images/perf_liberty_metal_m4.png)
 
