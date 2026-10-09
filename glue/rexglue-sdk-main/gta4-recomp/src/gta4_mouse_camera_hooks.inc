@@ -20,6 +20,14 @@ MouseRotation TakeMouseRotation(uint8_t* base, uint32_t control, uint32_t camera
   return consumed.Claim(epoch.sequence, camera) ? rotation : MouseRotation{};
 }
 
+// True while recent mouse/trackpad look should count as a held look stick for the camera's
+// idle logic (hold accumulators, return-to-centre timers). Never adds rotation.
+bool MouseLookHeld(uint8_t* base, uint32_t control) {
+  const auto epoch = ReadEpoch();
+  return control && epoch.valid && epoch.mouse_look_held &&
+      LoadU32(base, control + kControlUserIndexOffset) == epoch.state.user_index;
+}
+
 bool MouseHoldingAim(uint8_t* base, uint32_t control) {
   const auto epoch = ReadEpoch();
   return control && epoch.mouse_camera_allowed && epoch.mouse_aim &&

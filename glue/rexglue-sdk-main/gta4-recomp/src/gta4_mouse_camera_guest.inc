@@ -1,6 +1,6 @@
-// Derived by tools/derive_mouse_camera_hooks.py --write.
-// Complete retail functions; only reviewed mouse integration sites differ.
-// Do not edit by hand. Run the derivation without --write to verify.
+// Originally derived by tools/derive_mouse_camera_hooks.py (no longer in the tree); hand-maintained
+// since the PAL port. Complete retail functions; only the reviewed mouse integration sites differ.
+// Mouse sites: TakeMouseRotation / AcceptMouseAngles (rotation) and MouseLookHeld (idle logic).
 
 extern "C" void sub_82546A28(PPCContext& ctx, uint8_t* base) {
   gta4::input::MouseRotation native_mouse{};
@@ -168,6 +168,7 @@ loc_825338E4:
 	// lis r11,-32057
 	ctx.r11.s64 = -2100887552;
 	// fcmpu cr6,f1,f0
+if (gta4::input::MouseLookHeld(base, native_control)) ctx.f1.f64 = 1.0;  // held mouse look counts as a deflected stick for the dead-zone test only; the stick components stay 0
 	ctx.cr6.compare(ctx.f1.f64, ctx.f0.f64);
 	// addi r29,r11,20140
 	ctx.r29.s64 = ctx.r11.s64 + 20140;
@@ -1380,6 +1381,7 @@ loc_825ED784:
 	temp.u32 = REX_LOAD_U32(ctx.r11.u32 + -16440);
 	ctx.f0.f64 = double(temp.f32);
 	// fcmpu cr6,f1,f0
+if (gta4::input::MouseLookHeld(base, ctx.r28.u32)) ctx.f1.f64 = 1.0;  // held mouse look counts as a deflected stick for the dead-zone test only; the stick components stay 0
 	ctx.cr6.compare(ctx.f1.f64, ctx.f0.f64);
 	// ble cr6,0x82614b4c
 	if (!ctx.cr6.gt) goto loc_825ED7D4;
@@ -4283,6 +4285,8 @@ loc_82543A98:
 loc_82543B28:
 	// li r11,0
 	ctx.r11.s64 = 0;
+// Held mouse look resets the vehicle camera's idle timer (cam+716), as a deflected stick would.
+if (gta4::input::MouseLookHeld(base, native_control)) REX_STORE_U32(ctx.r31.u32 + 716, 0u);
 	// lfs f1,716(r31)
 	ctx.fpscr.disableFlushMode();
 	temp.u32 = REX_LOAD_U32(ctx.r31.u32 + 716);
@@ -8511,6 +8515,7 @@ loc_82538E24:
 	// lis r11,-32061
 	ctx.r11.s64 = -2101149696;
 	// fcmpu cr6,f1,f0
+if (gta4::input::MouseLookHeld(base, native_control)) ctx.f1.f64 = 1.0;  // held mouse look counts as a deflected stick for the dead-zone test only; the stick components stay 0
 	ctx.cr6.compare(ctx.f1.f64, ctx.f0.f64);
 	// addi r27,r11,2504
 	ctx.r27.s64 = ctx.r11.s64 + 2504;

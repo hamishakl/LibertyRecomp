@@ -38,6 +38,10 @@ REXCVAR_DEFINE_BOOL(gta4_native_input_trace, false, "GTA IV/Input",
                     "Trace native keyboard/mouse poll epochs and action injection");
 REXCVAR_DEFINE_BOOL(gta4_mouse_aim_toggle, false, "GTA IV/Input",
                     "Toggle firearm mouse aiming with RMB instead of holding it");
+REXCVAR_DEFINE_DOUBLE(gta4_mouse_look_hold_seconds, 2.0, "GTA IV/Input",
+                      "After mouse/trackpad look, keep the camera from re-centring for this long "
+                      "(the retail cameras otherwise treat the idle stick as released)")
+    .range(0.0, 30.0);
 REXCVAR_DEFINE_BOOL(gta4_motion_aim, false, "GTA IV/Motion Sensor",
                     "Enable gyroscope fine aiming when aiming on foot");
 REXCVAR_DEFINE_DOUBLE(gta4_motion_aim_full_scale, 2.0, "GTA IV/Motion Sensor/Tuning",
@@ -294,6 +298,9 @@ struct InputEpoch {
   int32_t mouse_y = 0;
   bool mouse_camera_candidate = false;
   bool mouse_camera_allowed = false;
+  // Mouse moved within gta4_mouse_look_hold_seconds: the reviewed cameras treat the look stick
+  // as held so their return-to-centre logic stays off, as it would for a deflected stick.
+  bool mouse_look_held = false;
   bool mouse_aim = false;
   bool mouse_free_aim = false;
   int32_t gyro_x = 0;
@@ -1464,6 +1471,7 @@ InputEpoch CaptureEpoch(const PPCContext& entry_context, uint8_t* base,
   g_epoch.mouse_y = 0;
   g_epoch.mouse_camera_candidate = false;
   g_epoch.mouse_camera_allowed = false;
+  g_epoch.mouse_look_held = false;
   g_epoch.mouse_aim = false;
   g_epoch.mouse_free_aim = false;
   g_epoch.map_mouse_x = 0;
@@ -1584,6 +1592,15 @@ InputEpoch CaptureEpoch(const PPCContext& entry_context, uint8_t* base,
   g_epoch.mouse_camera_allowed = g_epoch.mouse_camera_candidate && !phone.visible &&
       previous_sequence != 0 &&
       g_last_supported_mouse_camera_epoch.load(std::memory_order_relaxed) == previous_sequence;
+  {
+    static std::chrono::steady_clock::time_point last_mouse_motion{};
+    const auto now = std::chrono::steady_clock::now();
+    if (g_epoch.mouse_camera_candidate && state.mouse_has_motion) last_mouse_motion = now;
+    const double hold = REXCVAR_GET(gta4_mouse_look_hold_seconds);
+    g_epoch.mouse_look_held = g_epoch.mouse_camera_candidate && !phone.visible &&
+        last_mouse_motion != std::chrono::steady_clock::time_point{} &&
+        std::chrono::duration<double>(now - last_mouse_motion).count() <= hold;
+  }
   const bool aiming = g_epoch.mouse_aim || IsDown(g_epoch.state, VirtualKey::kRButton) ||
       (gamepad_valid && gamepad_state.gamepad.left_trigger > 30);
   const bool gyro_allowed = REXCVAR_GET(gta4_motion_aim) && aiming && !frontend_active &&
