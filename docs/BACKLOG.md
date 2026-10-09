@@ -29,5 +29,5 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 11 | Bring the game window to the front on launch | done | macOS ignores `activateIgnoringOtherApps` from a terminal-launched process; the launch scripts activate via LaunchServices (`osascript ... activate`) instead |
-| 12 | Verify console / settings / achievements overlays under the GTA IV theme | needs play test | F4, backtick, F7; only the installer was screenshotted |
+| 12 | Verify console / settings / achievements overlays under the GTA IV theme | done | achievements: fine. Settings: setting names were green/yellow/red by lifecycle, now white/amber/grey, and the window opens at 960x640 instead of 620x480. Console: level colours only (white/yellow/red), theme-driven otherwise |
 | 13 | Stale docs: DEV-NOTES installer section (USA/TU8), dumping guide (PAL/TU5) | done | |

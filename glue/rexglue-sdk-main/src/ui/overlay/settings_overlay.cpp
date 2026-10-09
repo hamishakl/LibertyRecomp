@@ -40,16 +40,18 @@ static const char* LifecycleBadge(rex::cvar::Lifecycle lc) {
   return "";
 }
 
+// Lifecycle cue in the GTA IV palette: live settings in white, restart-required in amber,
+// init-only dimmed. (Was green / yellow / red, which fought the theme.)
 static ImVec4 LifecycleColor(rex::cvar::Lifecycle lc) {
   switch (lc) {
     case rex::cvar::Lifecycle::kHotReload:
-      return {0.4f, 1.0f, 0.4f, 1.0f};
+      return {0.95f, 0.95f, 0.95f, 1.0f};
     case rex::cvar::Lifecycle::kRequiresRestart:
-      return {1.0f, 1.0f, 0.4f, 1.0f};
+      return {0.97f, 0.69f, 0.20f, 1.0f};
     case rex::cvar::Lifecycle::kInitOnly:
-      return {1.0f, 0.4f, 0.4f, 1.0f};
+      return {0.55f, 0.55f, 0.55f, 1.0f};
   }
-  return {1.0f, 1.0f, 1.0f, 1.0f};
+  return {0.95f, 0.95f, 0.95f, 1.0f};
 }
 
 static rex::ui::VirtualKey ImGuiKeyToVirtualKey(ImGuiKey key) {
@@ -198,7 +200,7 @@ void SettingsDialog::OnDraw(ImGuiIO& /*io*/) {
   const std::string search(search_buf_);
   const bool searching = !search.empty();
 
-  ImGui::SetNextWindowSize(ImVec2(620, 480), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(960, 640), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowBgAlpha(0.85f);
   if (!ImGui::Begin("Settings##rex", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::End();
@@ -390,7 +392,7 @@ void SettingsDialog::OnDraw(ImGuiIO& /*io*/) {
         }
         if (conflict_count > 0) {
           ImGui::SameLine();
-          ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "(!)");
+          ImGui::TextColored(ImVec4(0.97f, 0.69f, 0.20f, 1.0f), "(!)");
           if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Key '%s' is also bound to %d other action(s)", current_val.c_str(),
                               conflict_count);
