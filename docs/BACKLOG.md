@@ -8,21 +8,21 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 |---|---|---|---|
 | 1 | Cap the automatic render size at the panel's native pixel size instead of the 2x backing store | done | `gta4_native_panel_resolution_cap` (default on); verified: automatic 3840x2486 → 2880x1864. An explicit preset still wins |
 | 2 | Draw-distance / population defaults for Apple Silicon (A/B 1x, 2x, 3x on the same route) | needs play test | `tools/perf/play_preset.sh xbox360-parity` exists; needs a driven route per variant |
-| 3 | Make the GPU pass timer additive per category | todo | pass timestamps overlap on Apple GPUs; today it over-reported SMAA 10x |
+| 3 | Make the GPU pass timer additive per category | done | `exclusive_ms_per_frame` column shares overlapped intervals between active passes; verified: exclusive sum 7.3 ms vs 6.4 ms measured GPU (inclusive sum said 15.6) |
 
 ## Stability and diagnosability
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 4 | Always-on warnings/errors log in the user directory | todo | logging is off without `--diagnostics`; a crash leaves only "abort() called" |
-| 5 | "Resolve source has no produced content" rejections (64 per run) | todo | a rejected renderer command is a dropped draw |
-| 6 | Remaining PAL gaps: two US data addresses (cloud/timecycle), hooks on TU5-changed functions, data-table scan | todo | `tools/xex/manual_map.json` "unresolved"; `find_unregistered_targets.py` lists 4 pointers in a table at 0x82106Dxx |
+| 4 | Always-on warnings/errors log in the user directory | done | `log_quiet_errors` (default on): `~/Library/Application Support/LibertyRecomp/logs/Liberty Recompiled-errors.log`, warnings and above, path printed to stderr at start |
+| 5 | "Resolve source has no produced content" rejections (64 per run) | deferred | reviewed: all 64 land in a 3 s burst at world load, one 480x310 MSAA source (exposure/luminance chain, phase 6) resolved before its first production; none during play. Cosmetic log noise at most |
+| 6 | Remaining PAL gaps: two US data addresses (cloud/timecycle), hooks on TU5-changed functions, data-table scan | deferred | data scan reviewed: the 4 pointers at 0x82106Dxx point into the middle of CRT functions (unwind/pdata-style table), not call targets. The two US data addresses need the cloud/timecycle code read against the PAL image; `find_address_taken_targets.py` reports 0 |
 | 7 | Game Center "title-profile fetch failed; retrying" every 5 s all session | done | exponential back-off 5 s → 5 min, later failures at info level |
 
 ## Input feel
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 8 | Trackpad sensitivity curve / default | needs play test | only `mnk_trackpad_sensitivity` scales macOS-accelerated deltas |
-| 9 | Trackpad gestures: two-finger scroll for weapon cycle / radar zoom | todo | check what the wheel already maps to |
+| 9 | Trackpad gestures: two-finger scroll for weapon cycle / radar zoom | done | already mapped: two-finger scroll arrives as the wheel, which cycles weapons on foot and the radio while driving (gta4_input_hooks.cpp `wheel_route`). Nothing to add |
 | 10 | Mouse-look hold for the two cameras still on retail idle logic | needs play test | which mode drifts decides which function |
 
 ## Polish

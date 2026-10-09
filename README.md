@@ -116,6 +116,9 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
 - **Capturing a stutter.** `tools/perf/capture_stutter.sh` launches with diagnostics on and writes a
   per-frame CSV, a GPU pass CSV and the game log into one folder per session under `perf/`.
   `tools/perf/summarize_frames.py <frames.csv>` prints fps, percentiles and 5-second windows.
+- **Errors log.** Even without diagnostics, warnings and errors go to
+  `~/Library/Application Support/LibertyRecomp/logs/Liberty Recompiled-errors.log` (the path is
+  printed at start). After a crash, look there first; `log_quiet_errors = false` turns it off.
 - **Hotkeys.** F3 debug overlay, backtick console, F4 settings, F7 achievements, Y / U text chat.
 
 ## Mouse and trackpad
