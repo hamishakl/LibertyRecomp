@@ -9,6 +9,7 @@
  *              See LICENSE file in the project root for full license text.
  */
 
+#include <atomic>
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -39,6 +40,10 @@ REXCVAR_DEFINE_STRING(log_level, "info", "Log",
     .allowed({"trace", "debug", "info", "warn", "error", "critical", "off"});
 
 REXCVAR_DEFINE_STRING(log_file, "", "Log", "Log file path (empty = auto sequential naming)");
+
+REXCVAR_DEFINE_BOOL(log_quiet_errors, true, "Log",
+                    "Without --diagnostics, still write warnings and errors to "
+                    "<user dir>/logs/<app>-errors.log");
 
 REXCVAR_DEFINE_BOOL(log_verbose, false, "Log", "Enable verbose logging (sets level to trace)")
     .debug_only();
@@ -125,11 +130,16 @@ std::vector<spdlog::sink_ptr> BuildCategorySinks(const std::string& name) {
 }
 
 // Resolve per-category level from config, or return default
+std::atomic<bool> g_quiet_errors{false};
+
 spdlog::level::level_enum ResolveCategoryLevel(const std::string& name) {
   auto it = g_config.category_levels.find(name);
-  if (it != g_config.category_levels.end())
-    return it->second;
-  return g_config.default_level;
+  spdlog::level::level_enum level =
+      it != g_config.category_levels.end() ? it->second : g_config.default_level;
+  // The quiet file is for warnings and errors only, whatever the configured levels say.
+  if (g_quiet_errors.load(std::memory_order_relaxed) && level < spdlog::level::warn)
+    level = spdlog::level::warn;
+  return level;
 }
 
 // Create a logger and register it
@@ -178,10 +188,16 @@ void InitLoggingEarly() {
   g_early_initialized = true;
 }
 
+bool LoggingEnabled() noexcept {
+  return diagnostics::IsEnabled(diagnostics::Category::kLogging) ||
+         g_quiet_errors.load(std::memory_order_relaxed);
+}
+
 void InitLogging(const LogConfig& config) {
-  if (!diagnostics::IsEnabled(diagnostics::Category::kLogging))
+  if (!diagnostics::IsEnabled(diagnostics::Category::kLogging) && !config.quiet_errors)
     return;
   std::lock_guard lock(g_mutex);
+  g_quiet_errors.store(config.quiet_errors, std::memory_order_relaxed);
 
   if (g_initialized) {
     g_config = config;
@@ -362,7 +378,7 @@ std::span<const LogCategoryEntry> GetAllCategories() {
 }
 
 spdlog::logger* GetLoggerRaw(LogCategoryId category) {
-  if (!diagnostics::IsEnabled(diagnostics::Category::kLogging))
+  if (!LoggingEnabled())
     return nullptr;
   if (!g_initialized && !g_early_initialized)
     InitLoggingEarly();
@@ -373,7 +389,7 @@ spdlog::logger* GetLoggerRaw(LogCategoryId category) {
 }
 
 std::shared_ptr<spdlog::logger> GetLogger(LogCategoryId category) {
-  if (!diagnostics::IsEnabled(diagnostics::Category::kLogging))
+  if (!LoggingEnabled())
     return nullptr;
   if (!g_initialized && !g_early_initialized)
     InitLoggingEarly();

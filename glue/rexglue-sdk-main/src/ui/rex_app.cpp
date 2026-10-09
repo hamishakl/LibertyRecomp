@@ -19,6 +19,7 @@
 #include <rex/kernel/crt/heap.h>
 #include <rex/filesystem.h>
 #include <rex/logging/sink.h>
+#include <rex/diagnostics/policy.h>
 #include <rex/logging.h>
 #include <rex/ui/overlay/achievement_toast.h>
 #include <rex/ui/overlay/achievements_overlay.h>
@@ -47,6 +48,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <filesystem>
 #include <string_view>
 
@@ -193,10 +195,29 @@ bool ReXApp::SetupEnvironment() {
     // Runtime logs placed there make a subsequent incremental build fail to
     // seal the bundle.  Keep mutable diagnostics with the rest of the title's
     // user data instead.
-    log_config.log_dir = (user_dir / "logs").string();
+    // The title may have moved its data (OnConfigurePaths); its config file sits at that
+    // root, so keep logs beside it (~/Library/Application Support/LibertyRecomp/logs).
+    log_config.log_dir =
+        ((config_path_.empty() ? user_dir : config_path_.parent_path()) / "logs").string();
 #else
     log_config.log_dir = (exe_dir / "logs").string();
 #endif
+  }
+  // Without --diagnostics nothing would be logged at all, and a crash leaves only "abort()
+  // called" in the system report. Keep a quiet warnings/errors file in the user directory.
+  std::string quiet_log_path;
+  if (!rex::diagnostics::IsEnabled(rex::diagnostics::Category::kLogging) &&
+      REXCVAR_GET(log_quiet_errors)) {
+    const std::filesystem::path log_dir =
+        log_config.log_dir.empty() ? std::filesystem::path(log_file_cvar).parent_path()
+                                   : std::filesystem::path(log_config.log_dir);
+    quiet_log_path = (log_dir / (std::string(GetName()) + "-errors.log")).string();
+    log_config.log_file = quiet_log_path.c_str();
+    log_config.quiet_errors = true;
+    log_config.default_level = spdlog::level::warn;
+    log_config.flush_level = spdlog::level::warn;
+    log_config.log_to_console = false;
+    std::fprintf(stderr, "[log] warnings and errors -> %s\n", quiet_log_path.c_str());
   }
 
   rex::InitLogging(log_config);

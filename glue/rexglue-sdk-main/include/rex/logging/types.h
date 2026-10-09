@@ -73,6 +73,10 @@ struct LogConfig {
   /** Path to a log file, or nullptr for no file logging. */
   const char* log_file = nullptr;
 
+  /** Quiet mode: logging is active without the diagnostics logging category, clamped to
+   *  warnings and above, so a crash or rejected command still leaves a trace on disk. */
+  bool quiet_errors = false;
+
   /** spdlog pattern string for the stdout console sink. */
   std::string console_pattern = "[%^%l%$] [%n] [t%t] %v";
 

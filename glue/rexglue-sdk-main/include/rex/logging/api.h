@@ -21,6 +21,7 @@
 // Logging CVAR declarations (defined in logging.cpp)
 REXCVAR_DECLARE(std::string, log_level);
 REXCVAR_DECLARE(std::string, log_file);
+REXCVAR_DECLARE(bool, log_quiet_errors);
 REXCVAR_DECLARE(bool, log_verbose);
 REXCVAR_DECLARE(bool, log_noisy);
 REXCVAR_DECLARE(int32_t, log_flush_interval);
@@ -123,6 +124,10 @@ std::span<const LogCategoryEntry> GetAllCategories();
  * @return          Raw pointer to the spdlog logger (not owning).
  */
 spdlog::logger* GetLoggerRaw(LogCategoryId category);
+
+/** True when log calls should be evaluated: the diagnostics logging category is on, or the
+ *  quiet warnings/errors file (LogConfig::quiet_errors) is active. */
+bool LoggingEnabled() noexcept;
 
 /**
  * Get the shared logger pointer for a category.

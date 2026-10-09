@@ -18,7 +18,7 @@
    ref-count overhead and gates on should_log() to skip format evaluation. */
 #define REX_LOG_IMPL(cat, lvl, ...)                                                              \
   do {                                                                                           \
-    if (!::rex::diagnostics::IsEnabled(::rex::diagnostics::Category::kLogging))                  \
+    if (!::rex::LoggingEnabled())                                                                \
       break;                                                                                     \
     auto* rex_log_ptr_ = ::rex::GetLoggerRaw(cat);                                               \
     if (rex_log_ptr_ && rex_log_ptr_->should_log(lvl))                                           \
@@ -27,7 +27,7 @@
 
 #define REX_LOG_NOISY_IMPL(cat, lvl, ...) \
   do {                                    \
-    if (!::rex::diagnostics::IsEnabled(::rex::diagnostics::Category::kLogging)) \
+    if (!::rex::LoggingEnabled())         \
       break;                              \
     if (!REXCVAR_GET(log_noisy))          \
       break;                              \
