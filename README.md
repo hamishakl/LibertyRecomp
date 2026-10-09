@@ -102,10 +102,12 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
 
 ## Settings and performance
 
-- **Render resolution.** With no setting, the game renders at the display's full backing store. On a
-  scaled retina mode ("looks like 1920×1243") that is 3840×2486, more pixels than the panel has.
-  `resolution = "1440p"` in `native.toml` (the same choice as Settings > Resolution in game) renders
-  at 2224×1440 at the display aspect and cut GPU time per frame from 33 ms to 20 ms.
+- **Render resolution.** Upstream renders at the display's full backing store, which on a scaled
+  retina mode ("looks like 1920×1243") is 3840×2486, more pixels than the 2880×1864 panel has. This
+  fork caps the automatic size at the panel's native pixels (`gta4_native_panel_resolution_cap`,
+  on by default). For more headroom, `resolution = "1440p"` in `native.toml` (the same choice as
+  Settings > Resolution in game) renders at 2224×1440 at the display aspect; on the M4 that cut
+  GPU time per frame from 33 ms to 20 ms.
 - **Anti-aliasing is cheap.** SMAA costs about 2.5 ms per frame at full size; it is not the
   bottleneck.
 - **Xbox 360 parity preset.** The port raises draw distance, shadows, population and reflections

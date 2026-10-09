@@ -6,7 +6,7 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 ## Performance
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | Cap the automatic render size at the panel's native pixel size instead of the 2x backing store | todo | `GetNativeResolutionOverride`, gta4_native_hooks.cpp. Generalises `resolution = "1440p"` |
+| 1 | Cap the automatic render size at the panel's native pixel size instead of the 2x backing store | done | `gta4_native_panel_resolution_cap` (default on); verified: automatic 3840x2486 → 2880x1864. An explicit preset still wins |
 | 2 | Draw-distance / population defaults for Apple Silicon (A/B 1x, 2x, 3x on the same route) | needs play test | `tools/perf/play_preset.sh xbox360-parity` exists; needs a driven route per variant |
 | 3 | Make the GPU pass timer additive per category | todo | pass timestamps overlap on Apple GPUs; today it over-reported SMAA 10x |
 

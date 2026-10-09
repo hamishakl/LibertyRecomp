@@ -212,6 +212,12 @@ class Window {
   // the On* functions are for the implementation's feedback).
 
   virtual uint32_t GetMediumDpi() const { return 96; }
+  // Native pixel size of the panel the window is on, when the platform can tell. On a display in a
+  // scaled mode the backing store (what GetActualPhysical* reports) can be larger than the panel.
+  virtual bool GetNativeDisplayPixelSize(uint32_t& width, uint32_t& height) const {
+    (void)width; (void)height;
+    return false;
+  }
   // Host display HDR properties. Implementations that don't expose dynamic
   // HDR state retain SDR defaults.
   virtual bool IsHDREnabled() const { return false; }

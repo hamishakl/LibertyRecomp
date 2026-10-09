@@ -24,6 +24,9 @@ namespace rex::ui {
 // implementation remains platform-neutral C++.
 void ConfigureMetalLayerForPresentation(void* layer);
 
+// Native pixel size of the panel showing `ns_window` (an NSWindow*). False when unknown.
+bool NativeDisplayPixelSizeForWindow(void* ns_window, uint32_t& width, uint32_t& height);
+
 class CAMetalLayerSurface final : public Surface {
  public:
   CAMetalLayerSurface(SDL_Window* sdl_window, void* layer)

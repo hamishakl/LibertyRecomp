@@ -70,6 +70,9 @@ REXCVAR_DECLARE(bool, gta4_force_highest_lod);
 REXCVAR_DECLARE(double, gta4_draw_distance_scale);
 REXCVAR_DECLARE(bool, gta4_modern_shaders);
 REXCVAR_DECLARE(uint32_t, gta4_drawable_reference_limit);
+REXCVAR_DEFINE_BOOL(gta4_native_panel_resolution_cap, true, "GTA IV/Graphics/Display",
+                    "With no resolution set, render at most at the display panel's native pixel "
+                    "size rather than a scaled mode's larger backing store");
 REXCVAR_DEFINE_BOOL(gta4_native_pixel_snap_fonts, true, "GTA IV/Graphics/Text",
                     "Snap GTA IV font quads to native framebuffer pixels");
 REXCVAR_DEFINE_BOOL(
@@ -2772,8 +2775,22 @@ NativeResolutionOverride GetNativeResolutionOverride(uint32_t requested_width,
   if (!override_width && !override_height) {
     auto* runtime = rex::Runtime::instance();
     auto* window = runtime ? runtime->display_window() : nullptr;
-    const uint32_t display_width = window ? window->GetActualPhysicalWidth() : 0;
-    const uint32_t display_height = window ? window->GetActualPhysicalHeight() : 0;
+    uint32_t display_width = window ? window->GetActualPhysicalWidth() : 0;
+    uint32_t display_height = window ? window->GetActualPhysicalHeight() : 0;
+    // A scaled display mode ("looks like 1920x1243" on a 2880x1864 panel) has a 3840x2486 backing
+    // store: 77% more pixels than the panel can show, all downsampled by the compositor. Render
+    // at the panel instead; the presenter upscales to the drawable as it does for any preset.
+    uint32_t panel_width = 0, panel_height = 0;
+    if (REXCVAR_GET(gta4_native_panel_resolution_cap) && window && display_width &&
+        display_height && window->GetNativeDisplayPixelSize(panel_width, panel_height) &&
+        panel_width < display_width && panel_height < display_height) {
+      static std::atomic<bool> logged{false};
+      if (!logged.exchange(true))
+        REXLOG_INFO("GTA4 resolution: automatic {}x{} capped at the panel's native {}x{}",
+                    display_width, display_height, panel_width, panel_height);
+      display_width = panel_width;
+      display_height = panel_height;
+    }
     if (display_width && display_height) {
       configured_width = int32_t(display_width);
       configured_height = int32_t(display_height);

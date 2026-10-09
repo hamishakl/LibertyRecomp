@@ -120,7 +120,8 @@ target_link_libraries(rexui PUBLIC
 )
 target_link_libraries(rexui PRIVATE utf8cpp)
 if(APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    target_link_libraries(rexui PRIVATE "-framework AppKit" "-framework QuartzCore")
+    target_link_libraries(rexui PRIVATE "-framework AppKit" "-framework QuartzCore"
+                                        "-framework CoreGraphics" "-framework IOKit")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(rexui PRIVATE "-framework UIKit" "-framework QuartzCore")
 elseif(ANDROID)

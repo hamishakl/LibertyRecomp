@@ -50,6 +50,7 @@ class WindowSDL final : public Window {
   void HandlePaintEvent(uint32_t ticket);
 
   bool IsHDREnabled() const override;
+  bool GetNativeDisplayPixelSize(uint32_t& width, uint32_t& height) const override;
   float GetSDRWhiteLevel() const override;
   float GetHDRHeadroom() const override;
 

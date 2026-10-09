@@ -338,6 +338,18 @@ void* WindowSDL::GetNativeWindowHandle() const {
 #endif
 }
 
+bool WindowSDL::GetNativeDisplayPixelSize(uint32_t& width, uint32_t& height) const {
+#if REX_PLATFORM_MAC && !REX_PLATFORM_IOS
+  if (!sdl_window_) return false;
+  void* ns_window = SDL_GetPointerProperty(SDL_GetWindowProperties(sdl_window_),
+                                           SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
+  return NativeDisplayPixelSizeForWindow(ns_window, width, height);
+#else
+  (void)width; (void)height;
+  return false;
+#endif
+}
+
 bool WindowSDL::IsHDREnabled() const {
   if (!sdl_window_) {
     return false;
