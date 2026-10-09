@@ -20,7 +20,12 @@
 
 namespace gta4::input {
 namespace {
-constexpr uint32_t kRadarRenderPhaseVtable = 0x82013C9C;
+// PAL: 0x820131E4 (US 0x82013C9C). Installed by the render-phase constructor with id 7
+// (PAL sub_8236C140, US sub_8239C3A8); slot 4 is sub_8236C750, the radar phase's rectangle
+// method. Left at the US value by the port, which made CopyTouchRadarViewport never recognise
+// the radar phase, so the radar composition was never fitted to a non-16:9 display and drew
+// as a vertical oval on the 1.54:1 MacBook panel. Not touch-only despite the file name.
+constexpr uint32_t kRadarRenderPhaseVtable = 0x820131E4;
 constexpr uint32_t kViewportCopyVtable = 0x82001150;
 constexpr uint32_t kCurrentRenderPhase = 0x82FEFC74;
 constexpr uint32_t kCurrentViewport = 0x831C2080;

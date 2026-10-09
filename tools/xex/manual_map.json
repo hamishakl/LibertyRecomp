@@ -114,12 +114,15 @@
     "0x82B99F84": [
       "0x82BDCA14",
       "UNVERIFIED: neighbour inference only (both neighbours agree on shift); no direct references"
+    ],
+    "0x82013C9C": [
+      "0x820131E4",
+      "radar render-phase vtable: installed by the render-phase constructor with id 7 (US sub_8239C3A8 lis/addi -> 0x82013C9C; PAL sub_8236C140 -> 0x820131E4). PAL vtable slot 4 is sub_8236C750 (radar rect retention). Gates CopyTouchRadarViewport for every input, not just touch; the US value left the minimap a vertical oval on non-16:9 displays"
     ]
   },
   "unresolved": {
     "0x82B307A0": "cloud double-buffer producer index (gta4_native_hooks.cpp) - no direct references; reached via pointer",
     "0x82B307A4": "postfx timecycle / cloud double-buffer index (gta4_native_hooks.cpp, bulb trace) - no direct references",
-    "0x82013C9C": "radar render-phase vtable (touch hooks) - near-inference pointed at float data, rejected",
     "0x82055F8C": "MP proximity weight threshold - inference gave implausible floats, rejected",
     "0x82055F7C": "MP proximity weight threshold - inference gave implausible floats, rejected"
   }

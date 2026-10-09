@@ -31,3 +31,4 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 | 11 | Bring the game window to the front on launch | done | macOS ignores `activateIgnoringOtherApps` from a terminal-launched process; the launch scripts activate via LaunchServices (`osascript ... activate`) instead |
 | 12 | Verify console / settings / achievements overlays under the GTA IV theme | done | achievements: fine. Settings: setting names were green/yellow/red by lifecycle, now white/amber/grey, and the window opens at 960x640 instead of 620x480. Console: level colours only (white/yellow/red), theme-driven otherwise |
 | 13 | Stale docs: DEV-NOTES installer section (USA/TU8), dumping guide (PAL/TU5) | done | |
+| 14 | Minimap drawn as a vertical oval ("game feels squashed") | done | `kRadarRenderPhaseVtable` still held the US address, so the radar viewport was never fitted to the 1.54:1 display. Resolved to PAL `0x820131E4`; confirmed round in play |
