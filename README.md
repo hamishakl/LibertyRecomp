@@ -163,7 +163,14 @@ upstream's design.
 
 ## Performance comparison
 
-Upstream's comparison of GTA IV on macOS by method, kept for reference:
+This fork, free-roam driving on a **MacBook Air (Apple M4, 16 GB, macOS 26.6)** with the native Metal
+renderer, `resolution = "1440p"` and the port's default draw-distance/population settings. The
+overlay is Apple's Metal Performance HUD (`gta4_performance_hud = true`); the display is a 2880×1864
+panel in a scaled mode, hence the 3840×2486 drawable.
+
+![Liberty Recompiled on Apple M4, native Metal, 30 fps](docs/images/perf_liberty_metal_m4.png)
+
+Upstream's comparison of GTA IV on macOS by other methods, kept for reference:
 
 | Method | Screenshot |
 |--------|------------|
