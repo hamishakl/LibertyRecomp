@@ -78,7 +78,7 @@ void AchievementToastDialog::OnDraw(ImGuiIO& io) {
   ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav |
                            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                            ImGuiWindowFlags_NoInputs;
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, alpha));
   if (ImGui::Begin("##ach_toast", nullptr, flags)) {
     constexpr float kIconSize = 44.0f;
@@ -89,7 +89,7 @@ void AchievementToastDialog::OnDraw(ImGuiIO& io) {
     }
 
     ImGui::BeginGroup();
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.85f, 0.2f, alpha));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.97f, 0.69f, 0.20f, alpha));
     ImGui::TextUnformatted("Achievement Unlocked");
     ImGui::PopStyleColor();
     ImGui::TextUnformatted(toast.event.achievement.label.c_str());

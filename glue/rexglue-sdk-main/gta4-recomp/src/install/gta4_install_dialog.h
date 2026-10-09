@@ -11,6 +11,7 @@
 #include <rex/ui/imgui_dialog.h>
 
 #include "gta4_installer.h"
+#include "gta4_ui_theme.h"
 
 namespace gta4::install {
 
@@ -20,7 +21,7 @@ class InstallDialog final : public rex::ui::ImGuiDialog {
   using CancelCallback = std::function<void()>;
 
   InstallDialog(rex::ui::ImGuiDrawer* drawer, std::filesystem::path install_root, bool dlc_only,
-                CompleteCallback complete, CancelCallback cancel);
+                gta4::ui::UiFonts fonts, CompleteCallback complete, CancelCallback cancel);
 
  protected:
   void OnClose() override;
@@ -56,13 +57,16 @@ class InstallDialog final : public rex::ui::ImGuiDialog {
   void StartInstall();
   void FinishInstallIfNeeded();
   void DrawBaseInspection();
+  // One bordered row: uppercase label, REQUIRED/OPTIONAL tag, chosen path, picker buttons.
   void DrawSourceRow(const char* label, PickerTarget target, const std::filesystem::path& value,
                      bool required);
+  void DrawHeader(const char* kicker, const char* title);
   void AssignPickedPath(PickerTarget target, std::filesystem::path path);
   std::filesystem::path PathFor(PickerTarget target) const;
 
   std::filesystem::path install_root_;
   bool dlc_only_ = false;
+  gta4::ui::UiFonts fonts_;
   CompleteCallback complete_;
   CancelCallback cancel_;
   std::shared_ptr<PickerState> picker_state_;

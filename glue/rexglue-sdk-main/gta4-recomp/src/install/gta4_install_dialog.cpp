@@ -1,6 +1,8 @@
 #include "gta4_install_dialog.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <string>
 #include <utility>
 
 #include <SDL3/SDL_dialog.h>
@@ -45,13 +47,26 @@ constexpr SDL_DialogFileFilter kDlcFilters[] = {
     {"Xbox content package", "*"},
 };
 
+std::string HumanBytes(uint64_t bytes) {
+  char buffer[32];
+  if (bytes >= 1ull << 30) std::snprintf(buffer, sizeof buffer, "%.2f GB", double(bytes) / double(1ull << 30));
+  else if (bytes >= 1ull << 20) std::snprintf(buffer, sizeof buffer, "%.1f MB", double(bytes) / double(1ull << 20));
+  else std::snprintf(buffer, sizeof buffer, "%llu KB", static_cast<unsigned long long>(bytes >> 10));
+  return buffer;
+}
+
+constexpr ImVec2 kPrimarySize(200.0f, 44.0f);
+constexpr ImVec2 kSecondarySize(150.0f, 44.0f);
+
 }  // namespace
 
 InstallDialog::InstallDialog(rex::ui::ImGuiDrawer* drawer, std::filesystem::path install_root,
-                             bool dlc_only, CompleteCallback complete, CancelCallback cancel)
+                             bool dlc_only, gta4::ui::UiFonts fonts, CompleteCallback complete,
+                             CancelCallback cancel)
     : ImGuiDialog(drawer),
       install_root_(std::move(install_root)),
       dlc_only_(dlc_only),
+      fonts_(fonts),
       complete_(std::move(complete)),
       cancel_(std::move(cancel)),
       picker_state_(std::make_shared<PickerState>()) {}
@@ -186,24 +201,58 @@ void InstallDialog::ShowFolderPicker(PickerTarget target) {
 
 void InstallDialog::DrawSourceRow(const char* label, PickerTarget target,
                                   const std::filesystem::path& value, bool required) {
+  using namespace gta4::ui;
   ImGui::PushID(label);
-  ImGui::Text("%s%s", label, required ? " *" : "");
-  ImGui::SameLine();
-  ImGui::TextDisabled("%s", value.empty() ? "Not selected" : value.string().c_str());
-  if (ImGui::Button("Select File")) {
-    ShowFilePicker(target);
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Select Folder")) {
-    ShowFolderPicker(target);
-  }
-  if (!value.empty()) {
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, kPanel);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
+  if (ImGui::BeginChild("row", ImVec2(0.0f, 0.0f),
+                        ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders |
+                            ImGuiChildFlags_AlwaysUseWindowPadding)) {
+    {
+      ScopedFont heading(fonts_.heading);
+      ImGui::TextUnformatted(label);
+      ImGui::SameLine(0.0f, 14.0f);
+      ImGui::TextColored(required ? kAmber : kTextMuted, required ? "REQUIRED" : "OPTIONAL");
+    }
+    if (value.empty()) {
+      ImGui::TextColored(kTextMuted, "Not selected");
+    } else {
+      ImGui::PushStyleColor(ImGuiCol_Text, kText);
+      ImGui::TextWrapped("%s", value.string().c_str());
+      ImGui::PopStyleColor();
+    }
+    ImGui::Spacing();
+    if (SecondaryButton("SELECT FILE")) ShowFilePicker(target);
     ImGui::SameLine();
-    if (ImGui::Button("Clear")) {
-      AssignPickedPath(target, {});
+    if (SecondaryButton("SELECT FOLDER")) ShowFolderPicker(target);
+    if (!value.empty()) {
+      ImGui::SameLine();
+      if (SecondaryButton("CLEAR")) AssignPickedPath(target, {});
     }
   }
+  ImGui::EndChild();
+  ImGui::PopStyleVar();
+  ImGui::PopStyleColor();
   ImGui::PopID();
+}
+
+void InstallDialog::DrawHeader(const char* kicker, const char* title) {
+  using namespace gta4::ui;
+  {
+    ScopedFont heading(fonts_.heading);
+    ImGui::TextColored(kAmber, "%s", kicker);
+  }
+  {
+    ScopedFont big(fonts_.title);
+    ImGui::TextUnformatted(title);
+  }
+  // The loading screen's hairline under the title.
+  const ImVec2 origin = ImGui::GetCursorScreenPos();
+  const float width = ImGui::GetContentRegionAvail().x;
+  ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(origin.x, origin.y + 4.0f),
+                                            ImVec2(origin.x + width, origin.y + 6.0f),
+                                            IM_COL32(255, 255, 255, 230));
+  ImGui::Dummy(ImVec2(width, 24.0f));
 }
 
 void InstallDialog::StartInstall() {
@@ -256,31 +305,28 @@ void InstallDialog::FinishInstallIfNeeded() {
 }
 
 void InstallDialog::DrawBaseInspection() {
+  using namespace gta4::ui;
   const GameSourceInspectionSnapshot snapshot = picker_state_->inspection_worker.Snapshot();
   if (snapshot.checking) {
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.78f, 0.25f, 1.0f));
-    ImGui::TextUnformatted("Checking…");
-    ImGui::PopStyleColor();
+    ImGui::TextColored(kAmber, "CHECKING SOURCE...");
     return;
   }
   if (!snapshot.result) {
     return;
   }
-
-  const ImVec4 color = snapshot.result->supported() ? ImVec4(0.35f, 0.90f, 0.45f, 1.0f)
-                                                    : ImVec4(1.0f, 0.35f, 0.35f, 1.0f);
+  const bool supported = snapshot.result->supported();
   const std::string summary = FormatGameSourceInspection(*snapshot.result);
-  ImGui::PushStyleColor(ImGuiCol_Text, color);
+  ImGui::PushStyleColor(ImGuiCol_Text, supported ? kText : kDanger);
   ImGui::TextWrapped("%s", summary.c_str());
   ImGui::PopStyleColor();
-
   const std::string diagnostics = FormatGameSourceDiagnostics(*snapshot.result);
   if (!diagnostics.empty()) {
-    ImGui::TextDisabled("%s", diagnostics.c_str());
+    ImGui::TextColored(kTextMuted, "%s", diagnostics.c_str());
   }
 }
 
 void InstallDialog::OnDraw(ImGuiIO& io) {
+  using namespace gta4::ui;
   FinishInstallIfNeeded();
 
   if (completion_frames_ >= 0) {
@@ -296,48 +342,55 @@ void InstallDialog::OnDraw(ImGuiIO& io) {
     --completion_frames_;
   }
 
-  ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.10f, io.DisplaySize.y * 0.08f),
-                          ImGuiCond_Always);
-  ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x * 0.80f, io.DisplaySize.y * 0.84f),
-                           ImGuiCond_Always);
-  ImGui::SetNextWindowBgAlpha(0.98f);
-  constexpr ImGuiWindowFlags kWindowFlags =
-      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
-  if (!ImGui::Begin("Liberty Recompiled Setup##installer", nullptr, kWindowFlags)) {
+  // Full-screen black like the game's own loading screens, content in a left column.
+  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+  ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+  constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                                            ImGuiWindowFlags_NoSavedSettings |
+                                            ImGuiWindowFlags_NoBringToFrontOnFocus;
+  const bool open = ImGui::Begin("Liberty Recompiled Setup##installer", nullptr, kWindowFlags);
+  ImGui::PopStyleColor();
+  ImGui::PopStyleVar(2);
+  if (!open) {
     ImGui::End();
     return;
   }
 
-  ImGui::SetWindowFontScale(1.45f);
-  ImGui::TextUnformatted(dlc_only_ ? "INSTALL EPISODES" : "INSTALL LIBERTY RECOMPILED");
-  ImGui::SetWindowFontScale(1.0f);
-  ImGui::Separator();
-  ImGui::Spacing();
+  const float margin_x = io.DisplaySize.x * 0.07f;
+  const float margin_y = io.DisplaySize.y * 0.09f;
+  const float column = std::min(io.DisplaySize.x * 0.62f, 980.0f);
+  ImGui::SetCursorPos(ImVec2(margin_x, margin_y));
+  ImGui::BeginChild("##column", ImVec2(column, io.DisplaySize.y - margin_y - 24.0f), ImGuiChildFlags_None,
+                    ImGuiWindowFlags_NoBackground);
 
   if (state_ == State::kSelecting || state_ == State::kFailed) {
+    DrawHeader("LIBERTY RECOMPILED", dlc_only_ ? "INSTALL EPISODES" : "INSTALL GTA IV");
+    ImGui::PushStyleColor(ImGuiCol_Text, kTextDim);
     if (!dlc_only_) {
       ImGui::TextWrapped(
-          "Select your legally obtained Xbox 360 GTA IV source and the v8 (0.0.8.5) "
-          "title update. The update may be an STFS package or raw default.xexp.");
-      ImGui::Spacing();
-      DrawSourceRow("Base game", PickerTarget::kGame, PathFor(PickerTarget::kGame), true);
+          "Select your legally obtained Xbox 360 GTA IV source and the v8 (0.0.8.5) title update. "
+          "The update may be an STFS package or a raw default.xexp.");
+    } else {
+      ImGui::TextWrapped("Add either or both episodes to the existing GTA IV installation.");
+    }
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
+
+    if (!dlc_only_) {
+      DrawSourceRow("BASE GAME", PickerTarget::kGame, PathFor(PickerTarget::kGame), true);
       DrawBaseInspection();
       ImGui::Spacing();
-      DrawSourceRow("Title update v8", PickerTarget::kUpdate, PathFor(PickerTarget::kUpdate), true);
+      DrawSourceRow("TITLE UPDATE V8", PickerTarget::kUpdate, PathFor(PickerTarget::kUpdate), true);
       ImGui::Spacing();
-      ImGui::Separator();
-    } else {
-      ImGui::TextWrapped(
-          "Add either or both installed episodes to the existing GTA IV installation.");
     }
-
+    DrawSourceRow("THE LOST AND DAMNED", PickerTarget::kTlad, PathFor(PickerTarget::kTlad), false);
     ImGui::Spacing();
-    DrawSourceRow("The Lost and Damned", PickerTarget::kTlad, PathFor(PickerTarget::kTlad), false);
+    DrawSourceRow("THE BALLAD OF GAY TONY", PickerTarget::kTbogt, PathFor(PickerTarget::kTbogt), false);
     ImGui::Spacing();
-    DrawSourceRow("The Ballad of Gay Tony", PickerTarget::kTbogt, PathFor(PickerTarget::kTbogt),
-                  false);
-    ImGui::Spacing();
-    ImGui::TextDisabled("Install directory: %s", install_root_.string().c_str());
+    ImGui::TextColored(kTextMuted, "Install directory  %s", install_root_.string().c_str());
 
     std::string picker_error;
     {
@@ -345,12 +398,12 @@ void InstallDialog::OnDraw(ImGuiIO& io) {
       picker_error = picker_state_->error;
     }
     if (!picker_error.empty()) {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, kDanger);
       ImGui::TextWrapped("File picker error: %s", picker_error.c_str());
       ImGui::PopStyleColor();
     }
     if (state_ == State::kFailed && !result_.error.empty()) {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, kDanger);
       ImGui::TextWrapped("Installation failed: %s", result_.error.c_str());
       ImGui::PopStyleColor();
     }
@@ -366,44 +419,64 @@ void InstallDialog::OnDraw(ImGuiIO& io) {
       has_dlc = !picker_state_->tlad.empty() || !picker_state_->tbogt.empty();
     }
     const bool may_install = has_supported_game && has_update && (!dlc_only_ || has_dlc);
-    ImGui::Spacing();
-    ImGui::BeginDisabled(!may_install);
-    if (ImGui::Button(state_ == State::kFailed ? "Retry Installation" : "Install",
-                      ImVec2(190, 0))) {
-      StartInstall();
-    }
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-      auto cancel = std::move(cancel_);
-      Close();
-      if (cancel) {
-        cancel();
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    {
+      ScopedFont heading(fonts_.heading);
+      ImGui::BeginDisabled(!may_install);
+      if (PrimaryButton(state_ == State::kFailed ? "RETRY INSTALL" : "INSTALL", kPrimarySize)) {
+        StartInstall();
+      }
+      ImGui::EndDisabled();
+      ImGui::SameLine();
+      if (SecondaryButton("CANCEL", kSecondarySize)) {
+        auto cancel = std::move(cancel_);
+        Close();
+        if (cancel) {
+          cancel();
+        }
       }
     }
   } else if (state_ == State::kInstalling) {
-    ImGui::TextWrapped("Validating, extracting, and publishing the installation...");
+    DrawHeader("LIBERTY RECOMPILED", "INSTALLING");
     const uint64_t copied = progress_.copied_bytes.load(std::memory_order_relaxed);
     const uint64_t total = progress_.total_bytes.load(std::memory_order_relaxed);
     const float fraction =
         total == 0 ? 0.0f
                    : std::clamp(static_cast<float>(copied) / static_cast<float>(total), 0.0f, 1.0f);
-    ImGui::ProgressBar(fraction, ImVec2(-1.0f, 0.0f));
-    ImGui::Text("Copied %llu of %llu bytes", static_cast<unsigned long long>(copied),
-                static_cast<unsigned long long>(total));
-    ImGui::Spacing();
-    if (ImGui::Button("Cancel Installation")) {
-      progress_.cancel_requested = true;
+    ImGui::TextColored(kTextDim, "Validating, extracting and publishing the installation.");
+    ImGui::Dummy(ImVec2(0.0f, 18.0f));
+    {
+      ScopedFont heading(fonts_.heading);
+      const std::string left = "COPYING FILES   " + HumanBytes(copied) + " / " + HumanBytes(total);
+      char percent[16];
+      std::snprintf(percent, sizeof percent, "%d%%", int(fraction * 100.0f + 0.5f));
+      ImGui::TextUnformatted(left.c_str());
+      ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() -
+                      ImGui::CalcTextSize(percent).x);
+      ImGui::TextColored(kTextDim, "%s", percent);
+    }
+    ProgressLine(fraction);
+    ImGui::Dummy(ImVec2(0.0f, 18.0f));
+    {
+      ScopedFont heading(fonts_.heading);
+      if (SecondaryButton("CANCEL INSTALL", kSecondarySize)) {
+        progress_.cancel_requested = true;
+      }
     }
   } else {
-    ImGui::TextWrapped(
-        "Installation and integrity validation completed successfully. The game can now start.");
-    ImGui::Spacing();
-    if (completion_frames_ < 0 && ImGui::Button("Start Game", ImVec2(190, 0))) {
-      completion_frames_ = 1;
+    DrawHeader("LIBERTY RECOMPILED", "READY TO PLAY");
+    ImGui::TextColored(kTextDim,
+                       "Installation and integrity validation completed successfully.");
+    ImGui::Dummy(ImVec2(0.0f, 18.0f));
+    {
+      ScopedFont heading(fonts_.heading);
+      if (completion_frames_ < 0 && PrimaryButton("START GAME", kPrimarySize)) {
+        completion_frames_ = 1;
+      }
     }
   }
 
+  ImGui::EndChild();
   ImGui::End();
 }
 

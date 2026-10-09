@@ -106,6 +106,7 @@ if(APPLE AND LIBERTY_RECOMP_TARGET_PLATFORM STREQUAL "desktop")
         src/main.cpp
         src/gta4_app.cpp
         src/gta4_shader_precompile_screen.cpp
+        src/gta4_ui_theme.cpp
         src/gta4_frontend_hooks.cpp
         src/gta4_font_selection_trace.cpp
         src/gta4_presentation_options.cpp

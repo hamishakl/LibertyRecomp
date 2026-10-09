@@ -10,11 +10,13 @@
 #include <rex/system/xam/live_compatibility.h>
 #include <rex/ui/imgui_dialog.h>
 
+#include "gta4_ui_theme.h"
+
 namespace gta4::input {
 
 class TextChatDialog final : public rex::ui::ImGuiDialog {
  public:
-  TextChatDialog(rex::ui::ImGuiDrawer* drawer,
+  TextChatDialog(rex::ui::ImGuiDrawer* drawer, gta4::ui::UiFonts fonts,
                  std::function<void(bool)> set_input_capture);
   ~TextChatDialog() override;
 
@@ -38,6 +40,7 @@ class TextChatDialog final : public rex::ui::ImGuiDialog {
   static constexpr size_t kHistoryMessages = 64;
   static constexpr uint32_t kReceiveBatchMessages = 128;
 
+  gta4::ui::UiFonts fonts_;
   std::function<void(bool)> set_input_capture_;
   rex::system::xam::LiveCompatibilityRuntime* live_ = nullptr;
   rex::system::xam::ITextChatTransport* transport_ = nullptr;

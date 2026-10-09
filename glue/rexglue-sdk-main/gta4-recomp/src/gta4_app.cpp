@@ -632,7 +632,7 @@ std::optional<rex::PathConfig> GTA4App::OnFinalizePaths(
   }
   const bool dlc_only = ready && force_dlc && !force_install;
   new gta4::install::InstallDialog(
-      imgui_drawer(), liberty_root_, dlc_only,
+      imgui_drawer(), liberty_root_, dlc_only, ui_fonts_,
       [paths = std::move(paths), resume = std::move(resume)]() mutable {
         std::error_code error;
         const auto update_root = paths.game_data_root / "update";
@@ -1082,7 +1082,7 @@ void GTA4App::OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) {
       std::make_unique<gta4::input::ContextTouchOverlay>(
           drawer, immediate_drawer(), native_config_path_.parent_path() / "touch-icons", window());
   text_chat_dialog_ = std::make_unique<gta4::input::TextChatDialog>(
-      drawer, [this](bool captured) {
+      drawer, ui_fonts_, [this](bool captured) {
         SetTitleInputCaptured(captured);
         GTA4_SetTouchTitleInputOwned(captured);
       });
@@ -1106,6 +1106,8 @@ void GTA4App::OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) {
 
 void GTA4App::OnConfigureFonts(ImFontAtlas* atlas) {
   loading_screen_fonts_ = gta4::ui::LoadLoadingScreenFonts(atlas);
+  ui_fonts_ = gta4::ui::LoadUiFonts(atlas);
+  gta4::ui::ApplyTheme(ImGui::GetStyle());
 }
 
 void GTA4App::OnShaderPrecompileStarted(rex::system::IGraphicsSystem* graphics) {

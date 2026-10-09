@@ -141,10 +141,6 @@ void ImGuiDrawer::Initialize() {
   }
 #endif
 
-  if (font_setup_) {
-    font_setup_(io.Fonts);
-  }
-
   auto& style = ImGui::GetStyle();
   style.ScrollbarRounding = 0;
   style.WindowRounding = 0;
@@ -193,6 +189,11 @@ void ImGuiDrawer::Initialize() {
   style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
   style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.00f, 1.00f, 0.00f, 0.21f);
   style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
+
+  // The application hook runs last so it can add fonts, pick the default font and restyle.
+  if (font_setup_) {
+    font_setup_(io.Fonts);
+  }
 
   frame_time_tick_frequency_ = double(rex::chrono::Clock::QueryHostTickFrequency());
   last_frame_time_ticks_ = rex::chrono::Clock::QueryHostTickCount();
