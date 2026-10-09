@@ -371,7 +371,7 @@ void InstallDialog::OnDraw(ImGuiIO& io) {
     ImGui::PushStyleColor(ImGuiCol_Text, kTextDim);
     if (!dlc_only_) {
       ImGui::TextWrapped(
-          "Select your legally obtained Xbox 360 GTA IV source and the v8 (0.0.8.5) title update. "
+          "Select your legally obtained PAL (NZ/AU/EU) Xbox 360 GTA IV source and Title Update 5. "
           "The update may be an STFS package or a raw default.xexp.");
     } else {
       ImGui::TextWrapped("Add either or both episodes to the existing GTA IV installation.");
@@ -383,7 +383,7 @@ void InstallDialog::OnDraw(ImGuiIO& io) {
       DrawSourceRow("BASE GAME", PickerTarget::kGame, PathFor(PickerTarget::kGame), true);
       DrawBaseInspection();
       ImGui::Spacing();
-      DrawSourceRow("TITLE UPDATE V8", PickerTarget::kUpdate, PathFor(PickerTarget::kUpdate), true);
+      DrawSourceRow("TITLE UPDATE 5", PickerTarget::kUpdate, PathFor(PickerTarget::kUpdate), true);
       ImGui::Spacing();
     }
     DrawSourceRow("THE LOST AND DAMNED", PickerTarget::kTlad, PathFor(PickerTarget::kTlad), false);
