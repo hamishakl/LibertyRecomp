@@ -1,6 +1,8 @@
 #include "gpu_pass_timer.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -17,7 +19,8 @@ constexpr size_t kBuffers = 8;          // rotated as they fill: ~16k passes in 
 constexpr uint32_t kFramesPerRow = 300;
 
 struct Totals {
-  double ns = 0;
+  double ns = 0;            // inclusive: sum of each pass's own start-to-end span
+  double exclusive_ns = 0;  // span shared out between passes that overlap on the GPU
   uint64_t passes = 0;
 };
 
@@ -76,7 +79,12 @@ void Initialize(id<MTLDevice> device, const std::string& csv_path) {
   g->buffers = std::move(buffers);
   g->path = csv_path;
   g->ns_per_tick = CalibrateNsPerTick(device);
-  std::ofstream(csv_path, std::ios::trunc) << "row,frames,category,ms_per_frame,passes_per_frame\n";
+  // ms_per_frame is inclusive: Apple GPUs overlap the vertex work of one pass with the fragment
+  // work of the previous one, so categories do NOT add up (post-processing once read 25 ms of a
+  // 13 ms frame). exclusive_ms_per_frame shares every overlapped interval equally between the
+  // passes active in it and does add up to the GPU time of the command buffer.
+  std::ofstream(csv_path, std::ios::trunc)
+      << "row,frames,category,ms_per_frame,passes_per_frame,exclusive_ms_per_frame\n";
   REXLOG_INFO("gta4-metal-gpu-pass: enabled ({:.3f} ns/tick) -> {}", g->ns_per_tick, csv_path);
 }
 
@@ -102,6 +110,9 @@ void Commit(id<MTLCommandBuffer> commands) {
   State* state = g.get();
   [commands addCompletedHandler:^(id<MTLCommandBuffer>) {
     std::map<std::string, Totals> local;
+    struct Interval { uint64_t begin, end; const std::string* category; };
+    std::vector<Interval> intervals;
+    intervals.reserve(passes->size());
     for (const auto& [buffer, first, category] : *passes) {
       NSData* data = [buffer resolveCounterRange:NSMakeRange(first, 2)];
       if (!data || data.length < 2 * sizeof(MTLCounterResultTimestamp)) continue;
@@ -112,11 +123,35 @@ void Commit(id<MTLCommandBuffer> commands) {
       auto& t = local[category];
       t.ns += double(stamps[1].timestamp - stamps[0].timestamp) * state->ns_per_tick;
       ++t.passes;
+      intervals.push_back({stamps[0].timestamp, stamps[1].timestamp, &category});
+    }
+    // Sweep the passes of this command buffer: each elementary segment between consecutive
+    // timestamps is shared equally by the passes active in it. Passes in different command
+    // buffers are assumed not to overlap (they are consecutive frames).
+    std::vector<std::pair<uint64_t, int>> events;  // (time, +1 start / -1 end)
+    events.reserve(intervals.size() * 2);
+    for (size_t i = 0; i < intervals.size(); ++i) {
+      events.push_back({intervals[i].begin, int(i) + 1});
+      events.push_back({intervals[i].end, -int(i) - 1});
+    }
+    std::sort(events.begin(), events.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    std::vector<size_t> active;
+    uint64_t previous = events.empty() ? 0 : events.front().first;
+    for (const auto& [time, which] : events) {
+      if (time > previous && !active.empty()) {
+        const double share = double(time - previous) * state->ns_per_tick / double(active.size());
+        for (size_t index : active) local[*intervals[index].category].exclusive_ns += share;
+      }
+      previous = time;
+      const size_t index = size_t(std::abs(which)) - 1;
+      if (which > 0) active.push_back(index);
+      else active.erase(std::find(active.begin(), active.end(), index));
     }
     std::lock_guard lock(state->mutex);
     for (const auto& [category, t] : local) {
       auto& total = state->totals[category];
       total.ns += t.ns;
+      total.exclusive_ns += t.exclusive_ns;
       total.passes += t.passes;
     }
   }];
@@ -139,7 +174,7 @@ void FrameEnd() {
   ++g->rows;
   for (const auto& [category, t] : totals)
     out << g->rows << ',' << g->frames << ",\"" << category << "\"," << t.ns / 1e6 / g->frames << ','
-        << double(t.passes) / g->frames << '\n';
+        << double(t.passes) / g->frames << ',' << t.exclusive_ns / 1e6 / g->frames << '\n';
   g->frames = 0;
 }
 
