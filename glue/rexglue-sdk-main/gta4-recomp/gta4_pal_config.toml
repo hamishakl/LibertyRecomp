@@ -68,6 +68,15 @@ memmove = 0x82A01A40              # 40 xrefs — native rexcrt_memmove in memory
 "0x8219FFE8" = {}   # branch target from sub_821A2EDC
 "0x8219ACC0" = {}   # vtable slot +0x20 target in the original GTA IV .rdata tables
 "0x821947E0" = {}   # address-taken vtable thunk: addi r3,r3,-4; b sub_82194540
+# Address-taken entry points only reached through lis/addi immediates (2026-10-10, free-roam abort
+# "Call to invalid or unregistered function": sub_828A6638 passed 0x82893C98 to sub_8288FE70).
+# Found with the lis/addi scan in docs/PAL-PORT.md; each verified against the PAL image. Only
+# thunk-shaped targets qualify: 0x8290001C also looked address-taken but is a branch inside a loop,
+# and registering it split that function (codegen: unresolved conditional branch to 0x828FFFD0).
+"0x82882A70" = {}   # vcall thunk: lwz r12,0(r3); lwz r11,0x28(r12); mtctr; bctr (sub_82882A90)
+"0x82882A80" = {}   # vcall thunk slot 0x38 (sub_82882A90)
+"0x82893C98" = {}   # vcall thunk slot 0x40 (sub_82893E68, sub_828A6638)
+"0x82893CB8" = {}   # vcall thunk slot 0x44 (sub_827F8920, sub_827F9358, sub_82893E68, sub_828A6638)
 "0x82893CC8" = {}   # address-taken vtable slot +0x54 callback thunk
 "0x827AE060" = {}   # address-taken vtable slot +0x50 callback thunk
 "0x82893CA8" = {}   # address-taken vtable slot +0x34 callback thunk

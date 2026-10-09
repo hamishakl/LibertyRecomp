@@ -13,6 +13,7 @@
  *              role as a function dispatch table rather than a CPU emulator.
  */
 
+#include <cstdio>
 #include <rex/assert.h>
 #include <rex/dbg.h>
 #include <rex/logging.h>
@@ -35,6 +36,11 @@ FunctionDispatcher* GetBoundFunctionDispatcher() {
 }  // namespace
 
 static void InvalidFunctionTrap(PPCContext& ctx, uint8_t* /*base*/) {
+  // Also say it on stderr: without --diagnostics the log is off, and the macOS crash report only
+  // records "abort() called", which leaves no way to find the missing entry point afterwards.
+  std::fprintf(stderr, "[FATAL] Call to invalid or unregistered function at guest address 0x%08X (lr 0x%08X)\n",
+               ctx.last_indirect_target, uint32_t(ctx.lr));
+  std::fflush(stderr);
   REX_FATAL("Call to invalid or unregistered function at guest address 0x{:08X}",
             ctx.last_indirect_target);
 }

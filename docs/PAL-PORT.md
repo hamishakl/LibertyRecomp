@@ -80,6 +80,21 @@ small varying amounts. Every guest address the project hard-codes has to be rema
   - Follow-up: `shader_overrides/manifest.json` keys the Bink overrides by US hashes (`9E76B68B60127349`,
     `A6C9E2B8B2A59D7A`, `156BAD4A9EE62726`); PAL Bink shaders currently use the stock translation.
 
+### Free-roam abort 2026-10-10: address-taken vcall thunks (fixed)
+Driving in Hove Beach aborted with `Call to invalid or unregistered function` (SIGABRT on the main
+guest thread; `sub_82882A90` → `sub_828A6638` → `sub_8288FE70` → bctrl). The callbacks those callers
+pass by `lis/addi` are four-instruction virtual-call thunks laid out back to back
+(`lwz r12,0(r3); lwz r11,N(r12); mtctr r11; bctr`), and codegen had only registered the first thunk
+of each run. Registered in `gta4_pal_config.toml`: `0x82882A70`, `0x82882A80`, `0x82893C98`,
+`0x82893CB8`.
+- Found with **`tools/xex/find_address_taken_targets.py <image> generated_pal`** — the data scanner
+  (`find_unregistered_targets.py`) cannot see these because the addresses live in code immediates.
+- Only thunk/prologue-shaped targets qualify. `0x8290001C` looked address-taken but is a branch in a
+  loop body; registering it split the function (codegen: unresolved conditional branch to
+  `0x828FFFD0`). Re-run the scan after any config change; it should print 0.
+- `InvalidFunctionTrap` now also prints the target and `lr` to stderr, so a crash outside a
+  `--diagnostics` run still leaves the address in the terminal.
+
 ### Known gaps (left as US values, see `tools/xex/manual_map.json` "unresolved")
 | US address | Used by | Impact |
 |---|---|---|
