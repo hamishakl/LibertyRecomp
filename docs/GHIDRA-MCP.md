@@ -67,21 +67,28 @@ check `df -h /System/Volumes/Data` first.
 ## 3. Build the analysed project (DONE 2026-10-10, repeatable)
 
 `tools/ghidra/analyze_pal.sh` does all of this: imports `local/ghidra/pal_tu5.bin` as a raw binary
-at `0x82000000` with language `PowerPC:BE:32:default`, runs `SeedLibertySymbols.java` to create a
+at `0x82000000` with language `PowerPC:BE:64:A2ALT-32addr` (see the warning above), runs `SeedLibertySymbols.java` to create a
 function at every one of the **38,070 recompiled PAL function addresses** (taken from the address
 table in `generated_pal/gta4_init.cpp` by `make_symbols.py`) plus the 19 resolved data globals from
 `manual_map.json` as labels (`dat_pal_<PAL>_us_<US>`), then auto-analyses and prints the counts.
 
 Result on 2026-10-10: project `~/ghidra/projects/GTAIV_PAL_TU5.gpr`, program `pal_tu5.bin`,
-**38,235 functions, 393k instructions, 108k defined data**, analysis 29 s. Names match every
-`sub_82......` in `generated_pal/`, `gta4_pal_config.toml` and `manual_map.json`.
+**38,395 functions, 1.82M instructions, 115k defined data**, analysis 76 s. Names match every
+`sub_82......` in `generated_pal/`, `gta4_pal_config.toml` and `manual_map.json`. Verified through
+the MCP: `sub_8236C750` (radar render phase, vtable slot 4) decompiles to 52 lines and shows the
+`+0x8E8 = 7` store the PAL vtable hunt was based on; `0x82543B28` resolves to `sub_82543B20`.
+
+⚠ **The seed script disables the "Non-Returning Functions - Discovered" analyzer.** With it on,
+the register save/restore helper at `829FF3C8` (a `bl` target in nearly every function, outside the
+recompiled table) was marked noreturn and 2,362 callers decompiled to a single call; instruction
+count was 946k instead of 1.82M. Two earlier attempts failed that way, one of them also from using
+the 32-bit language.
 
 - Without the seed, a raw import has no entry points and the analysis finds almost nothing. Always
   seed first.
-- The recompiled address table contains branch-target fragments as well as true functions, so some
-  Ghidra functions are short tails of their neighbour (the radar render-phase constructor at
-  `sub_8236C140` shows as 2 instructions because `sub_8236C148` is also an entry). Read the
-  decompilation of the *parent* when a body looks truncated.
+- The recompiled address table contains some branch-target fragments as well as true functions;
+  about 4,000 seeded entries end up merged into their parent's body rather than as separate
+  Ghidra functions. If a `sub_` name from the fork is missing, query by address instead.
 - An `XEXLoaderWV` import (github.com/zeroKilo/XEXLoaderWV) would recover PE sections and `.pdata`
   but was not needed; the raw image plus seed gives the same function set the fork uses.
 - The US v8 executable is not on this machine (`assets/default_v8.xex`), so there is no US project;
