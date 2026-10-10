@@ -119,8 +119,9 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   The Metal renderer now records each copy and runs it when the texture is first read or the
   source is about to be redrawn, so a copy that is overwritten unread is dropped. The frame summary
   in the game log prints `resolve-deferred / executed / dropped`; `gta4_metal_defer_resolves = false`
-  restores the immediate path. The next step (snapshotting the source so records survive a redraw) is
-  tracked in `docs/BACKLOG.md` item 17.
+  restores the immediate path. In practice the unread copies are forced anyway, because their source is
+  redrawn with its old contents loaded, so this saves nothing yet; `docs/BACKLOG.md` item 17 has the
+  measurements and what a real saving would take.
 - **World settings default to Xbox 360 parity.** Upstream raises draw distance (3×), shadows (2×),
   population (1.25×), reflections and the streaming budget. On the M4 that ran at 34 fps with 70 ms
   spikes; parity ran at 50 fps with a flat 33 ms p99 and visibly more traffic (the raised budgets

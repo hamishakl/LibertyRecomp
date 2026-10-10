@@ -174,6 +174,7 @@ struct Renderer::State {
   // waiting Flush runs them all.
   struct PendingResolve {
     uint64_t recorded_submission = 0;
+    std::shared_ptr<SurfaceResource> source;  // identity and clear state only; the image is below
     id<MTLTexture> source_image = nil;
     id<MTLTexture> target = nil;
     std::shared_ptr<TextureResource> destination;

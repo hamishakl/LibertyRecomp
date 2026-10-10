@@ -226,7 +226,7 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
   if(!exchanged) {
     PendingResolve record;
     record.recorded_submission = submitted;
-    record.source_image = source->image; record.target = target; record.destination = destination;
+    record.source = source; record.source_image = source->image; record.target = target; record.destination = destination;
     record.subresource = subresource; record.source_handle = resolve.source.handle;
     record.destination_handle = resolve.destination_texture;
     record.level = level; record.slice = slice; record.target_w = target_w; record.target_h = target_h;
@@ -261,8 +261,11 @@ bool Renderer::State::ExecuteResolve(const PendingResolve& r, std::string& error
   ++frame_resolve_executions;
   if (profile_enabled) {
     const char* file = settle_point.file_name(); if (const char* slash = std::strrchr(file, '/')) file = slash + 1;
-    REXLOG_INFO("gta4-metal-profile-resolve-execute recording={} source={:08X} destination={:08X} level={} slice={} full={} direct={} at={}:{}",
-        submitted + 1, r.source_handle, r.destination_handle, r.level, r.slice, r.full, r.direct, file, settle_point.line());
+    REXLOG_INFO("gta4-metal-profile-resolve-execute recording={} source={:08X} destination={:08X} level={} slice={} full={} direct={} "
+        "recorded={} source-pending-clear={} source-initialized={} source-image-current={} samples={} at={}:{}",
+        submitted + 1, r.source_handle, r.destination_handle, r.level, r.slice, r.full, r.direct, r.recorded_submission,
+        r.source ? r.source->pending_clear.aspects : 99u, r.source ? r.source->initialized : false,
+        r.source && r.source->image == r.source_image, uint32_t(r.source_image.sampleCount), file, settle_point.line());
   }
   // Blits retain their first partial-write initialization. Conversions merge it
   // into their load action and avoid a separate store/reload of the attachment.
