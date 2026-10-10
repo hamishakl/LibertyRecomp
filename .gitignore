@@ -804,3 +804,6 @@ CMakeUserPresets.json
 glue/rexglue-sdk-main/gta4-recomp/assets_pal
 glue/rexglue-sdk-main/gta4-recomp/generated_pal/
 glue/rexglue-sdk-main/gta4-recomp/generated_pal_raw/
+
+# Local-only artefacts (decrypted game images for Ghidra, backups); never commit game code
+/local/

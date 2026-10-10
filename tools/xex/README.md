@@ -7,7 +7,7 @@ Python tools need `pip install cryptography` (use a venv).
 |---|---|
 | `extract_basefile.py default.xex out.bin` | Decrypt + decompress a retail XEX (basic compression) to its memory image |
 | `lzxdelta.c` | Standalone port of the SDK's `lzxdelta_apply_patch` (`SDK/src/system/lzx.cpp`). Build: `cc -O2 -w -I$M lzxdelta.c $M/lzxd.c $M/system.c -o lzxdelta` with `M=glue/rexglue-sdk-main/thirdparty/libmspack/libmspack/mspack` (setup_repo.py's patched copy) |
-| `apply_tu.py base.xex basefile.bin tu.stfs ./lzxdelta out.bin` | Pull `default.xexp` out of an STFS title-update package and apply it (mirrors `XexModule::ApplyPatch`; every block SHA-1 verified) |
+| `apply_tu.py base.xex basefile.bin tu.stfs\|default.xexp ./lzxdelta out.bin` | Apply a title update (bare `default.xexp`, or pulled out of an STFS package) (mirrors `XexModule::ApplyPatch`; every block SHA-1 verified) |
 | `compare_callsites.py image.bin glue/rexglue-sdk-main/gta4-recomp/generated` | Check every recompiled `bl` site against an image: same-address rate + target drift |
 
 ## Result 2026-10-08 — PAL (NZ) disc

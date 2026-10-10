@@ -1,5 +1,5 @@
-"""Extract default.xexp from an STFS TU package and apply it to a decrypted XEX basefile.
-Mirrors rexglue XexModule::ApplyPatch. usage: apply_tu.py base.xex basefile.bin tu.stfs lzxdelta out_image.bin"""
+"""Apply a title update (a bare default.xexp, or an STFS TU package holding one) to a decrypted XEX basefile.
+Mirrors rexglue XexModule::ApplyPatch. usage: apply_tu.py base.xex basefile.bin tu.stfs|default.xexp lzxdelta out_image.bin"""
 import struct, sys, subprocess, hashlib, tempfile, os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 base_xex, basefile, stfs_path, lzx_tool, out_path = sys.argv[1:6]
@@ -8,28 +8,33 @@ def aes(k, data, mode): c = Cipher(algorithms.AES(k), mode).decryptor(); return 
 u24le = lambda b: b[0] | b[1] << 8 | b[2] << 16
 be32 = lambda b, o: struct.unpack('>I', b[o:o+4])[0]
 
-# --- STFS: find default.xexp ---
-s = open(stfs_path, 'rb').read()
-hdr = (be32(s, 0x340) + 0xFFF) & ~0xFFF
-vd = s[0x379:0x379+0x24]
-per_table = 1 if vd[2] & 1 else 2
-ft_count = struct.unpack('<H', vd[3:5])[0]; ft_block = u24le(vd[5:8])
-def blk_off(b):
-    blk = b
-    for lvl in (0xAA, 0x70E4, 0x4AF768):
-        blk += ((b + lvl) // lvl) * per_table
-        if b < lvl: break
-    return hdr + (blk << 12)
-entries = b''.join(s[blk_off(ft_block+i):blk_off(ft_block+i)+0x1000] for i in range(ft_count))
+# --- the patch: a bare default.xexp, or an STFS title-update package holding one ---
 xexp = None
-for i in range(0, len(entries), 0x40):
-    e = entries[i:i+0x40]; nlen = e[0x28] & 0x3F
-    if not nlen: continue
-    name = e[:nlen].decode(); start = u24le(e[0x2F:0x32]); size = be32(e, 0x34)
-    print(f"stfs entry {name} size {size} contiguous={bool(e[0x28]&0x40)}")
-    if name.lower() == 'default.xexp':
-        nblk = (size + 0xFFF) // 0x1000
-        xexp = b''.join(s[blk_off(start+k):blk_off(start+k)+0x1000] for k in range(nblk))[:size]
+s = open(stfs_path, 'rb').read()
+if s[:4] == b'XEX2':
+    xexp = s
+    print(f"bare xexp {stfs_path} size {len(s)}")
+    s = b''
+if xexp is None:  # STFS package: find default.xexp
+    hdr = (be32(s, 0x340) + 0xFFF) & ~0xFFF
+    vd = s[0x379:0x379+0x24]
+    per_table = 1 if vd[2] & 1 else 2
+    ft_count = struct.unpack('<H', vd[3:5])[0]; ft_block = u24le(vd[5:8])
+    def blk_off(b):
+        blk = b
+        for lvl in (0xAA, 0x70E4, 0x4AF768):
+            blk += ((b + lvl) // lvl) * per_table
+            if b < lvl: break
+        return hdr + (blk << 12)
+    entries = b''.join(s[blk_off(ft_block+i):blk_off(ft_block+i)+0x1000] for i in range(ft_count))
+    for i in range(0, len(entries), 0x40):
+        e = entries[i:i+0x40]; nlen = e[0x28] & 0x3F
+        if not nlen: continue
+        name = e[:nlen].decode(); start = u24le(e[0x2F:0x32]); size = be32(e, 0x34)
+        print(f"stfs entry {name} size {size} contiguous={bool(e[0x28]&0x40)}")
+        if name.lower() == 'default.xexp':
+            nblk = (size + 0xFFF) // 0x1000
+            xexp = b''.join(s[blk_off(start+k):blk_off(start+k)+0x1000] for k in range(nblk))[:size]
 assert xexp and xexp[:4] == b'XEX2', 'default.xexp not found/invalid'
 
 def opt(x, key):
