@@ -191,6 +191,8 @@ bool Renderer::State::Begin(std::string& error) {
   fold_full_clears = rex::cvar::Query<bool>("gta4_metal_fold_full_clears");
   defer_unrelated_clears = rex::cvar::Query<bool>("gta4_metal_defer_unrelated_clears");
   exchange_resolve_clear = rex::cvar::Query<bool>("gta4_metal_exchange_resolve_clear");
+  // Diagnostics inspect resolve images as they are produced, so they see the immediate path.
+  defer_resolves = rex::cvar::Query<bool>("gta4_metal_defer_resolves") && !fire_active;
   cache_pipeline_lookup = rex::cvar::Query<bool>("gta4_metal_cache_pipeline_lookup");
   if (!cache_pipeline_lookup) pipeline_lookup.Reset();
   for (auto& bank : constant_banks) { bank.size = 0; bank.upload = {};bank.source_view=nullptr; }
@@ -205,7 +207,9 @@ void Renderer::State::EndRender(std::source_location caller) {
   active_targets={};
 }
 bool Renderer::State::Flush(bool wait,std::string& error) {
-  if (!MaterializePendingClears(error)) { frame_qos.End(); return false; }
+  // Every recorded resolve lands in the command buffer that recorded it, ahead of any clear of
+  // its source that was folded after it.
+  if (!SettleAllPendingResolves(error) || !MaterializePendingClears(error)) { frame_qos.End(); return false; }
   EndRender();
   FinishResolveProfile();
   if(!commands) frame_qos.End();
@@ -397,12 +401,15 @@ bool Renderer::SubmitImpl(std::span<const std::byte> bytes,std::string& error) {
         if(c.event==TemporalEvent::kBeforePostFx){
           if(!executed)return true;
           t.active_composite_scope=c.time_ns;t.executed_composite_source.reset();
+          if(t.depth_source&&!s.SettlePendingResolves(t.depth_source->image,false,error))return false;
           return t.CaptureDepth(s.commands,error);
         }
         if(c.event==TemporalEvent::kAfterPostFx){
           if(!executed||t.active_composite_scope!=c.time_ns)return true;
+          // RecoverComposite blits back into the guest composite surface: a write to that image.
           if(!t.HasSceneOutput()&&t.executed_composite_source&&
-              !t.RecoverComposite(s.commands,t.executed_composite_source,error))return false;
+              (!s.SettlePendingResolves(t.executed_composite_source->image,true,error)||
+               !t.RecoverComposite(s.commands,t.executed_composite_source,error)))return false;
           t.active_composite_scope=0;
           return t.StartUi(s.commands,error);
         }
@@ -547,7 +554,9 @@ bool Renderer::SubmitImpl(std::span<const std::byte> bytes,std::string& error) {
       case CommandType::kResolve: {
         const auto c=Command<ResolveCommand>(bytes);
         if(s.temporal_scene.active&&s.temporal_scene.depth_source&&c.source.handle==s.temporal_scene.depth_source->descriptor.handle){
-          s.EndRender();if(!s.temporal_scene.CaptureDepth(s.commands,error))return false;
+          s.EndRender();
+          if(!s.SettlePendingResolves(s.temporal_scene.depth_source->image,false,error))return false;
+          if(!s.temporal_scene.CaptureDepth(s.commands,error))return false;
         }
         return s.Resolve(c,error);
       }

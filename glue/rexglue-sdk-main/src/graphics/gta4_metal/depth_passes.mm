@@ -35,6 +35,7 @@ std::shared_ptr<TextureResource> Renderer::State::PrepareTexture(uint32_t handle
       destination->packed_source_serial == source->content_serial && destination->packed_swizzle == fetch.swizzle)
     return destination;
   ProfileRead(source,3);
+  if (!SettlePendingResolves(source.get(), error) || !SettlePendingResolves(destination->image, true, error)) return {};
   auto stencil = [source->image newTextureViewWithPixelFormat:MTLPixelFormatX32_Stencil8];
   auto pipeline = Utility("liberty_packed_depth_alias_ps", destination->image.pixelFormat, MTLPixelFormatInvalid, 1, error);
   if (!stencil || !pipeline || !Begin(error)) {
@@ -88,6 +89,7 @@ bool Renderer::State::Handoff(const gta4_native::DepthSurfaceHandoffCommand& han
     if (error.empty()) error = "Depth handoff requires a matching resolved snapshot and destination"; return false;
   }
   ProfileRead(source,4);
+  if (!SettlePendingResolves(source.get(), error) || !SettlePendingResolves(destination->image, true, error)) return false;
   const bool rebuild = handoff.stencil_policy == ForwardStencilHandoffPolicy::kRebuildSceneCoverage;
   const char* name = rebuild ? "liberty_scene_depth_handoff_ps" : "liberty_depth_handoff_ps";
   auto pipeline = Utility(name, MTLPixelFormatInvalid, destination->image.pixelFormat,

@@ -115,6 +115,12 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   at up to one frame of latency. Settings > **Frame Pacing** switches to Low Latency.
 - **Anti-aliasing is cheap.** SMAA costs about 2.5 ms per frame at full size; it is not the
   bottleneck.
+- **Deferred resolves.** The Xbox 360 copies its render targets into textures 28 times a frame.
+  The Metal renderer now records each copy and runs it when the texture is first read or the
+  source is about to be redrawn, so a copy that is overwritten unread is dropped. The frame summary
+  in the game log prints `resolve-deferred / executed / dropped`; `gta4_metal_defer_resolves = false`
+  restores the immediate path. The next step (snapshotting the source so records survive a redraw) is
+  tracked in `docs/BACKLOG.md` item 17.
 - **World settings default to Xbox 360 parity.** Upstream raises draw distance (3×), shadows (2×),
   population (1.25×), reflections and the streaming budget. On the M4 that ran at 34 fps with 70 ms
   spikes; parity ran at 50 fps with a flat 33 ms p99 and visibly more traffic (the raised budgets

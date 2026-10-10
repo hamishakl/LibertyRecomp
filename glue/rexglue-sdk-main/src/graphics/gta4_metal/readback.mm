@@ -32,6 +32,7 @@ bool Renderer::State::Readback(const gta4_native::TextureLockCommand& lock,
   result.generation = resource->generation;
   if (!resource->gpu_produced) return true;
   ProfileRead(resource,5);
+  if (!SettlePendingResolves(resource.get(), error)) return false;
   const auto& info = resource->info;
   const auto image = resource->image;
   const bool volume = info.dimension == xenos::DataDimension::k3D;

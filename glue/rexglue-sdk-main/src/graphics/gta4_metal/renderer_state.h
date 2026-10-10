@@ -165,6 +165,36 @@ struct Renderer::State {
   std::shared_ptr<TextureResource> PrepareTexture(uint32_t handle,
       const xenos::xe_gpu_texture_fetch_t&,std::string&);
   bool ResolveClears(const gta4_native::ResolveCommand&,std::string&);
+  // A resolve is recorded, not encoded, until something needs its result: the first read of the
+  // destination, or a GPU write to its source or destination image. Resolves whose destination is
+  // fully rewritten before anyone reads it are dropped without ever running (see docs/BACKLOG.md 17).
+  // The list is always empty after Flush(): every record executes in the command buffer that
+  // recorded it, so no record outlives its source image contents.
+  struct PendingResolve {
+    id<MTLTexture> source_image = nil;
+    id<MTLTexture> target = nil;
+    std::shared_ptr<TextureResource> destination;
+    uint64_t subresource = 0;
+    uint32_t source_handle = 0, destination_handle = 0;
+    uint32_t level = 0, slice = 0, target_w = 0, target_h = 0;
+    bool volume = false, depth = false, direct = false, full = false, existing = false,
+         initialize_in_pass = false;
+    PixelRectangle src_rect, dst_rect;
+    ResolveConstants constants{};
+  };
+  std::vector<PendingResolve> pending_resolves;
+  bool defer_resolves = true;
+  uint64_t frame_resolve_deferrals = 0, frame_resolve_executions = 0, frame_resolve_drops = 0;
+  bool ExecuteResolve(const PendingResolve&, std::string&);
+  // writing=true: anything that reads or writes the image must land first. writing=false (a read):
+  // only pending writes to the image must land.
+  bool SettlePendingResolves(id<MTLTexture> image, bool writing, std::string&,
+                             std::source_location caller = std::source_location::current());
+  bool SettlePendingResolves(const TextureResource* destination, std::string&,
+                             std::source_location caller = std::source_location::current());
+  bool SettleAllPendingResolves(std::string&, std::source_location caller = std::source_location::current());
+  // Profiler only: which flush point forced the execution being encoded.
+  std::source_location settle_point = std::source_location::current();
   gta4_native::ModernShaderFramePolicy modern;
   gta4_native::ModernShaderDiagnostics modern_diagnostics;
   ModernSkyProbe sky_probe;

@@ -33,6 +33,7 @@ bool Renderer::State::Present(const gta4_native::PresentCommand& present, std::s
     if (error.empty()) error = "Title frontbuffer is not a ready color image"; return false;
   }
   ProfileRead(source,2);
+  if (!SettlePendingResolves(source.get(), error)) return false;
   FireSnapshot(source->image,"present-before-aa",present.frontbuffer_texture,false,true);
   // One protected command recording contains the scene AND its mailbox copy.
   // RefreshGuestOutput invokes its writer before publishing or waiting for
@@ -184,15 +185,16 @@ bool Renderer::State::Present(const gta4_native::PresentCommand& present, std::s
         present.submitted_frame, vertex_cache.bytes, vertex_cache.charged_bytes,
         vertex_cache.budget, vertex_cache.entries, vertex_cache.hits,
         vertex_cache.misses, vertex_cache.evictions);
-    REXLOG_INFO("gta4-metal: frame={} draws={} resolves={} clears={} published={} textures={} buffers={} uploads={} resolve-reuse={} resolve-init-merges={} clear-folds={} clear-materialized={} state-calls={} state-skips={} residency-calls={} residency-skips={} constant-last-hits={} constant-hash-hits={} constant-upload-bytes={} texture-budget={} texture-entries={} texture-evictions={} texture-rejections={}",
+    REXLOG_INFO("gta4-metal: frame={} draws={} resolves={} clears={} published={} textures={} buffers={} uploads={} resolve-reuse={} resolve-init-merges={} resolve-deferred={} resolve-executed={} resolve-dropped={} clear-folds={} clear-materialized={} state-calls={} state-skips={} residency-calls={} residency-skips={} constant-last-hits={} constant-hash-hits={} constant-upload-bytes={} texture-budget={} texture-entries={} texture-evictions={} texture-rejections={}",
         present.submitted_frame, frame_draws, frame_resolves, frame_clears, published,
         resources.texture_bytes(), resources.buffer_bytes(), frames.reserved_bytes(),
-        resolve_skips, resolve_initializations_merged,clear_load_folds,clear_materializations,
+        resolve_skips, resolve_initializations_merged,frame_resolve_deferrals,frame_resolve_executions,frame_resolve_drops,clear_load_folds,clear_materializations,
         bindings.calls,bindings.skipped,bindings.residency_calls,bindings.residency_skipped,
         constant_last_hits,constant_hash_hits,constant_upload_bytes,
         texture_cache.budget,texture_cache.entries,texture_cache.evictions,texture_cache.rejections);
   }
   frame_draws = frame_resolves = frame_clears = 0;
+  frame_resolve_deferrals = frame_resolve_executions = frame_resolve_drops = 0;
   target_observations = {}; pass_breaks = {};
   if (!published && error.empty()) error = "Presenter did not accept the title output";
   return published;

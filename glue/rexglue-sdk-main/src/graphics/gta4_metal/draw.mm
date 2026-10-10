@@ -161,6 +161,9 @@ bool Renderer::State::BeginRender(const Targets& target,std::string& error) {
     }
   }
   EndRender();
+  // Binding an attachment writes its image: pending resolves reading or writing it land first.
+  for(const auto& color:target.colors) if(color&&!SettlePendingResolves(color->image,true,error)) return false;
+  if(target.depth&&!SettlePendingResolves(target.depth->image,true,error)) return false;
   auto pass=[MTLRenderPassDescriptor renderPassDescriptor];
   pass.visibilityResultBuffer=sky_visibility;
   for(size_t i=0;i<target.colors.size();++i) {
@@ -519,6 +522,7 @@ bool Renderer::State::Draw(const gta4_native::CommandHeader& header,std::span<co
     else{
       owner=PrepareTexture(handle,fetch,error);if(!owner)return false;
       ProfileRead(owner,1);resource=owner.get();
+      if(!SettlePendingResolves(resource,error))return false;
       image=resources.View(owner,fetch,error);sampler=resources.Sampler(fetch,error,resource);
       if(!image||!sampler)return false;
       if(cache_material_bindings)prepared=resources.RememberMaterialBinding(handle,fetch,owner,image,sampler);
@@ -598,6 +602,7 @@ bool Renderer::State::Draw(const gta4_native::CommandHeader& header,std::span<co
     EndRender();
     std::string dof_error;
     const auto postfx_half_scene = resources.FindTexture(postfx_half_scene_handle);
+    if (!SettlePendingResolves(postfx_half_scene.get(), error)) return false;
     auto half_scene = postfx_half_scene && postfx_half_scene->initialized
         ? postfx_half_scene->image : nil;
     if(composite_draw&&temporal.HasSceneOutput()&&temporal_upscale)half_scene=temporal.ResampleHalf(commands,half_scene,dof_error);

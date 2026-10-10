@@ -73,6 +73,7 @@ bool Renderer::State::ClearSurface(const std::shared_ptr<SurfaceResource>& surfa
     return true;
   }
   if (!MaterializePendingClears(error)) return false;
+  if (!SettlePendingResolves(image, true, error)) return false;
   id<MTLRenderPipelineState> pipeline = nil;
   id<MTLDepthStencilState> depth_state = nil;
   if (!full) {
@@ -161,6 +162,8 @@ bool Renderer::State::MaterializePendingClears(std::string& error, const Surface
   EndRender();
   for (const auto& surface : pending_clears) {
     if (!needed(surface)) continue;
+    // A resolve recorded before this clear was folded still reads the pre-clear image.
+    if (!SettlePendingResolves(surface->image, true, error)) return false;
     const auto value = surface->pending_clear;
     auto pass = [MTLRenderPassDescriptor renderPassDescriptor];
     if (surface->depth) {
@@ -220,6 +223,7 @@ bool Renderer::State::CopyColor(id<MTLTexture> source, id<MTLTexture> destinatio
   if (source == destination) return true;
   if (!MaterializePendingClears(error)) return false;
   if (!Begin(error)) return false;
+  if (!SettlePendingResolves(source, false, error) || !SettlePendingResolves(destination, true, error)) return false;
   EndRender();
   if (source.pixelFormat == destination.pixelFormat && source.width == destination.width && source.height == destination.height) {
     auto blit = [commands blitCommandEncoder];

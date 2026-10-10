@@ -7,7 +7,12 @@
 
 #include <algorithm>
 #include <bit>
+#include <cstring>
 #include <fmt/format.h>
+#include <rex/logging/macros.h>
+
+REXCVAR_DEFINE_BOOL(gta4_metal_defer_resolves, true, "GPU",
+                   "Record resolves and run them on first use; drop ones that are overwritten unread");
 
 namespace rex::graphics::gta4_metal {
 namespace {
@@ -90,6 +95,7 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
         resources.IsReflection(resolve.destination_texture);
     // Reflection textures may retain an initialized fallback before their first
     // capture. Initialization is not a successful scene resolve or content owner.
+    if (reflection && !SettlePendingResolves(destination->image, true, error)) return false;
     if (reflection && !resources.InitializeTextureStorage(destination, commands,
         [&] { EndRender(); }, error)) return false;
     const bool preserved = reflection && destination->storage_initialized;
@@ -181,30 +187,24 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
   }
   // A proven no-op resolve has no encoder dependency. ResolveClears still
   // materializes any required clear and ends the encoder itself when needed.
-  EndRender();
-  FireInspect(source->image,"resolve-source",resolve.source.handle,fire_draw);
   const bool initialize_in_pass = MergeResolveInitialization(direct, full, existing);
-  // Blits retain their first partial-write initialization. Conversions merge it
-  // into their load action and avoid a separate store/reload of the attachment.
-  if (!full && !existing && !initialize_in_pass) {
-    auto pass = [MTLRenderPassDescriptor renderPassDescriptor];
-    if (depth) {
-      pass.depthAttachment.texture = target; pass.depthAttachment.level = level; pass.depthAttachment.slice = slice;
-      pass.stencilAttachment.texture = target; pass.stencilAttachment.level = level; pass.stencilAttachment.slice = slice;
-      pass.depthAttachment.loadAction = pass.stencilAttachment.loadAction = MTLLoadActionClear;
-      pass.depthAttachment.storeAction = pass.stencilAttachment.storeAction = MTLStoreActionStore;
-      pass.depthAttachment.clearDepth = 0; pass.stencilAttachment.clearStencil = 0;
-    } else {
-      pass.colorAttachments[0].texture = target; pass.colorAttachments[0].level = level;
-      if (volume) pass.colorAttachments[0].depthPlane = slice; else pass.colorAttachments[0].slice = slice;
-      pass.colorAttachments[0].loadAction = MTLLoadActionClear;
-      pass.colorAttachments[0].storeAction = MTLStoreActionStore;
-      pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
-    }
-    gpu_pass_timer::Tag(pass,"resolve-draw");
-    auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
-    if (!encoder) { error = "Resolve destination initialization failed"; return false; }
-    [encoder endEncoding];
+  // Pending work on the destination image, and pending writes into the source image, must land
+  // before this resolve is recorded or exchanged. A full rewrite of the same subresource makes an
+  // unread pending resolve into it dead: drop it instead of ordering behind it.
+  if (full && defer_resolves) {
+    const auto superseded = [&](const PendingResolve& record) {
+      if (record.target != target || record.subresource != subresource) return false;
+      for (const auto& later : pending_resolves) if (later.source_image == target) return false;
+      return true;
+    };
+    const auto dropped = std::erase_if(pending_resolves, superseded);
+    frame_resolve_drops += dropped;
+  }
+  if (!SettlePendingResolves(target, true, error) || !SettlePendingResolves(source->image, false, error))
+    return false;
+  if (!defer_resolves) {
+    EndRender();
+    FireInspect(source->image,"resolve-source",resolve.source.handle,fire_draw);
   }
   bool exchanged=false;
   if(direct&&!depth&&full&&src_rect.full(uint32_t(source->image.width),uint32_t(source->image.height))&&
@@ -223,62 +223,24 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
       }
     }
   }
-  if(exchanged){
-    // The exact produced image has changed ownership, not contents.
-  }else if (direct) {
-    auto blit = [commands blitCommandEncoder];
-    if (!blit) { error = "Resolve copy encoder creation failed"; return false; }
-    blit.label = @"Liberty exact resolve copy";
-    [blit copyFromTexture:source->image sourceSlice:0 sourceLevel:0
-        sourceOrigin:MTLOriginMake(src_rect.x, src_rect.y, 0)
-        sourceSize:MTLSizeMake(src_rect.width, src_rect.height, 1) toTexture:target
-        destinationSlice:volume ? 0 : slice destinationLevel:level
-        destinationOrigin:MTLOriginMake(dst_rect.x, dst_rect.y, volume ? slice : 0)];
-    [blit endEncoding];
-  } else {
-    const bool multisampled = source->image.sampleCount > 1;
-    const char* name = depth ? (multisampled ? "liberty_copy_depth_stencil_msaa" : "liberty_copy_depth_stencil") :
-        multisampled ? "liberty_resolve_convert_msaa_ps" : "liberty_resolve_convert_ps";
-    auto pipeline = Utility(name, depth ? MTLPixelFormatInvalid : target.pixelFormat,
-        depth ? target.pixelFormat : MTLPixelFormatInvalid, 1, error);
-    id<MTLTexture> stencil_view = depth ? StencilView(source->image) : nil;
-    FixedState fixed{}; fixed.depth_enable = depth; fixed.depth_function = 7; fixed.depth_write_enable = depth;
-    fixed.stencil_enable = depth; fixed.stencil_function = 7; fixed.stencil_pass = 2;
-    fixed.stencil_mask = fixed.stencil_write_mask = 255;
-    auto depth_state = DepthState(fixed, depth, error);
-    if (!pipeline || !depth_state || (depth && !stencil_view)) {
-      if (error.empty()) error = "Resolve stencil sampling view failed"; return false;
+  if(!exchanged) {
+    PendingResolve record;
+    record.source_image = source->image; record.target = target; record.destination = destination;
+    record.subresource = subresource; record.source_handle = resolve.source.handle;
+    record.destination_handle = resolve.destination_texture;
+    record.level = level; record.slice = slice; record.target_w = target_w; record.target_h = target_h;
+    record.volume = volume; record.depth = depth; record.direct = direct; record.full = full;
+    record.existing = existing; record.initialize_in_pass = initialize_in_pass;
+    record.src_rect = src_rect; record.dst_rect = dst_rect; record.constants = constants;
+    if (defer_resolves) {
+      // Bounded: the oldest record runs when the list is full.
+      settle_point = std::source_location::current();
+      if (pending_resolves.size() >= 64 && !ExecuteResolve(pending_resolves.front(), error)) return false;
+      if (pending_resolves.size() >= 64) pending_resolves.erase(pending_resolves.begin());
+      pending_resolves.push_back(std::move(record)); ++frame_resolve_deferrals;
+    } else if (!ExecuteResolve(record, error)) {
+      return false;
     }
-    auto pass = [MTLRenderPassDescriptor renderPassDescriptor];
-    if (depth) {
-      pass.depthAttachment.texture = target; pass.stencilAttachment.texture = target;
-      pass.depthAttachment.level = pass.stencilAttachment.level = level;
-      pass.depthAttachment.slice = pass.stencilAttachment.slice = slice;
-      pass.depthAttachment.loadAction = pass.stencilAttachment.loadAction = full ? MTLLoadActionDontCare :
-          initialize_in_pass ? MTLLoadActionClear : MTLLoadActionLoad;
-      pass.depthAttachment.clearDepth = 0; pass.stencilAttachment.clearStencil = 0;
-      pass.depthAttachment.storeAction = pass.stencilAttachment.storeAction = MTLStoreActionStore;
-    } else {
-      pass.colorAttachments[0].texture = target; pass.colorAttachments[0].level = level;
-      if (volume) pass.colorAttachments[0].depthPlane = slice; else pass.colorAttachments[0].slice = slice;
-      pass.colorAttachments[0].loadAction = full ? MTLLoadActionDontCare :
-          initialize_in_pass ? MTLLoadActionClear : MTLLoadActionLoad;
-      pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
-      pass.colorAttachments[0].storeAction = MTLStoreActionStore;
-    }
-    gpu_pass_timer::Tag(pass,"resolve-draw");
-    auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
-    if (!encoder) { error = "Resolve conversion encoder creation failed"; return false; }
-    encoder.label = depth ? @"Liberty depth and stencil resolve" : @"Liberty color resolve";
-    [encoder setRenderPipelineState:pipeline]; [encoder setDepthStencilState:depth_state];
-    [encoder setViewport:MTLViewport{0, 0, double(target_w), double(target_h), 0, 1}];
-    [encoder setScissorRect:MTLScissorRect{dst_rect.x, dst_rect.y, dst_rect.width, dst_rect.height}];
-    [encoder setFragmentTexture:source->image atIndex:0];
-    if (depth) [encoder setFragmentTexture:stencil_view atIndex:1];
-    [encoder setFragmentSamplerState:fallback_sampler atIndex:0];
-    [encoder setFragmentBytes:&constants length:sizeof(constants) atIndex:0];
-    [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
-    [encoder endEncoding];
   }
   if (initialize_in_pass) ++resolve_initializations_merged;
   destination->initialized = true;
@@ -289,7 +251,153 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
   if(profile_enabled) resolve_profile.Write(reuse,destination->content_serial,resolve.source.handle,
       resolve.destination_texture,resolve.flags&0x300u,false);
   ++resolves; ++frame_resolves;
-  FireInspect(target,"resolve-destination",resolve.destination_texture,fire_draw);
+  if (!defer_resolves) FireInspect(target,"resolve-destination",resolve.destination_texture,fire_draw);
   return ResolveClears(resolve, error);
+}
+bool Renderer::State::ExecuteResolve(const PendingResolve& r, std::string& error) {
+  if (!Begin(error)) return false;
+  EndRender();
+  ++frame_resolve_executions;
+  if (profile_enabled) {
+    const char* file = settle_point.file_name(); if (const char* slash = std::strrchr(file, '/')) file = slash + 1;
+    REXLOG_INFO("gta4-metal-profile-resolve-execute recording={} source={:08X} destination={:08X} level={} slice={} full={} direct={} at={}:{}",
+        submitted + 1, r.source_handle, r.destination_handle, r.level, r.slice, r.full, r.direct, file, settle_point.line());
+  }
+  // Blits retain their first partial-write initialization. Conversions merge it
+  // into their load action and avoid a separate store/reload of the attachment.
+  if (!r.full && !r.existing && !r.initialize_in_pass) {
+    auto pass = [MTLRenderPassDescriptor renderPassDescriptor];
+    if (r.depth) {
+      pass.depthAttachment.texture = r.target; pass.depthAttachment.level = r.level; pass.depthAttachment.slice = r.slice;
+      pass.stencilAttachment.texture = r.target; pass.stencilAttachment.level = r.level; pass.stencilAttachment.slice = r.slice;
+      pass.depthAttachment.loadAction = pass.stencilAttachment.loadAction = MTLLoadActionClear;
+      pass.depthAttachment.storeAction = pass.stencilAttachment.storeAction = MTLStoreActionStore;
+      pass.depthAttachment.clearDepth = 0; pass.stencilAttachment.clearStencil = 0;
+    } else {
+      pass.colorAttachments[0].texture = r.target; pass.colorAttachments[0].level = r.level;
+      if (r.volume) pass.colorAttachments[0].depthPlane = r.slice; else pass.colorAttachments[0].slice = r.slice;
+      pass.colorAttachments[0].loadAction = MTLLoadActionClear;
+      pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+      pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+    }
+    gpu_pass_timer::Tag(pass,"resolve-draw");
+    auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
+    if (!encoder) { error = "Resolve destination initialization failed"; return false; }
+    [encoder endEncoding];
+  }
+  if (r.direct) {
+    auto blit = [commands blitCommandEncoder];
+    if (!blit) { error = "Resolve copy encoder creation failed"; return false; }
+    blit.label = @"Liberty exact resolve copy";
+    [blit copyFromTexture:r.source_image sourceSlice:0 sourceLevel:0
+        sourceOrigin:MTLOriginMake(r.src_rect.x, r.src_rect.y, 0)
+        sourceSize:MTLSizeMake(r.src_rect.width, r.src_rect.height, 1) toTexture:r.target
+        destinationSlice:r.volume ? 0 : r.slice destinationLevel:r.level
+        destinationOrigin:MTLOriginMake(r.dst_rect.x, r.dst_rect.y, r.volume ? r.slice : 0)];
+    [blit endEncoding];
+  } else {
+    const bool multisampled = r.source_image.sampleCount > 1;
+    const char* name = r.depth ? (multisampled ? "liberty_copy_depth_stencil_msaa" : "liberty_copy_depth_stencil") :
+        multisampled ? "liberty_resolve_convert_msaa_ps" : "liberty_resolve_convert_ps";
+    auto pipeline = Utility(name, r.depth ? MTLPixelFormatInvalid : r.target.pixelFormat,
+        r.depth ? r.target.pixelFormat : MTLPixelFormatInvalid, 1, error);
+    id<MTLTexture> stencil_view = r.depth ? StencilView(r.source_image) : nil;
+    FixedState fixed{}; fixed.depth_enable = r.depth; fixed.depth_function = 7; fixed.depth_write_enable = r.depth;
+    fixed.stencil_enable = r.depth; fixed.stencil_function = 7; fixed.stencil_pass = 2;
+    fixed.stencil_mask = fixed.stencil_write_mask = 255;
+    auto depth_state = DepthState(fixed, r.depth, error);
+    if (!pipeline || !depth_state || (r.depth && !stencil_view)) {
+      if (error.empty()) error = "Resolve stencil sampling view failed"; return false;
+    }
+    auto pass = [MTLRenderPassDescriptor renderPassDescriptor];
+    if (r.depth) {
+      pass.depthAttachment.texture = r.target; pass.stencilAttachment.texture = r.target;
+      pass.depthAttachment.level = pass.stencilAttachment.level = r.level;
+      pass.depthAttachment.slice = pass.stencilAttachment.slice = r.slice;
+      pass.depthAttachment.loadAction = pass.stencilAttachment.loadAction = r.full ? MTLLoadActionDontCare :
+          r.initialize_in_pass ? MTLLoadActionClear : MTLLoadActionLoad;
+      pass.depthAttachment.clearDepth = 0; pass.stencilAttachment.clearStencil = 0;
+      pass.depthAttachment.storeAction = pass.stencilAttachment.storeAction = MTLStoreActionStore;
+    } else {
+      pass.colorAttachments[0].texture = r.target; pass.colorAttachments[0].level = r.level;
+      if (r.volume) pass.colorAttachments[0].depthPlane = r.slice; else pass.colorAttachments[0].slice = r.slice;
+      pass.colorAttachments[0].loadAction = r.full ? MTLLoadActionDontCare :
+          r.initialize_in_pass ? MTLLoadActionClear : MTLLoadActionLoad;
+      pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+      pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+    }
+    gpu_pass_timer::Tag(pass,"resolve-draw");
+    auto encoder = [commands renderCommandEncoderWithDescriptor:pass];
+    if (!encoder) { error = "Resolve conversion encoder creation failed"; return false; }
+    encoder.label = r.depth ? @"Liberty depth and stencil resolve" : @"Liberty color resolve";
+    [encoder setRenderPipelineState:pipeline]; [encoder setDepthStencilState:depth_state];
+    [encoder setViewport:MTLViewport{0, 0, double(r.target_w), double(r.target_h), 0, 1}];
+    [encoder setScissorRect:MTLScissorRect{r.dst_rect.x, r.dst_rect.y, r.dst_rect.width, r.dst_rect.height}];
+    [encoder setFragmentTexture:r.source_image atIndex:0];
+    if (r.depth) [encoder setFragmentTexture:stencil_view atIndex:1];
+    [encoder setFragmentSamplerState:fallback_sampler atIndex:0];
+    [encoder setFragmentBytes:&r.constants length:sizeof(r.constants) atIndex:0];
+    [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
+    [encoder endEncoding];
+  }
+  return true;
+}
+
+bool Renderer::State::SettlePendingResolves(id<MTLTexture> image, bool writing, std::string& error,
+                                            std::source_location caller) {
+  if (pending_resolves.empty() || !image) return true;
+  settle_point = caller;
+  // Select every record the access depends on, then every earlier record a selected one depends
+  // on: a record depends on an earlier writer of its source or target, and on an earlier reader of
+  // its target. Two readers of one source are independent, so a read of one destination does not
+  // drag in every other resolve from the same (often EDRAM-aliased) source image.
+  std::vector<id<MTLTexture>> written, read{image};
+  if (writing) written.push_back(image);
+  std::vector<bool> selected(pending_resolves.size(), false);
+  const auto in = [](const std::vector<id<MTLTexture>>& set, id<MTLTexture> i) {
+    return std::find(set.begin(), set.end(), i) != set.end();
+  };
+  bool any = false;
+  for (size_t n = pending_resolves.size(); n-- > 0;) {
+    const auto& r = pending_resolves[n];
+    if (!in(read, r.target) && !in(written, r.target) && !in(written, r.source_image)) continue;
+    selected[n] = true; any = true;
+    written.push_back(r.target); read.push_back(r.source_image);
+  }
+  if (!any) return true;
+  std::vector<PendingResolve> remaining;
+  remaining.reserve(pending_resolves.size());
+  bool ok = true;
+  for (size_t n = 0; n < pending_resolves.size(); ++n) {
+    if (!selected[n]) { remaining.push_back(std::move(pending_resolves[n])); continue; }
+    if (ok && !ExecuteResolve(pending_resolves[n], error)) ok = false;
+  }
+  pending_resolves = std::move(remaining);
+  return ok;
+}
+
+bool Renderer::State::SettlePendingResolves(const TextureResource* destination, std::string& error,
+                                            std::source_location caller) {
+  if (pending_resolves.empty() || !destination) return true;
+  // Records name the destination by resource too: after an image exchange the resource's current
+  // image and a record's target can differ, and a read needs both settled.
+  for (bool again = true; again;) {
+    again = false;
+    for (const auto& r : pending_resolves) {
+      if (r.destination.get() != destination) continue;
+      if (!SettlePendingResolves(r.target, false, error, caller)) return false;
+      again = true; break;
+    }
+  }
+  return SettlePendingResolves(destination->image, false, error, caller);
+}
+
+bool Renderer::State::SettleAllPendingResolves(std::string& error, std::source_location caller) {
+  if (pending_resolves.empty()) return true;
+  settle_point = caller;
+  auto records = std::move(pending_resolves);
+  pending_resolves.clear();
+  for (const auto& r : records) if (!ExecuteResolve(r, error)) return false;
+  return true;
 }
 }  // namespace rex::graphics::gta4_metal
