@@ -102,11 +102,28 @@ of each run. Registered in `gta4_pal_config.toml`: `0x82882A70`, `0x82882A80`, `
 | ~~`0x82013C9C`~~ | radar render-phase vtable | **resolved 2026-10-10: `0x820131E4`** (constructor with phase id 7, PAL `sub_8236C140`; slot 4 = `sub_8236C750`). Was NOT touch-only: it gates the radar's aspect fit for every input, and left the minimap a vertical oval on the 1.54:1 panel |
 | `0x82055F8C`, `0x82055F7C` | MP proximity weight thresholds | multiplayer tuning only |
 
-### Review list — hooks on functions PAL's TU5 changed (similarity < 1.0)
-Pairing verified by similarity; the hook logic may still depend on changed internals.
-`82141F00`, `82145968`, `8214B640` (transition hooks), `8215CB10`, `821C1C78`, `82205C30`, `822343C0`,
-`8223F9F0`, `82253370`, `82257450`, `8229D8A8` (+ interior `8229E044`/`8229E200`/`8229E7C0`, touch HUD caller),
-`823A8F70`, `826DD580`, `82A3BE18` (0.886 — lowest). (US addresses; PAL targets via the resolver.)
+### Hooks on functions PAL's TU5 changed — REVIEWED 2026-10-10, nothing to fix
+`tools/xex/review_changed_hooks.py <gta4-recomp dir>` finds every hooked PAL function whose US pair
+is not an exact match (13 today), diffs the instruction streams and classifies each hunk; it also
+lists which hook `constexpr` globals the PAL body references and checks `ctx.lr` key literals that
+fall inside a body. Re-run it after any config or hook change. Result: **12 pairs differ only in
+relocated globals** (same code, different `lis`/lo pair) and **1 has a real code change** that the
+hook does not depend on. Every guest constant a reviewed hook reads was confirmed against the
+global the PAL body itself touches, and whole-tree reference counts match US↔PAL for the rest
+(player-info generation table, secondary player id, loading flags, command arena).
+
+| US → PAL | Hook | Finding |
+|---|---|---|
+| `82141F00` → `82141F50` | world activation (transition) | **TU5 dropped a 9-instruction probe** (`sub_821B5600` on a string literal, conditional `sub_821B53D0`) before `sub_821CC6B8`; PAL passes the literal straight through. Hook reads r3/r4/lr and the result only |
+| `82145968` → `82145998` | loading-screen parser (presentation) | globals only; `kScreenCount` `831D51C4`, `kDefinitions` `831D5318` referenced by the body; `kParserCaller` `82145588` is the return of `bl 0x82145998` in `sub_82145450` |
+| `8214B640` → `8214AB18` | state dispatch (transition) | globals only; `kFrontendStoredStateGlobal` `82C30C0C` referenced |
+| `8215CB10`, `821C1C78`, `82205C30`, `823A8F70`, `826DD580` | primary-player-info alias | globals only; every body reads `82A938A8` (primary id) and `82B61DF0` (pointer table), which is exactly what the alias swaps |
+| `822343C0` → `822720B0` | explosion observe (Sony) | two episode-global reads moved; r7 → `mr r14,r7` then `lvx128`, unchanged. Ghidra truncates this body at 20 bytes (VMX), use the generated code |
+| `8223F9F0` → `821CFCB8` | storage dialog failure reasons | one global; the switch still carries cases 0x11–0x16 and 0x20 |
+| `82253370` → `82265730`, `82257450` → `82269810` | adjust dispatch / cancel (frontend) | globals only; `kCurrentScreenAddress` `82C30BF4`, `kScreenDescriptorsAddress` `831D6A20`, `kFrontendWidgetIndex` `82C30BDC`, `kPauseMenuActiveAddress` `82C309C4` referenced |
+| `8229D8A8` → `822B09D8` | frontend draw / touch HUD caller | 20 hunks, all the four video width/height globals (`82B0B310…1C`); widget tables `82CD056C`/`82CD0578` referenced. The three `ctx.lr` keys `822B1174`/`822B1330`/`822B18F0` sit at the same instruction index as US `8229E044`/`8229E200`/`8229E7C0`, each after `bl sub_82226068` (US `sub_821F6E38`) |
+| `82A3BE18` → `82A3BA08` | guest call from the native resolve-batch hook (`sub_82A3E998`) | 0.886 only because the US tree swallowed one instruction of the `D3DDevice_SetViewportF` stub after the `blr`; the 31-instruction body is identical. Argument `0x820B0274` (US `0x820B0314`) is the same literal the PAL caller builds (`lis r11,-32245; addi r4,r11,628`) and holds a full viewport `{0,0,0xFFFF,0xFFFF,0.0f,1.0f}` |
+| `82A4A600` → `82A4A1F0` | resource unlock (native) | not in the map at all (ratio 0.687): the US tree merged the `D3DResource_AddRef`/`Release` bodies (config names them one instruction late, `82A4A710`/`82A4A788`) into the unlock function; PAL names them at `82A4A300`/`82A4A378`, so the PAL body is the first 67 instructions, identical. Resolved by local shift, correct |
 
 ### Lessons
 - Inline jump tables mean instruction index ≠ address; track `loc_` labels.

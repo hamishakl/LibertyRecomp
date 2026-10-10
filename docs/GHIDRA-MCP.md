@@ -134,8 +134,19 @@ Route names worth knowing when poking the plugin directly with curl (the MCP too
 
 ## Working notes for the session
 
-- First tasks worth the setup: the TU5-changed hook review list (`docs/BACKLOG.md`), confirming the
-  remaining `unresolved` entries in `manual_map.json`, and any new gameplay hook.
+- Ghidra reopens `pal_tu5.bin` by itself when launched on the project, so `/check_connection`
+  already reports the program; the `open_program` POST is then a no-op.
+- Useful raw routes (all GET): `/get_functions?name=sub_X&fields=signature,decompiled_code,callers`
+  returns a flat object (`decompiled_code`, `size`, `callers[]`), `/read_memory?address=820B0274&length=32`
+  (hex + bytes), `/disassemble_bytes?start_address=82A3BA80&length=16`.
+- VMX128-heavy bodies truncate: `sub_822720B0` and `sub_823A8E28` decompile to 20 bytes with
+  "bad instruction data". For those, the generated C++ comments are the source.
+- Done 2026-10-10: the TU5-changed hook review (`tools/xex/review_changed_hooks.py`, results in
+  `docs/PAL-PORT.md`). Ghidra was useful for the decompiled view of what a changed hunk does
+  (e.g. the dropped probe in world activation) and for reading data (`0x820B0274` viewport);
+  the hunk classification itself comes from the generated trees.
+- Next tasks worth the setup: confirming the remaining `unresolved` entries in `manual_map.json`,
+  and any new gameplay hook.
 - Keep `manual_map.json` and `gta4_pal_config.toml` as the source of truth. Ghidra is where the
   reading happens; the fork's files are where the result is recorded.
 - The generated C++ keeps the raw PPC in comments, which is still the fastest way to confirm a

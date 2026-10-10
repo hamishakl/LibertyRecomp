@@ -9,6 +9,7 @@ Python tools need `pip install cryptography` (use a venv).
 | `lzxdelta.c` | Standalone port of the SDK's `lzxdelta_apply_patch` (`SDK/src/system/lzx.cpp`). Build: `cc -O2 -w -I$M lzxdelta.c $M/lzxd.c $M/system.c -o lzxdelta` with `M=glue/rexglue-sdk-main/thirdparty/libmspack/libmspack/mspack` (setup_repo.py's patched copy) |
 | `apply_tu.py base.xex basefile.bin tu.stfs\|default.xexp ./lzxdelta out.bin` | Apply a title update (bare `default.xexp`, or pulled out of an STFS package) (mirrors `XexModule::ApplyPatch`; every block SHA-1 verified) |
 | `compare_callsites.py image.bin glue/rexglue-sdk-main/gta4-recomp/generated` | Check every recompiled `bl` site against an image: same-address rate + target drift |
+| `review_changed_hooks.py <gta4-recomp dir>` | For every hooked PAL function whose US pair is not exact: diff the instruction streams, classify hunks (relocated global vs structural), list hook `constexpr` globals the body references, check `ctx.lr` key literals inside the body. Re-run after config or hook changes (2026-10-10: 13 pairs, nothing to fix) |
 
 ## Result 2026-10-08 — PAL (NZ) disc
 - PAL disc: media `0x7CF4679F`, version `0x7`. PAL TU5 (XboxUnity id 21180): `0x7 -> 0x507`, image `0x1300000`.
