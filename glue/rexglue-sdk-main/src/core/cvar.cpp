@@ -343,6 +343,11 @@ bool InvokeCommand(std::string_view name, std::string_view args) {
   return true;
 }
 
+bool IsRegistered(std::string_view name) {
+  std::lock_guard lock(GetRegistryMutex());
+  return GetRegistryIndex().find(std::string(name)) != GetRegistryIndex().end();
+}
+
 std::string GetFlagByName(std::string_view name) {
   std::lock_guard lock(GetRegistryMutex());
   auto it = GetRegistryIndex().find(std::string(name));

@@ -177,6 +177,8 @@ std::optional<size_t> RegisterFlag(FlagEntry entry);
 void UnregisterFlag(std::string_view name);
 
 bool SetFlagByName(std::string_view name, std::string_view value);
+/** True when a flag of that name is registered (some flags only exist in optional modules). */
+bool IsRegistered(std::string_view name);
 std::string GetFlagByName(std::string_view name);
 
 // Invoke a registered command by name, passing the raw argument text.

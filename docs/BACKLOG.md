@@ -32,3 +32,19 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 | 12 | Verify console / settings / achievements overlays under the GTA IV theme | done | achievements: fine. Settings: setting names were green/yellow/red by lifecycle, now white/amber/grey, and the window opens at 960x640 instead of 620x480. Console: level colours only (white/yellow/red), theme-driven otherwise |
 | 13 | Stale docs: DEV-NOTES installer section (USA/TU8), dumping guide (PAL/TU5) | done | |
 | 14 | Minimap drawn as a vertical oval ("game feels squashed") | done | `kRadarRenderPhaseVtable` still held the US address, so the radar viewport was never fitted to the 1.54:1 display. Resolved to PAL `0x820131E4`; confirmed round in play |
+
+## From the 2026-10-10 render-thread profile (parity defaults, 1440p, M4)
+Render thread per 20 ms frame at ~50 fps: ~6.4 ms waiting for frame admission (vsync pacing), ~6.9 ms in the
+game's own recompiled draw-list code, ~6.5 ms in the Metal submit path. GPU exclusive ~13.4 ms. Both halves
+are just under a 60 Hz tick, so jitter on either turns 17 ms frames into 33 ms ones (p50 17, p95 33).
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 15 | Run one frame ahead to absorb tick jitter | needs play test | `present_frames_ahead=1` + `gta4_native_frames_in_flight=3` (both new, default off). Costs up to one frame of latency; A/B p95 on the same route |
+| 16 | Metal submit hot spots | todo | inside Draw: constant-bank `memcmp` ~10%, ObjC retain/release ~9%, `CaptureBuffer`/vertex conversion ~7%, `mach_continuous_time` per draw ~5%. Each is a few hundred µs per frame |
+| 17 | Render-pass breaks from resolves | todo | `#end-pass@resolve.mm:184` = 25 pass ends per frame, `draw.mm:163` = 7. Aliasing resolve targets instead of copying is the structural fix (resolve-draw ≈ 3 ms exclusive) |
+| 18 | CPU submit spikes to 30+ ms in some areas | todo | minute 2 of the profile drive: 27 fps with GPU unchanged; see the slow-frame correlation in the session notes |
+| 19 | Thermal | done | no decline over a 5-minute drive (GPU 14-17 ms flat); not a factor at parity/1440p |
+| 20 | Hidden window pacing | needs play test | occluded/minimized windows now pace at 2 fps (`FramePublicationGate::SetHidden`) instead of 18 |
+| 21 | Startup warning "could not set vsync=true" | done | the flag belongs to the Vulkan module; startup flags now skip unregistered names |
+

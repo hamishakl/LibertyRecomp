@@ -45,6 +45,7 @@ REXCVAR_DEFINE_BOOL(gta4_native_host_fog, false, "GTA IV/Graphics/Native Rendere
                     "Legacy compatibility flag; fog replacements now follow gta4_modern_shaders");
 
 REXCVAR_DEFINE_UINT32(gta4_native_frames_in_flight, 2, "GTA IV/Graphics/Native Renderer",
-                      "Native renderer frame-resource slots")
-    .range(1, 2)
+                      "Native renderer frame-resource slots (3 lets the CPU encode a frame while "
+                      "two are on the GPU; pair with present_frames_ahead=1)")
+    .range(1, 3)
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);

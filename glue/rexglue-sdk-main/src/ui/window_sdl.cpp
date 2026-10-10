@@ -632,13 +632,19 @@ void WindowSDL::HandleWindowEvent(SDL_Event& event) {
       OnFocusUpdate(false, destruction_receiver);
       break;
     case SDL_EVENT_WINDOW_EXPOSED:
+      if (presenter()) presenter()->SetWindowHiddenFromUIThread(false);
       // The platform cannot retain the previous image; force the paint.
       OnPaint(true);
       break;
+    case SDL_EVENT_WINDOW_OCCLUDED:
+      if (presenter()) presenter()->SetWindowHiddenFromUIThread(true);
+      break;
     case SDL_EVENT_WINDOW_MINIMIZED:
+      if (presenter()) presenter()->SetWindowHiddenFromUIThread(true);
       OnMinimized(destruction_receiver);
       break;
     case SDL_EVENT_WINDOW_RESTORED:
+      if (presenter()) presenter()->SetWindowHiddenFromUIThread(false);
       OnRestored(destruction_receiver);
       break;
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:

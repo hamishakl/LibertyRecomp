@@ -544,6 +544,9 @@ bool IsEpisodePackageReady(const std::filesystem::path& marketplace_root,
 }
 
 void SetStartupFlag(std::string_view name, std::string_view value) {
+  // The vsync and vulkan_* presentation flags belong to the Vulkan/Xenos modules; the Metal
+  // plugin build has no "vsync" flag at all and used to warn about it on every launch.
+  if (!rex::cvar::IsRegistered(name)) return;
   if (!rex::cvar::SetFlagByName(name, value)) {
     REXLOG_WARN("GTA IV graphics configuration could not set {}={}", name, value);
   }

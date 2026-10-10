@@ -14,7 +14,10 @@ namespace rex::ui::metal {
 // No completion block captures a renderer, window, or frame pointer.
 class FrameRing {
  public:
-  static constexpr size_t kSlotCount = 2;
+  // Up to three title command buffers in flight: with two, CPU submit and GPU time both just
+  // under a 60 Hz tick still miss ticks on jitter (alternating 17/33 ms frames). The active
+  // count comes from gta4_native_frames_in_flight.
+  static constexpr size_t kSlotCount = 3;
   struct Slot {
     explicit Slot(size_t budget = UploadArena::kDefaultBudget) : uploads(budget) {}
     UploadArena uploads;
@@ -22,8 +25,8 @@ class FrameRing {
     bool encoding = false;
   };
   explicit FrameRing(size_t upload_budget = UploadArena::kDefaultBudget, size_t slot_count = kSlotCount)
-      : slots_{Slot{upload_budget}, Slot{upload_budget}},
-        active_slot_count_(slot_count == 1 ? 1 : kSlotCount) {}
+      : slots_{Slot{upload_budget}, Slot{upload_budget}, Slot{upload_budget}},
+        active_slot_count_(slot_count < 1 ? 1 : slot_count > kSlotCount ? kSlotCount : slot_count) {}
   FrameRing(const FrameRing&) = delete;
   FrameRing& operator=(const FrameRing&) = delete;
   ~FrameRing();

@@ -155,10 +155,14 @@ class FramePacer {
 // queue, resource or UI mutex. The UI only acknowledges; it never waits here.
 class FramePublicationGate {
  public:
-  uint64_t Publish(uint32_t fps,bool paired=false) {
+  // `ahead` publications may be outstanding before the producer blocks (0 = the published
+  // frame itself must be admitted first; 1 = the producer may run one frame ahead of the host,
+  // trading up to one frame of latency for immunity to single-tick jitter).
+  uint64_t Publish(uint32_t fps,bool paired=false,uint32_t ahead=0) {
     std::lock_guard lock(mutex_);
     limited_ = fps != 0 || paired;
     fps_ = fps;
+    ahead_ = ahead;
     const auto result = ++published_;
     condition_.notify_all();
     return result;
@@ -182,10 +186,13 @@ class FramePublicationGate {
     // three periods at the title's own limit keeps that at a third of the limit
     // (20 fps at 60) rather than 4 fps, while staying far above any foreground
     // handoff wait (measured p99 17 ms, max 61 ms at a 60 fps limit).
-    return condition_.wait_for(lock, std::chrono::nanoseconds(WatchdogNs(fps_)), [&] {
-      return stopped_ || !available_ || !limited_ || epoch_ != epoch || admitted_ >= serial;
+    const uint64_t watchdog = hidden_ ? kHiddenWatchdogNs : WatchdogNs(fps_);
+    return condition_.wait_for(lock, std::chrono::nanoseconds(watchdog), [&] {
+      return stopped_ || !available_ || !limited_ || epoch_ != epoch ||
+             admitted_ + ahead_ >= serial;
     });
   }
+  static constexpr uint64_t kHiddenWatchdogNs = 500'000'000;
   static constexpr uint64_t WatchdogNs(uint32_t fps) noexcept {
     constexpr uint64_t kFloor = 50'000'000, kCeiling = 250'000'000;
     return fps ? std::clamp<uint64_t>(3 * FramePacer::kSecond / fps, kFloor, kCeiling) : kCeiling;
@@ -194,6 +201,13 @@ class FramePublicationGate {
     std::lock_guard lock(mutex_);
     available_ = value;
     if (!value) ++epoch_;
+    condition_.notify_all();
+  }
+  // Occluded or minimized window: nobody can see the frames, so pace the title at the slow
+  // watchdog (2 fps) instead of the three-period one, and wake it when the window shows again.
+  void SetHidden(bool value) {
+    std::lock_guard lock(mutex_);
+    hidden_ = value;
     condition_.notify_all();
   }
   void Stop() {
@@ -205,8 +219,8 @@ class FramePublicationGate {
   std::mutex mutex_;
   std::condition_variable condition_;
   uint64_t published_ = 0, accepted_ = 0, admitted_=0, epoch_ = 0;
-  uint32_t fps_ = 0;
-  bool limited_ = false, available_ = false, stopped_ = false;
+  uint32_t fps_ = 0, ahead_ = 0;
+  bool limited_ = false, available_ = false, stopped_ = false, hidden_ = false;
 };
 
 }  // namespace rex::ui

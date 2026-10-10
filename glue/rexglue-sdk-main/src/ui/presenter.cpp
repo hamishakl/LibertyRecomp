@@ -34,6 +34,12 @@ REXCVAR_DEFINE_BOOL(host_present_from_non_ui_thread, true, "UI/Presenter",
 REXCVAR_DEFINE_BOOL(present_letterbox, true, "UI/Presenter",
                     "Enable letterboxing for non-native aspect ratios");
 
+REXCVAR_DEFINE_UINT32(present_frames_ahead, 0, "UI/Presenter",
+                      "Frames the title may run ahead of presentation (0 = none; 1 = smoother "
+                      "when CPU and GPU are both near the vsync budget, adds up to one frame of "
+                      "latency; pair with gta4_native_frames_in_flight=3)")
+    .range(0, 1);
+
 REXCVAR_DEFINE_INT32(present_safe_area_x, 90, "UI/Presenter",
                      "Horizontal safe area percentage (0-100)")
     .range(0, 100);
@@ -664,7 +670,8 @@ bool Presenter::RefreshGuestOutput(
 
   const bool paired_presentation = is_active && writable_properties.provenance.paired_presentation;
   const uint64_t publication_serial = frame_publication_gate_.Publish(
-      is_active ? provenance.frame_rate_limit : 0, paired_presentation);
+      is_active ? provenance.frame_rate_limit : 0, paired_presentation,
+      paired_presentation ? 0 : REXCVAR_GET(present_frames_ahead));
   writable_properties.provenance.publication_serial = publication_serial;
   host_frame_rate_limit_.store(is_active ? provenance.frame_rate_limit : 0,
                                std::memory_order_relaxed);
