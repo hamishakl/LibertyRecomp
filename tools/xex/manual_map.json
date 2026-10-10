@@ -118,11 +118,17 @@
     "0x82013C9C": [
       "0x820131E4",
       "radar render-phase vtable: installed by the render-phase constructor with id 7 (US sub_8239C3A8 lis/addi -> 0x82013C9C; PAL sub_8236C140 -> 0x820131E4). PAL vtable slot 4 is sub_8236C750 (radar rect retention). Gates CopyTouchRadarViewport for every input, not just touch; the US value left the minimap a vertical oval on non-16:9 displays"
+    ],
+    "0x82B307A0": [
+      "0x82B30620",
+      "cloud double-buffer producer index: word +4032 of the timecycle/cloud state struct. US base 0x82B2F7E0 (lis -32077; addi -2080) -> PAL base 0x82B2F660 (addi -2464), read as lwz 4032(base) by PAL sub_821671C8, sub_82167228, sub_82167680, sub_82174560 (US sub_82167308, sub_82167368, sub_821677B8, sub_82174D58)"
+    ],
+    "0x82B307A4": [
+      "0x82B30624",
+      "postfx timecycle / cloud selected-slot index: word +4036 of the same struct (see 0x82B307A0); PAL sub_8266FAD8 multiplies it by 528 to index the cloud buffer at 0x82D4A280 (unchanged between builds)"
     ]
   },
   "unresolved": {
-    "0x82B307A0": "cloud double-buffer producer index (gta4_native_hooks.cpp) - no direct references; reached via pointer",
-    "0x82B307A4": "postfx timecycle / cloud double-buffer index (gta4_native_hooks.cpp, bulb trace) - no direct references",
     "0x82055F8C": "MP proximity weight threshold - inference gave implausible floats, rejected",
     "0x82055F7C": "MP proximity weight threshold - inference gave implausible floats, rejected"
   }

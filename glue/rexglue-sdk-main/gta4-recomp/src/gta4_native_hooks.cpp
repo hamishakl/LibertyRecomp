@@ -177,14 +177,17 @@ constexpr uint32_t kDistanceScaleOutputGlobal = 0x82A94170;
 constexpr uint32_t kDistanceScaleInputGlobal = 0x82A94178;
 constexpr uint32_t kGuestTimeStepGlobal = 0x82B06EC8;
 constexpr uint32_t kCurrentViewportGlobal = 0x831C2080;
-constexpr uint32_t kPostFxTimecycleIndexGlobal = 0x82B307A4;
+// PAL 0x82B30624 (US 0x82B307A4): the +4036 word of the timecycle/cloud state struct, whose
+// base moved from 0x82B2F7E0 to 0x82B2F660. Read by PAL sub_821671C8/sub_82167228/sub_82167680/
+// sub_82174560 (US sub_82167308/sub_82167368/sub_821677B8/sub_82174D58) as lwz 4036(base).
+constexpr uint32_t kPostFxTimecycleIndexGlobal = 0x82B30624;
 constexpr uint32_t kPostFxTimecycleStride = 0xF0;
 constexpr uint32_t kPostFxDirectionalMotionBlurLengthOffset = 0x168;
 // Verified in the generated sub_8266FAD8 and sub_821B5B08 implementations.
 // The worker flips the index after a submitted command batch, and the cloud
 // callback reads the selected 528-byte slot at the offsets below.
-constexpr uint32_t kCloudDoubleBufferIndexGlobal = 0x82B307A4;
-constexpr uint32_t kCloudDoubleBufferProducerIndexGlobal = 0x82B307A0;
+constexpr uint32_t kCloudDoubleBufferIndexGlobal = 0x82B30624;  // PAL; US 0x82B307A4
+constexpr uint32_t kCloudDoubleBufferProducerIndexGlobal = 0x82B30620;  // PAL; US 0x82B307A0 (+4032)
 constexpr uint32_t kCloudDoubleBufferBase = 0x82D4A280;
 constexpr uint32_t kCloudDoubleBufferStride = 528;
 // sub_8266FAD8 loads the global sky pointer from 0x830BAECC. The embedded

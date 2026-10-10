@@ -98,7 +98,7 @@ of each run. Registered in `gta4_pal_config.toml`: `0x82882A70`, `0x82882A80`, `
 ### Known gaps (left as US values, see `tools/xex/manual_map.json` "unresolved")
 | US address | Used by | Impact |
 |---|---|---|
-| `0x82B307A0`, `0x82B307A4` | native renderer cloud double-buffer / postfx timecycle index, bulb trace | clouds/timecycle selection in `gta4-native`/`gta4-metal` may misbehave |
+| ~~`0x82B307A0`, `0x82B307A4`~~ | cloud double-buffer producer / selected (timecycle) index | **resolved 2026-10-10: `0x82B30620`, `0x82B30624`.** Words +4032/+4036 of a struct whose base moved 0x82B2F7E0 → 0x82B2F660; confirmed by four accessor functions paired US↔PAL by the function map. The buffer at `0x82D4A280` did not move |
 | ~~`0x82013C9C`~~ | radar render-phase vtable | **resolved 2026-10-10: `0x820131E4`** (constructor with phase id 7, PAL `sub_8236C140`; slot 4 = `sub_8236C750`). Was NOT touch-only: it gates the radar's aspect fit for every input, and left the minimap a vertical oval on the 1.54:1 panel |
 | `0x82055F8C`, `0x82055F7C` | MP proximity weight thresholds | multiplayer tuning only |
 

@@ -15,7 +15,7 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 |---|---|---|---|
 | 4 | Always-on warnings/errors log in the user directory | done | `log_quiet_errors` (default on): `~/Library/Application Support/LibertyRecomp/logs/Liberty Recompiled-errors.log`, warnings and above, path printed to stderr at start |
 | 5 | "Resolve source has no produced content" rejections (64 per run) | deferred | reviewed: all 64 land in a 3 s burst at world load, one 480x310 MSAA source (exposure/luminance chain, phase 6) resolved before its first production; none during play. Cosmetic log noise at most |
-| 6 | Remaining PAL gaps: two US data addresses (cloud/timecycle), hooks on TU5-changed functions, data-table scan | deferred | data scan reviewed: the 4 pointers at 0x82106Dxx point into the middle of CRT functions (unwind/pdata-style table), not call targets. The two US data addresses need the cloud/timecycle code read against the PAL image; `find_address_taken_targets.py` reports 0 |
+| 6 | Remaining PAL gaps: two US data addresses (cloud/timecycle), hooks on TU5-changed functions, data-table scan | done | all three data addresses resolved 2026-10-10 (radar vtable `0x820131E4`, cloud/timecycle `0x82B30620`/`0x82B30624`) and confirmed in play. Data-table scan reviewed (CRT unwind pointers). The TU5-changed hook review list stays as a note in docs/PAL-PORT.md |
 | 7 | Game Center "title-profile fetch failed; retrying" every 5 s all session | done | exponential back-off 5 s → 5 min, later failures at info level |
 
 ## Input feel

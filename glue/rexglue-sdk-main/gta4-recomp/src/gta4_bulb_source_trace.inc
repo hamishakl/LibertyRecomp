@@ -61,7 +61,7 @@ std::string BulbSourceFloats(uint8_t* base, uint32_t address, uint32_t count) {
 void TraceBulbCoronaBatch(uint8_t* base, std::string_view phase, uint64_t event) {
   if (!event) return;
   // Generated sub_82230650 selects one of the queued counts with this index.
-  const auto selector = LoadU32(base,0x82B307A4);
+  const auto selector = LoadU32(base,0x82B30624);  // PAL timecycle index (US 0x82B307A4)
   if (selector > 1 || !BulbSourceReadable(base,0x82BF0E30,20)) {
     REXLOG_INFO("gta4-bulb-source: point=corona-batch event={} phase={} selector={} state=unsupported",event,phase,selector);
     return;
