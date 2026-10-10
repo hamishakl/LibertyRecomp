@@ -74,6 +74,10 @@ struct Renderer::State {
   };
   std::array<ConstantBank, 4> constant_banks;
   bool cache_constant_sources = true,cache_material_bindings=true;
+  // Per-frame snapshots of settings consulted per draw/texture/clear: a by-name cvar query takes
+  // the registry mutex and a hash lookup, which showed up per texture stage in the profile.
+  bool prepare_textures = true, fold_full_clears = true, defer_unrelated_clears = true,
+       exchange_resolve_clear = true;
   GuestConstantTracking guest_constants;
   bool track_guest_constants = true, audit_guest_constants = false;
   bool guest_constant_tracking_failed = false;

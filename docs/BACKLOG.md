@@ -41,7 +41,7 @@ are just under a 60 Hz tick, so jitter on either turns 17 ms frames into 33 ms o
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 15 | Run one frame ahead to absorb tick jitter | done | same route: doubled frames 24% → 8% of displayed frames, 48 → 55 fps on screen; latency not noticeable in play. Now the default (`present_frames_ahead=1`, Metal ring grows to 3 automatically); pause-menu row **Frame Pacing**: Smooth / Low Latency |
-| 16 | Metal submit hot spots | todo | inside Draw: constant-bank `memcmp` ~10%, ObjC retain/release ~9%, `CaptureBuffer`/vertex conversion ~7%, `mach_continuous_time` per draw ~5%. Each is a few hundred µs per frame |
+| 16 | Metal submit hot spots | doing | done: per-draw/per-texture by-name setting lookups (`gta4_metal_prepare_textures` per SetTexture and per draw, plus the clear/resolve flags) now cached once per frame; they took the cvar registry mutex each time. Remaining, each ~0.3-0.7 ms/frame: ObjC retain/release on per-draw `id<>` locals (needs lifetime review before `__unsafe_unretained`), constant-bank `memcmp` on dirty banks, rolling vertex/index validation compares. The per-command clock read is frame-log overhead only |
 | 17 | Render-pass breaks from resolves | todo | `#end-pass@resolve.mm:184` = 25 pass ends per frame, `draw.mm:163` = 7. Aliasing resolve targets instead of copying is the structural fix (resolve-draw ≈ 3 ms exclusive) |
 | 18 | CPU submit spikes to 30+ ms in some areas | todo | minute 2 of the profile drive: 27 fps with GPU unchanged; see the slow-frame correlation in the session notes |
 | 19 | Thermal | done | no decline over a 5-minute drive (GPU 14-17 ms flat); not a factor at parity/1440p |

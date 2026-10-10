@@ -294,7 +294,7 @@ bool Renderer::State::Draw(const gta4_native::CommandHeader& header,std::span<co
   // Start all independent texture misses before pipeline and geometry work.
   // SetTexture provides earlier lookahead; this also covers unchanged bindings
   // whose backing was dirtied and any direct guest state updates.
-  if (rex::cvar::Query<bool>("gta4_metal_prepare_textures")) {
+  if (prepare_textures) {
     const auto vertex = shaders.find(vertex_shader);
     const uint32_t used = (vertex != shaders.end() ? vertex->second.used_texture_mask : 0) |
         (pixel != shaders.end() ? pixel->second.used_texture_mask : 0);

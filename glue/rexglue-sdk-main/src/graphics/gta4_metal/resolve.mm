@@ -209,7 +209,7 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
   bool exchanged=false;
   if(direct&&!depth&&full&&src_rect.full(uint32_t(source->image.width),uint32_t(source->image.height))&&
       (resolve.flags&0x100u)&&!resolve.parameters_valid&&level==0&&slice==0&&
-      resolve.source.handle==source->descriptor.handle&&rex::cvar::Query<bool>("gta4_metal_exchange_resolve_clear")){
+      resolve.source.handle==source->descriptor.handle&&exchange_resolve_clear){
     const auto device_bytes=memory.Read(resolve.device,kGuestDeviceSize);
     const uint32_t slot=resolve.flags&7u;
     const uint32_t clear_handle=!device_bytes.empty()&&slot<kRenderTargetCount?GuestWord(device_bytes,12432+slot*sizeof(uint32_t)):resolve.source.handle;

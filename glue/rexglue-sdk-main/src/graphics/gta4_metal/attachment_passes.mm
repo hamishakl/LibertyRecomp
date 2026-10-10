@@ -61,7 +61,7 @@ bool Renderer::State::ClearSurface(const std::shared_ptr<SurfaceResource>& surfa
   if (!Begin(error)) return false;
   EndRender();
   const bool full = rectangle.full(uint32_t(image.width), uint32_t(image.height));
-  if (full && rex::cvar::Query<bool>("gta4_metal_fold_full_clears")) {
+  if (full && fold_full_clears) {
     if (!surface->pending_clear.aspects) {
       if (pending_clears.size() >= 64 && !MaterializePendingClears(error)) return false;
       pending_clears.push_back(surface);
@@ -146,7 +146,7 @@ void Renderer::State::ConsumePendingClear(const std::shared_ptr<SurfaceResource>
 }
 
 bool Renderer::State::MaterializePendingClears(std::string& error, const SurfaceResource* only) {
-  if (only && !rex::cvar::Query<bool>("gta4_metal_defer_unrelated_clears")) only = nullptr;
+  if (only && !defer_unrelated_clears) only = nullptr;
   // A resolve reads one selected producer image. Unrelated clears can still be
   // consumed by a later render pass's load action, avoiding a clear/store/load
   // round trip. Match the actual image, including another surface wrapper for

@@ -187,6 +187,10 @@ bool Renderer::State::Begin(std::string& error) {
   audit_guest_constants = rex::cvar::Query<bool>("gta4_metal_audit_guest_constants");
   guest_constants.Reset();
   cache_encoder_state = rex::cvar::Query<bool>("gta4_metal_cache_encoder_state");
+  prepare_textures = rex::cvar::Query<bool>("gta4_metal_prepare_textures");
+  fold_full_clears = rex::cvar::Query<bool>("gta4_metal_fold_full_clears");
+  defer_unrelated_clears = rex::cvar::Query<bool>("gta4_metal_defer_unrelated_clears");
+  exchange_resolve_clear = rex::cvar::Query<bool>("gta4_metal_exchange_resolve_clear");
   cache_pipeline_lookup = rex::cvar::Query<bool>("gta4_metal_cache_pipeline_lookup");
   if (!cache_pipeline_lookup) pipeline_lookup.Reset();
   for (auto& bank : constant_banks) { bank.size = 0; bank.upload = {};bank.source_view=nullptr; }
@@ -479,7 +483,7 @@ bool Renderer::SubmitImpl(std::span<const std::byte> bytes,std::string& error) {
         const auto c=Command<SetTextureCommand>(bytes);
         if(c.stage>=kTextureStageCount || c.vector_font_id>3) {error="Texture stage/font identity out of range"; return false;}
         s.resources.RegisterFont(c.texture, c.vector_font_id);
-        if (c.texture && rex::cvar::Query<bool>("gta4_metal_prepare_textures")) {
+        if (c.texture && s.prepare_textures) {
           const auto guest = s.memory.Read(c.device, kGuestDeviceSize);
           if (!guest.empty() && GuestWord(guest, 0x30F8 + c.stage * sizeof(uint32_t)) == c.texture) {
             xenos::xe_gpu_texture_fetch_t fetch{};
