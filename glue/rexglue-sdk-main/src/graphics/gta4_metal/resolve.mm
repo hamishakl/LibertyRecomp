@@ -225,6 +225,7 @@ bool Renderer::State::Resolve(const gta4_native::ResolveCommand& request, std::s
   }
   if(!exchanged) {
     PendingResolve record;
+    record.recorded_submission = submitted;
     record.source_image = source->image; record.target = target; record.destination = destination;
     record.subresource = subresource; record.source_handle = resolve.source.handle;
     record.destination_handle = resolve.destination_texture;
@@ -390,6 +391,24 @@ bool Renderer::State::SettlePendingResolves(const TextureResource* destination, 
     }
   }
   return SettlePendingResolves(destination->image, false, error, caller);
+}
+
+bool Renderer::State::SettleStalePendingResolves(std::string& error, std::source_location caller) {
+  if (pending_resolves.empty()) return true;
+  // Records from an earlier submission have had one whole frame to be superseded. Older records
+  // never depend on newer ones, so running the stale prefix in order is safe.
+  bool any = false;
+  for (const auto& r : pending_resolves) if (r.recorded_submission < submitted) { any = true; break; }
+  if (!any) return true;
+  settle_point = caller;
+  std::vector<PendingResolve> remaining;
+  bool ok = true;
+  for (auto& r : pending_resolves) {
+    if (r.recorded_submission >= submitted) { remaining.push_back(std::move(r)); continue; }
+    if (ok && !ExecuteResolve(r, error)) ok = false;
+  }
+  pending_resolves = std::move(remaining);
+  return ok;
 }
 
 bool Renderer::State::SettleAllPendingResolves(std::string& error, std::source_location caller) {

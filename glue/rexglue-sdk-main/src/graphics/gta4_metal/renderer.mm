@@ -207,9 +207,10 @@ void Renderer::State::EndRender(std::source_location caller) {
   active_targets={};
 }
 bool Renderer::State::Flush(bool wait,std::string& error) {
-  // Every recorded resolve lands in the command buffer that recorded it, ahead of any clear of
-  // its source that was folded after it.
-  if (!SettleAllPendingResolves(error) || !MaterializePendingClears(error)) { frame_qos.End(); return false; }
+  // Records from this submission may wait for next frame's superseding resolve; older ones run now.
+  // Settle before the folded clears so a record still reads its source's pre-clear image.
+  if (!(wait ? SettleAllPendingResolves(error) : SettleStalePendingResolves(error)) ||
+      !MaterializePendingClears(error)) { frame_qos.End(); return false; }
   EndRender();
   FinishResolveProfile();
   if(!commands) frame_qos.End();
@@ -426,6 +427,7 @@ bool Renderer::SubmitImpl(std::span<const std::byte> bytes,std::string& error) {
         s.pipeline_lookup.Reset();
         s.guest_constants.Reset();
         if(!s.Flush(true,error)) return false;
+        s.pending_resolves.clear();
         s.temporal_scene.Reset();
         s.resources.Clear(); s.shaders.clear(); s.declarations.clear(); s.modern.Reset(); s.phases.Reset();
         s.postfx_half_scene_handle = 0; s.depth_of_field.ReleaseExtentResources(); s.sun_shafts.ReleaseExtentResources();

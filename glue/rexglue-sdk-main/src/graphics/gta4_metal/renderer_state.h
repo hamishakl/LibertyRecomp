@@ -168,9 +168,12 @@ struct Renderer::State {
   // A resolve is recorded, not encoded, until something needs its result: the first read of the
   // destination, or a GPU write to its source or destination image. Resolves whose destination is
   // fully rewritten before anyone reads it are dropped without ever running (see docs/BACKLOG.md 17).
-  // The list is always empty after Flush(): every record executes in the command buffer that
-  // recorded it, so no record outlives its source image contents.
+  // A record may outlive its command buffer: images are never recycled, and every GPU write to one
+  // goes through a settle hook, so a record's source image keeps the recorded contents until the
+  // hook runs it. Flush() runs only records left over from an earlier submission (bounded age); a
+  // waiting Flush runs them all.
   struct PendingResolve {
+    uint64_t recorded_submission = 0;
     id<MTLTexture> source_image = nil;
     id<MTLTexture> target = nil;
     std::shared_ptr<TextureResource> destination;
@@ -193,6 +196,7 @@ struct Renderer::State {
   bool SettlePendingResolves(const TextureResource* destination, std::string&,
                              std::source_location caller = std::source_location::current());
   bool SettleAllPendingResolves(std::string&, std::source_location caller = std::source_location::current());
+  bool SettleStalePendingResolves(std::string&, std::source_location caller = std::source_location::current());
   // Profiler only: which flush point forced the execution being encoded.
   std::source_location settle_point = std::source_location::current();
   gta4_native::ModernShaderFramePolicy modern;
