@@ -34,10 +34,12 @@ REXCVAR_DEFINE_BOOL(host_present_from_non_ui_thread, true, "UI/Presenter",
 REXCVAR_DEFINE_BOOL(present_letterbox, true, "UI/Presenter",
                     "Enable letterboxing for non-native aspect ratios");
 
-REXCVAR_DEFINE_UINT32(present_frames_ahead, 0, "UI/Presenter",
-                      "Frames the title may run ahead of presentation (0 = none; 1 = smoother "
-                      "when CPU and GPU are both near the vsync budget, adds up to one frame of "
-                      "latency; pair with gta4_native_frames_in_flight=3)")
+// Default 1 since 2026-10-10: on an M4 at parity/1440p it cut doubled frames from 24% to 8% of
+// displayed frames (48 -> 55 fps on screen) and the added latency was not noticeable in play.
+REXCVAR_DEFINE_UINT32(present_frames_ahead, 1, "UI/Presenter",
+                      "Frames the title may run ahead of presentation (1 = smoother when CPU and "
+                      "GPU are both near the vsync budget, up to one frame of latency; 0 = lowest "
+                      "latency). The Metal frame ring grows to hold it automatically")
     .range(0, 1);
 
 REXCVAR_DEFINE_INT32(present_safe_area_x, 90, "UI/Presenter",

@@ -109,6 +109,10 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   on by default). For more headroom, `resolution = "1440p"` in `native.toml` (the same choice as
   Settings > Resolution in game) renders at 2224×1440 at the display aspect; on the M4 that cut
   GPU time per frame from 33 ms to 20 ms.
+- **Frame pacing.** The title runs one frame ahead of presentation by default
+  (`present_frames_ahead = 1`): with CPU and GPU both just under a 60 Hz tick, that cut frames shown
+  for two vsyncs from 24% to 8% and raised the on-screen rate from 48 to 55 fps on the same route,
+  at up to one frame of latency. Settings > **Frame Pacing** switches to Low Latency.
 - **Anti-aliasing is cheap.** SMAA costs about 2.5 ms per frame at full size; it is not the
   bottleneck.
 - **World settings default to Xbox 360 parity.** Upstream raises draw distance (3×), shadows (2×),

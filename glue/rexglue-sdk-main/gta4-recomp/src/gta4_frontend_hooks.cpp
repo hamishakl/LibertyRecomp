@@ -227,6 +227,9 @@ enum class TextId : uint8_t {
   kDoubleSpeed,
   kTripleSpeed,
   kQuadSpeed,
+  kFramePacingLabel,
+  kSmooth,
+  kLowLatency,
   kCount,
 };
 
@@ -307,6 +310,10 @@ constexpr std::array kTrackpadSensitivityChoices = {
     Choice{"2", TextId::kDoubleSpeed},
     Choice{"3", TextId::kTripleSpeed},
     Choice{"4", TextId::kQuadSpeed},
+};
+constexpr std::array kFramePacingChoices = {
+    Choice{"1", TextId::kSmooth},
+    Choice{"0", TextId::kLowLatency},
 };
 constexpr std::array kLookHoldChoices = {
     Choice{"0", TextId::kOff},
@@ -468,6 +475,8 @@ constexpr std::array kSettings = {
             kPeakBrightnessChoices.size()},
     Setting{"LR_PRESENT", TextId::kPresentationLabel, "gta4_present_mode", kPresentChoices.data(),
             kPresentChoices.size()},
+    Setting{"LR_PACING", TextId::kFramePacingLabel, "present_frames_ahead",
+            kFramePacingChoices.data(), kFramePacingChoices.size()},
     Setting{"LR_FPS", TextId::kFrameLimitLabel, "gta4_frame_limit", kFrameLimitChoices.data(),
             kFrameLimitChoices.size()},
     Setting{"LR_UPSCALE", TextId::kUpscalingLabel, "gta4_native_upscaler", kUpscalerChoices.data(),
@@ -669,6 +678,9 @@ constexpr std::array<std::string_view, static_cast<size_t>(TextId::kCount)> kStr
     "2x",
     "3x",
     "4x",
+    "Frame Pacing",
+    "Smooth",
+    "Low Latency",
 };
 
 struct NativePageState {

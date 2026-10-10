@@ -50,7 +50,9 @@ Renderer::State::State(std::shared_ptr<ui::metal::MetalContext> c,memory::Memory
     :context(std::move(c)),memory(m),presenter(p),resources(context,memory),stock(context),
      overrides(context,"override_shader_archive"),temporal_stock(context,"stock_temporal_shader_archive"),
      temporal_overrides(context,"override_temporal_shader_archive"),frames(64u*1024u*1024u,
-       rex::cvar::Query<uint32_t>("gta4_native_frames_in_flight")) {}
+       // Running a frame ahead of presentation needs a third slot or Begin() blocks on the GPU.
+       std::max(rex::cvar::Query<uint32_t>("gta4_native_frames_in_flight"),
+                2u+rex::cvar::Query<uint32_t>("present_frames_ahead"))) {}
 Renderer::Renderer(std::shared_ptr<ui::metal::MetalContext> context,memory::Memory* memory,ui::Presenter* presenter)
     :state_(std::make_unique<State>(std::move(context),memory,presenter)) {}
 Renderer::~Renderer() {std::string error; if(!Finish(error)) REXLOG_ERROR("gta4-metal: shutdown: {}",error); state_->WriteFrameLog();}
