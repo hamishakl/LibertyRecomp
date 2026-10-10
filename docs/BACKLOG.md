@@ -23,7 +23,8 @@ Started 2026-10-10 after the stutter, UI and input sessions. Status: `todo`, `do
 |---|---|---|---|
 | 8 | Trackpad sensitivity curve / default | done | 2.0 chosen by feel (was 1.0); default changed and a **Trackpad Sensitivity** row (0.5x–4x) added to the pause-menu settings. Delayed swing-back after 2 s hold judged fine |
 | 9 | Trackpad gestures: two-finger scroll for weapon cycle / radar zoom | done | already mapped: two-finger scroll arrives as the wheel, which cycles weapons on foot and the radio while driving (gta4_input_hooks.cpp `wheel_route`). Nothing to add |
-| 10 | Mouse-look hold for the two cameras still on retail idle logic | needs play test | which mode drifts decides which function |
+| 10 | Mouse-look hold for the two cameras still on retail idle logic | needs play test | play test 2026-10-10: on-foot modes hold, **every car view swings back**. Cause: the vehicle follow camera's yaw rate always receives a return pull `(targetYaw − yaw)/dt` (sub_8254F848, `fdivs f29`), the stick only adds to it; the earlier cam+716 write was a vehicle-moved timer, not a stick timer (removed). Fix: zero the pull while mouse look is held. Retest the three follow distances first; bonnet and cinematic are separate paths |
+| 22 | Death camera: moving the mouse after dying, the camera snaps back | todo | reported 2026-10-10 play test; the wasted camera is not one of the six hooked cameras, so the mouse rotation is applied then overwritten by its own orbit. Find the function (vtable-called camera update active while the player is dead) |
 
 ## Polish
 | # | Item | Status | Notes |

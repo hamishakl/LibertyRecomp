@@ -3414,6 +3414,11 @@ loc_8254357C:
 	ctx.f0.f64 = double(float(ctx.f30.f64 - ctx.f0.f64));
 	// fdivs f29,f0,f21
 	ctx.f29.f64 = double(float(ctx.f0.f64 / ctx.f21.f64));
+// f29 is the return pull (target yaw - yaw) / dt that the yaw rate always receives; the look stick
+// only adds to it, so releasing the stick swings the camera back behind the vehicle at once. Held
+// mouse look cancels the pull so the camera stays where the mouse left it; once the hold window
+// lapses the retail pull resumes and the camera eases back. r27 is the control at this point.
+if (gta4::input::MouseLookHeld(base, ctx.r27.u32)) ctx.f29.f64 = 0.0;
 	// beq cr6,0x8254feb0
 	if (ctx.cr6.eq) goto loc_825435E8;
 	// lbz r11,904(r31)
@@ -4285,8 +4290,6 @@ loc_82543A98:
 loc_82543B28:
 	// li r11,0
 	ctx.r11.s64 = 0;
-// Held mouse look resets the vehicle camera's idle timer (cam+716), as a deflected stick would.
-if (gta4::input::MouseLookHeld(base, native_control)) REX_STORE_U32(ctx.r31.u32 + 716, 0u);
 	// lfs f1,716(r31)
 	ctx.fpscr.disableFlushMode();
 	temp.u32 = REX_LOAD_U32(ctx.r31.u32 + 716);
