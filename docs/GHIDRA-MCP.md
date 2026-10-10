@@ -37,70 +37,77 @@ gitignored; these images are game code and must not be committed.
 Done on 2026-10-10: `local/ghidra/pal_base.bin` (0x11F0000 bytes) and `local/ghidra/pal_tu5.bin`
 (0x1300000 bytes, 44 patch blocks SHA-1 verified) exist, so start at step 2.
 
-## 2. Install Java, Ghidra, uv
+## 2. Install Java, Ghidra, uv, Maven, Gradle (DONE 2026-10-10)
 
 ```bash
 brew install --cask temurin@21                # Ghidra 12.x needs Java 21
-# Ghidra: ghidra-mcp pins a Ghidra version (12.1.4 at the time of writing). Download that exact
-# release zip from https://github.com/NationalSecurityAgency/ghidra/releases and unzip it to
-# ~/ghidra/ghidra_12.1.4_PUBLIC. The Homebrew cask tracks a different version; avoid it here.
-xattr -dr com.apple.quarantine ~/ghidra/ghidra_12.1.4_PUBLIC
-# uv is already installed at /opt/homebrew/bin/uv
+brew install maven gradle                     # ghidra-mcp build, and Ghidra's native build below
+# ghidra-mcp pins Ghidra 12.1.4 (pom.xml ghidra.version; same major.minor required). Download that
+# release zip, not the Homebrew cask:
+gh release download Ghidra_12.1.4_build -R NationalSecurityAgency/ghidra -p "ghidra_12.1.4_PUBLIC*.zip" -D ~/ghidra
+cd ~/ghidra && unzip -q ghidra_12.1.4_PUBLIC_*.zip && xattr -dr com.apple.quarantine ghidra_12.1.4_PUBLIC
+# uv is at /opt/homebrew/bin/uv
 ```
 
-Run `~/ghidra/ghidra_12.1.4_PUBLIC/ghidraRun` once to confirm it starts, then quit.
-
-## 3. Load the images
-
-Two options. Try the loader first; fall back to the raw import if it fails on these files.
-
-**Option A, XEX loader (preferred).** `XEXLoaderWV` (github.com/zeroKilo/XEXLoaderWV, or the
-SaveEditors fork which ships ready-made zips on its Releases page) is a Ghidra extension that
-reads XEX files directly, including `.xexp` delta patches, and recovers sections and `.pdata`
-functions. Install the zip matching your Ghidra version via **File > Install Extensions**, restart,
-then **File > Import File** on `assets_pal/default.xex`. If the loader offers to apply a patch,
-point it at `default.xexp`.
-
-**Option B, raw image.** **File > Import File** on `local/ghidra/pal_tu5.bin`, format **Raw Binary**,
-language **PowerPC:BE:32:default** (the Xenon is a 64-bit core but all addresses are 32-bit; if
-the decompiler shows 64-bit register noise, re-import as **PowerPC:BE:64:A2ALT-32addr**), base
-address **0x82000000**. The file is an MZ/PE image, so the headers sit at the base and code starts
-at the first section; the function addresses then match `tools/xex/manual_map.json`, the
-`gta4_pal_config.toml` entries and every `sub_82......` name in `generated_pal/`.
-
-Run auto-analysis with defaults. Expect an hour or more on the 20 MB image; let it finish before
-using the MCP. Make a second project the same way for `us_v8.bin` (base 0x82000000 as well) so
-US and PAL can be compared.
-
-Seed the PAL project with what the fork already knows, so names match the code:
-`tools/xex/manual_map.json` (code/data/unresolved) and the `[functions]` table in
-`glue/rexglue-sdk-main/gta4-recomp/gta4_pal_config.toml` can be turned into Ghidra labels with a
-short script once the MCP is up (rename_function / create_label calls), or imported through
-Ghidra's **ImportSymbolsScript** from a `name address` text file.
-
-## 4. Build and install ghidra-mcp
+⚠ **The public 12.1.4 zip ships native binaries for Linux and Windows only.** Without them every
+decompile fails with `os/mac_arm_64/decompile does not exist`. Build them (a few seconds with the
+Command Line Tools present), and copy them beside the shipped platforms, since the build lands in
+`build/os` and the installed launcher did not find them there:
 
 ```bash
-git clone https://github.com/bethington/ghidra-mcp ~/repos/tools/ghidra-mcp
+cd ~/ghidra/ghidra_12.1.4_PUBLIC/support/gradle
+JAVA_HOME=$(/usr/libexec/java_home -v 21) gradle --no-daemon buildNatives   # Homebrew gradle defaults to JDK 27; pin 21
+for m in Decompiler DemanglerGnu FileFormats; do d=../../Ghidra/Features/$m; [ -d $d/build/os/mac_arm_64 ] && mkdir -p $d/os && cp -R $d/build/os/mac_arm_64 $d/os/; done
+```
+
+The 570 MB zip plus 1 GB install plus the Maven/Gradle caches need about 3 GB free. The disk was
+at 141 MB free when this was first attempted; `docs/BACKLOG.md` is not the place for that, but
+check `df -h /System/Volumes/Data` first.
+
+## 3. Build the analysed project (DONE 2026-10-10, repeatable)
+
+`tools/ghidra/analyze_pal.sh` does all of this: imports `local/ghidra/pal_tu5.bin` as a raw binary
+at `0x82000000` with language `PowerPC:BE:32:default`, runs `SeedLibertySymbols.java` to create a
+function at every one of the **38,070 recompiled PAL function addresses** (taken from the address
+table in `generated_pal/gta4_init.cpp` by `make_symbols.py`) plus the 19 resolved data globals from
+`manual_map.json` as labels (`dat_pal_<PAL>_us_<US>`), then auto-analyses and prints the counts.
+
+Result on 2026-10-10: project `~/ghidra/projects/GTAIV_PAL_TU5.gpr`, program `pal_tu5.bin`,
+**38,235 functions, 393k instructions, 108k defined data**, analysis 29 s. Names match every
+`sub_82......` in `generated_pal/`, `gta4_pal_config.toml` and `manual_map.json`.
+
+- Without the seed, a raw import has no entry points and the analysis finds almost nothing. Always
+  seed first.
+- The recompiled address table contains branch-target fragments as well as true functions, so some
+  Ghidra functions are short tails of their neighbour (the radar render-phase constructor at
+  `sub_8236C140` shows as 2 instructions because `sub_8236C148` is also an entry). Read the
+  decompilation of the *parent* when a body looks truncated.
+- An `XEXLoaderWV` import (github.com/zeroKilo/XEXLoaderWV) would recover PE sections and `.pdata`
+  but was not needed; the raw image plus seed gives the same function set the fork uses.
+- The US v8 executable is not on this machine (`assets/default_v8.xex`), so there is no US project;
+  the US side of any comparison comes from upstream's committed `generated/` C++ as before.
+
+## 4. ghidra-mcp (DONE 2026-10-10)
+
+```bash
+git clone https://github.com/bethington/ghidra-mcp ~/repos/tools/ghidra-mcp   # v7.0.0, pins Ghidra 12.1.4
 cd ~/repos/tools/ghidra-mcp
 GH=~/ghidra/ghidra_12.1.4_PUBLIC
-python3 -m tools.setup ensure-prereqs --ghidra-path "$GH"   # wants Maven 3.9+; brew install maven if asked
-python3 -m tools.setup build
-python3 -m tools.setup deploy --ghidra-path "$GH"            # installs the extension into the user profile
-# alternative without Maven: ./gradlew buildExtension -PGHIDRA_INSTALL_DIR="$GH", then
-# File > Install Extensions > Add on the produced GhidraMCP-<version>.zip
+python3 -m tools.setup ensure-prereqs --ghidra-path "$GH"
+python3 -m tools.setup build                      # Maven, ~15 s
+python3 -m tools.setup deploy --ghidra-path "$GH" # installs to ~/Library/ghidra/ghidra_12.1.4_PUBLIC/Extensions/GhidraMCP
 ```
 
-In Ghidra: **File > Configure > Utility > Configure > GhidraMCPPlugin**, tick it, restart. With a
-program open, the plugin listens on `http://127.0.0.1:8089/`:
+`deploy` also **launches the Ghidra GUI** with the plugin enabled and no project. Quit that one
+and start Ghidra on the project instead; the plugin listens on `http://127.0.0.1:8089/`:
 
 ```bash
-curl http://127.0.0.1:8089/check_connection
+~/ghidra/ghidra_12.1.4_PUBLIC/ghidraRun ~/ghidra/projects/GTAIV_PAL_TU5.gpr &
+curl http://127.0.0.1:8089/check_connection                                 # {"status":"ok","server_kind":"gui",...}
+curl -X POST http://127.0.0.1:8089/open_program -H 'Content-Type: application/json' -d '{"path":"/pal_tu5.bin"}'
 ```
 
-## 5. Register the MCP server with Claude Code
-
-User scope, so it is available in every project and nothing with local paths lands in the repo:
+Registered with Claude Code at user scope (`claude mcp list` shows `ghidra-mcp ... Connected`):
 
 ```bash
 claude mcp add-json ghidra-mcp --scope user '{
@@ -108,12 +115,10 @@ claude mcp add-json ghidra-mcp --scope user '{
   "args": ["run", "--directory", "/Users/ham/repos/tools/ghidra-mcp", "bridge-mcp-ghidra", "--transport", "stdio"],
   "env": { "GHIDRA_MCP_URL": "http://127.0.0.1:8089" }
 }'
-claude mcp list                                 # should show ghidra-mcp
 ```
 
-Ghidra must be running with the program open before the bridge is useful; the MCP only relays to
-the plugin's HTTP port. Only one program is served at a time, so switch the open program in Ghidra
-when moving between the US and PAL projects.
+Ghidra must be running with the program open whenever the MCP is used; the bridge only relays to
+the plugin's port. Start a session with the `ghidraRun` line above.
 
 ## Working notes for the session
 
