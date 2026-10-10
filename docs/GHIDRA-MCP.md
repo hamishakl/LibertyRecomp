@@ -120,6 +120,11 @@ claude mcp add-json ghidra-mcp --scope user '{
 Ghidra must be running with the program open whenever the MCP is used; the bridge only relays to
 the plugin's port. Start a session with the `ghidraRun` line above.
 
+Route names worth knowing when poking the plugin directly with curl (the MCP tools wrap the same):
+`/get_functions?name=sub_82543AA0&fields=signature,decompiled_code,callers,xrefs,disassembly`
+(the field is `decompiled_code`, there is no `/decompile` route), `/find_functions`,
+`/list_open_programs`, `/list_project_files`.
+
 ## Working notes for the session
 
 - First tasks worth the setup: the TU5-changed hook review list (`docs/BACKLOG.md`), confirming the
