@@ -136,6 +136,9 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   Its first line is a `device summary` (GPU, Apple family, 32-bit float MSAA support, memory,
   macOS version). **Black screen or hang on another Mac:** send that file. M1 (Apple family 7)
   cannot multisample 32-bit float surfaces; the renderer substitutes RG16Float there and logs it.
+- **Launch flags are not saved.** A cvar given on the command line (`--diagnostics`, `--log_file`,
+  the capture script's CSV paths, `--gta4_performance_hud`) is never written to `native.toml` by the
+  settings menu unless you change it there afterwards.
 - **Hotkeys.** F3 debug overlay, backtick console, F4 settings, F7 achievements, Y / U text chat.
 
 ## Mouse and trackpad

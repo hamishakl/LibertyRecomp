@@ -699,3 +699,27 @@ TEST_CASE("Invalid explicit CLI values do not suppress a valid saved setting", "
   std::filesystem::remove(path);
   rex::cvar::testing::ResetAllForTesting();
 }
+
+TEST_CASE("Untouched command-line values are not written back to the config", "[cvar]") {
+  rex::cvar::testing::ResetAllForTesting();
+  const auto path = std::filesystem::temp_directory_path() / "rex-cli-not-persisted.toml";
+  { std::ofstream file(path); file << "test_int32_flag = 30\n"; }
+  char program[] = "test", text[] = "--test_string_flag=launch", flag[] = "--test_bool_flag";
+  char* args[] = {program, text, flag};
+  rex::cvar::Init(int(std::size(args)), args);
+  rex::cvar::LoadConfig(path);
+  CHECK(REXCVAR_GET(test_string_flag) == "launch");
+  CHECK(REXCVAR_GET(test_bool_flag));
+  auto toml = rex::cvar::SerializeToTOML();
+  // Launch-only values stay out; a saved setting still round-trips.
+  CHECK(toml.find("test_string_flag") == std::string::npos);
+  CHECK(toml.find("test_bool_flag") == std::string::npos);
+  CHECK(toml.find("test_int32_flag = 30") != std::string::npos);
+  // Changing a launch value in the menu makes it a real setting again.
+  REQUIRE(rex::cvar::SetFlagByName("test_string_flag", "menu"));
+  toml = rex::cvar::SerializeToTOML();
+  CHECK(toml.find("test_string_flag = \"menu\"") != std::string::npos);
+  CHECK(toml.find("test_bool_flag") == std::string::npos);
+  std::filesystem::remove(path);
+  rex::cvar::testing::ResetAllForTesting();
+}

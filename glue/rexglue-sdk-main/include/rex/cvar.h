@@ -122,6 +122,8 @@ void LoadConfig(const std::filesystem::path& config_path);
 void ApplyEnvironment();
 void FinalizeInit();
 bool IsFinalized();
+/// Writes every cvar that differs from its default, except values that still equal what the
+/// command line set for this launch (diagnostics, log paths and other one-off overrides).
 [[nodiscard]] bool SaveConfig(const std::filesystem::path& config_path);
 
 //=============================================================================

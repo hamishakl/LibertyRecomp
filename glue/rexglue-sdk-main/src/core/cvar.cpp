@@ -236,7 +236,7 @@ std::optional<size_t> RegisterFlag(FlagEntry entry) {
         stored.setter(*pending_it->second.config);
       }
       if (pending_it->second.cmdline && stored.setter(*pending_it->second.cmdline)) {
-        GetCommandLineValuesStorage()[stored.name] = *pending_it->second.cmdline;
+        GetCommandLineValuesStorage()[stored.name] = stored.getter();
       }
       pending.erase(pending_it);
     }
@@ -502,11 +502,21 @@ std::vector<std::string> ListModifiedFlags() {
   return result;
 }
 
+// A value that still equals what the command line set belongs to that launch, not to the saved
+// configuration: diagnostics flags, log paths and one-off overrides must not persist because the
+// settings menu saved the whole registry while they were in effect. A value the user changed
+// afterwards no longer matches and is saved as usual. Caller holds the registry mutex.
+bool IsUntouchedCommandLineValue(const FlagEntry& entry) {
+  const auto& cli = GetCommandLineValuesStorage();
+  auto it = cli.find(entry.name);
+  return it != cli.end() && it->second == entry.getter();
+}
+
 std::string SerializeToTOML() {
   std::lock_guard lock(GetRegistryMutex());
   std::string result;
   for (const auto& entry : GetRegistryStorage()) {
-    if (entry.getter() != entry.default_value) {
+    if (entry.getter() != entry.default_value && !IsUntouchedCommandLineValue(entry)) {
       if (entry.type == FlagType::String) {
         result += entry.name + " = \"" + entry.getter() + "\"\n";
       } else {
@@ -521,7 +531,8 @@ std::string SerializeToTOML(std::string_view category) {
   std::lock_guard lock(GetRegistryMutex());
   std::string result;
   for (const auto& entry : GetRegistryStorage()) {
-    if (entry.category == category && entry.getter() != entry.default_value) {
+    if (entry.category == category && entry.getter() != entry.default_value &&
+        !IsUntouchedCommandLineValue(entry)) {
       if (entry.type == FlagType::String) {
         result += entry.name + " = \"" + entry.getter() + "\"\n";
       } else {
@@ -546,6 +557,15 @@ void UnregisterChangeCallbacks(std::string_view name) {
 // Initialization
 //=============================================================================
 
+// Remember what the command line set, as the cvar now renders it, so SaveConfig can tell an
+// untouched launch flag from a value the user changed afterwards.
+void RecordCommandLineValue(const std::string& name) {
+  std::lock_guard lock(GetRegistryMutex());
+  auto it = GetRegistryIndex().find(name);
+  if (it != GetRegistryIndex().end())
+    GetCommandLineValuesStorage()[name] = GetRegistryStorage()[it->second].getter();
+}
+
 std::vector<std::string> Init(int argc, char** argv) {
   CLI::App app{"", ""};
   app.allow_extras();
@@ -556,13 +576,13 @@ std::vector<std::string> Init(int argc, char** argv) {
           "--" + entry.name + ",!--no-" + entry.name,
           [name = entry.name](int64_t count) {
             const std::string value = count > 0 ? "true" : "false";
-            if (SetFlagByName(name, value)) GetCommandLineValuesStorage()[name] = value;
+            if (SetFlagByName(name, value)) RecordCommandLineValue(name);
           },
           entry.description);
     } else {
       app.add_option_function<std::string>(
           "--" + entry.name, [name = entry.name](const std::string& value) {
-            if (SetFlagByName(name, value)) GetCommandLineValuesStorage()[name] = value;
+            if (SetFlagByName(name, value)) RecordCommandLineValue(name);
           },
           entry.description);
     }
