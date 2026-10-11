@@ -1,3 +1,4 @@
+#include <sys/sysctl.h>
 #include <ctime>
 #include <chrono>
 #include <xxhash.h>
@@ -63,6 +64,24 @@ bool Renderer::Initialize(std::string& error,const std::filesystem::path& direct
     if(s.ready) return true;
     if(!s.context || !s.context->device || s.context->device.argumentBuffersSupport!=MTLArgumentBuffersTier2) {
       error="Native Metal title rendering requires Tier 2 argument buffers"; return false;
+    }
+    {
+      // Logged at warning level on purpose: the always-on errors log only keeps warnings and
+      // above, and a report from another Mac is useless without the GPU family and memory.
+      id<MTLDevice> device=s.context->device;
+      int family=0;
+      for(int f=9;f>=1;--f) {
+        if([device supportsFamily:MTLGPUFamily(MTLGPUFamilyApple1+(f-1))]) {family=f; break;}
+      }
+      uint64_t memsize=0; size_t len=sizeof(memsize);
+      sysctlbyname("hw.memsize",&memsize,&len,nullptr,0);
+      REXLOG_WARN("gta4-metal: device summary (informational): {} family=Apple{} 32-bit-float-msaa={} "
+                  "bc-textures={} working-set={:.1f} GB memory={:.1f} GB macOS {}",
+                  device.name.UTF8String, family, device.supports32BitMSAA ? "yes" : "no",
+                  device.supportsBCTextureCompression ? "yes" : "no",
+                  double(device.recommendedMaxWorkingSetSize)/(1024.0*1024.0*1024.0),
+                  double(memsize)/(1024.0*1024.0*1024.0),
+                  NSProcessInfo.processInfo.operatingSystemVersionString.UTF8String);
     }
     if(directory.empty()) {
       if(!s.stock.Initialize(error) || !s.overrides.Initialize(error)) return false;

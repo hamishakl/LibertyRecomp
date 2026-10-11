@@ -133,6 +133,9 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
 - **Errors log.** Even without diagnostics, warnings and errors go to
   `~/Library/Application Support/LibertyRecomp/logs/Liberty Recompiled-errors.log` (the path is
   printed at start). After a crash, look there first; `log_quiet_errors = false` turns it off.
+  Its first line is a `device summary` (GPU, Apple family, 32-bit float MSAA support, memory,
+  macOS version). **Black screen or hang on another Mac:** send that file. M1 (Apple family 7)
+  cannot multisample 32-bit float surfaces; the renderer substitutes RG16Float there and logs it.
 - **Hotkeys.** F3 debug overlay, backtick console, F4 settings, F7 achievements, Y / U text chat.
 
 ## Mouse and trackpad
