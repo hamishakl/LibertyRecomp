@@ -26,6 +26,7 @@ class Gta4MetalGraphicsSystem final : public system::IGraphicsSystem {
   bool ExecuteTitleCommand(uint32_t title_id, uint32_t abi, const void* command, size_t size,
                            void* result, size_t result_size) override;
   void Shutdown() override;
+  void PrepareShaderStorage(const std::filesystem::path& cache_root) override;
   void InitializeShaderStorage(const std::filesystem::path& cache_root, uint32_t title_id, bool blocking) override;
   bool BeginShaderPrecompile(std::function<void()> on_complete) override;
   ShaderPrecompileProgress GetShaderPrecompileProgress() const override;

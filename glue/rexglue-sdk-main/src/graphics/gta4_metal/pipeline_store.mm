@@ -1,11 +1,57 @@
 #include "pipeline_store.h"
 
+#include <climits>
 #include <cstring>
+#include <unistd.h>
 #include <rex/logging.h>
 #include <xxhash.h>
 #include "../../ui/metal/context.h"
 
 namespace rex::graphics::gta4_metal {
+
+namespace {
+constexpr const char* kRebuildMarker = "rebuild-pending";
+}
+
+std::filesystem::path PipelineStore::Directory(const std::filesystem::path& cache_root, uint32_t title_id) {
+  char title[16];
+  std::snprintf(title, sizeof(title), "%08X", title_id);
+  return cache_root / "gta4-metal" / title;
+}
+
+void PipelineStore::PrepareLaunch(const std::filesystem::path& cache_root, uint32_t title_id) {
+  std::error_code ec;
+  if (!std::filesystem::exists(Directory(cache_root, title_id) / kRebuildMarker, ec)) return;
+  // Apple keeps a per-app shader cache under the user cache directory. Pipelines served from it are
+  // not compiled in this process, and serializing a binary archive that holds one of them can fault
+  // inside Metal (see pipeline_store.h). The marker says this launch rebuilds, so start that cache
+  // empty; everything it held is recompiled into our archive by the rebuild anyway.
+  char user_cache[PATH_MAX];
+  const size_t length = confstr(_CS_DARWIN_USER_CACHE_DIR, user_cache, sizeof(user_cache));
+  NSString* bundle = [[NSBundle mainBundle] bundleIdentifier];
+  if (!length || length > sizeof(user_cache) || !bundle) {
+    REXLOG_WARN("gta4-metal-pipeline-cache: pipeline rebuild pending but the host shader cache "
+                "location is unknown; leaving it in place");
+    return;
+  }
+  const auto host_cache = std::filesystem::path(user_cache) / bundle.UTF8String / "com.apple.metal";
+  if (!std::filesystem::exists(host_cache, ec)) return;
+  uintmax_t bytes = 0, files = 0;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(host_cache, ec)) {
+    if (!entry.is_regular_file(ec)) continue;
+    ++files;
+    bytes += entry.file_size(ec);
+  }
+  std::filesystem::remove_all(host_cache, ec);
+  if (ec) {
+    REXLOG_WARN("gta4-metal-pipeline-cache: could not clear the host shader cache {}: {}",
+                host_cache.string(), ec.message());
+    return;
+  }
+  REXLOG_WARN("gta4-metal-pipeline-cache: pipeline rebuild pending; cleared the host shader cache {} "
+              "({} files, {:.1f} MB) so the rebuilt archive can be serialized",
+              host_cache.string(), files, double(bytes) / (1024.0 * 1024.0));
+}
 
 PipelineRecipe RecipeFromDescriptor(MTLRenderPipelineDescriptor* descriptor, const RecipeFunction& vertex,
                                     const RecipeFunction& fragment) {
@@ -91,9 +137,7 @@ bool PipelineStore::Open(id<MTLDevice> device, const std::filesystem::path& cach
                          uint64_t shader_identity, std::string& error) {
   std::lock_guard lock(mutex_);
   device_ = device;
-  char title[16];
-  std::snprintf(title, sizeof(title), "%08X", title_id);
-  directory_ = cache_root / "gta4-metal" / title;
+  directory_ = Directory(cache_root, title_id);
   std::error_code ec;
   std::filesystem::create_directories(directory_, ec);
   if (ec) { error = "Cannot create Metal pipeline cache directory: " + ec.message(); return false; }
@@ -108,6 +152,8 @@ bool PipelineStore::Open(id<MTLDevice> device, const std::filesystem::path& cach
   recipes_path_ = directory_ / "recipes-v1.bin";
   archive_path_ = directory_ / (std::string("pipelines-") + identity + ".metalar");
   manifest_path_ = directory_ / (std::string("pipelines-") + identity + ".manifest");
+  marker_path_ = directory_ / kRebuildMarker;
+  marker_present_ = std::filesystem::exists(marker_path_, ec);
 
   // Recipe log: a sequence of fixed-size records; a torn tail record is ignored.
   if (std::ifstream in(recipes_path_, std::ios::binary); in) {
@@ -152,6 +198,26 @@ void PipelineStore::Record(const PipelineRecipe& recipe) {
     log_.write(reinterpret_cast<const char*>(&recipe), sizeof(recipe));
     log_.flush();
   }
+  // This pipeline was buildable (it was just built), so the next launch rebuilds the archive.
+  TouchRebuildMarker();
+}
+
+void PipelineStore::TouchRebuildMarker() {
+  if (marker_present_ || marker_path_.empty()) return;
+  std::ofstream(marker_path_, std::ios::binary | std::ios::trunc) << "pipeline rebuild pending\n";
+  marker_present_ = true;
+}
+
+void PipelineStore::ClearRebuildMarker() {
+  if (marker_path_.empty()) return;
+  std::error_code ec;
+  std::filesystem::remove(marker_path_, ec);
+  marker_present_ = false;
+}
+
+void PipelineStore::Settle() {
+  std::lock_guard lock(mutex_);
+  ClearRebuildMarker();
 }
 
 std::vector<PipelineRecipe> PipelineStore::Pending() const {
@@ -175,6 +241,9 @@ bool PipelineStore::Reset(std::string& error) {
   archive_ = fresh;
   archived_.clear();
   dirty_ = true;
+  // Stays until Save() succeeds: a crash or force-quit during the rebuild rebuilds again next
+  // launch, with the host shader cache cleared first (PrepareLaunch).
+  TouchRebuildMarker();
   return true;
 }
 
@@ -213,6 +282,7 @@ bool PipelineStore::Save(std::string& error) {
   std::ofstream manifest(manifest_path_, std::ios::binary | std::ios::trunc);
   for (uint64_t hash : archived_) manifest.write(reinterpret_cast<const char*>(&hash), sizeof(hash));
   dirty_ = false;
+  ClearRebuildMarker();
   return true;
 }
 

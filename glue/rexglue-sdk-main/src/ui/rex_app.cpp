@@ -403,6 +403,9 @@ bool ReXApp::SetupPresentation() {
   }
 
   if (config_.graphics) {
+    // Before the device exists; the cache root is final except on a first run, when there is
+    // nothing cached yet anyway.
+    if (!cache_root_.empty()) config_.graphics->PrepareShaderStorage(cache_root_);
     X_STATUS status = config_.graphics->SetupPresentation(&app_context());
     if (XFAILED(status)) {
       REXLOG_ERROR("Graphics presentation setup failed: {:08X}", status);

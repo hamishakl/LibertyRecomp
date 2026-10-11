@@ -1,4 +1,5 @@
 #include "graphics_system.h"
+#include "pipeline_store.h"
 #include "renderer.h"
 
 #include <rex/graphics/gta4_native/fire_escape_trace.h>
@@ -145,6 +146,11 @@ bool Gta4MetalGraphicsSystem::ExecuteTitleCommand(uint32_t title_id, uint32_t ab
   return success;
 }
 
+void Gta4MetalGraphicsSystem::PrepareShaderStorage(const std::filesystem::path& cache_root) {
+  // Runs before the Metal device exists (see PipelineStore::PrepareLaunch).
+  PipelineStore::PrepareLaunch(cache_root, gta4_native::kTitleId);
+}
+
 void Gta4MetalGraphicsSystem::InitializeShaderStorage(const std::filesystem::path& cache_root,
                                                       uint32_t title_id, bool blocking) {
   (void)blocking;
@@ -160,6 +166,9 @@ bool Gta4MetalGraphicsSystem::BeginShaderPrecompile(std::function<void()> on_com
   {
     std::lock_guard lock(renderer_mutex_);
     if (renderer_) pending = renderer_->PendingPipelineCount();
+    // Recipes this build cannot compile (e.g. temporal shaders while temporal AA is off) do not
+    // trigger a rebuild, so the next launch need not prepare for one either.
+    if (renderer_ && !pending) renderer_->SettlePipelineStore();
   }
   if (!pending || precompile_thread_.joinable()) return false;
   precompile_completed_ = 0;

@@ -54,9 +54,22 @@ uint64_t HashRecipe(const PipelineRecipe& recipe);
 // <cache_root>/gta4-metal/<title>/recipes-v1.bin                append-only recipe log
 // <cache_root>/gta4-metal/<title>/pipelines-<identity>.metalar  MTLBinaryArchive
 // <cache_root>/gta4-metal/<title>/pipelines-<identity>.manifest recipe hashes held by that archive
+// <cache_root>/gta4-metal/<title>/rebuild-pending               present while the next launch will rebuild
 // The identity covers the GPU, the OS build and the shader archives, so any change rebuilds it.
+//
+// Serializing a rebuilt archive faults inside Metal (null dispatch_retain in
+// -[_MTLBinaryArchive materializeAirNTFromOnlineForSlice:]) when the pipelines were served from a
+// stale or damaged entry in Apple's own per-app shader cache rather than compiled in this process.
+// Reproduced 2026-10-11: the same 482-pipeline rebuild crashed with the existing
+// <DARWIN_USER_CACHE_DIR>/<bundle id>/com.apple.metal and saved in 5 s with that directory moved
+// aside. The rebuild-pending marker lets PrepareLaunch clear that cache before Metal is first used.
 class PipelineStore {
  public:
+  // Call before the Metal device exists. When a rebuild is pending (new recipes were recorded, or a
+  // previous rebuild never finished saving), removes Apple's per-app shader cache so the rebuilt
+  // pipelines compile fresh and the archive can be serialized. Logs what it did.
+  static void PrepareLaunch(const std::filesystem::path& cache_root, uint32_t title_id);
+
   bool Open(id<MTLDevice> device, const std::filesystem::path& cache_root, uint32_t title_id,
             uint64_t shader_identity, std::string& error);
   bool is_open() const { return archive_ != nil; }
@@ -75,16 +88,23 @@ class PipelineStore {
   // Marks a recipe that cannot be built with this build's shaders, so it is not retried every launch.
   void Skip(uint64_t recipe_hash);
   bool Save(std::string& error);
+  // Nothing buildable is pending this launch: the next launch will not rebuild either.
+  void Settle();
 
  private:
+  static std::filesystem::path Directory(const std::filesystem::path& cache_root, uint32_t title_id);
+  void TouchRebuildMarker();  // caller holds mutex_
+  void ClearRebuildMarker();  // caller holds mutex_
+
   mutable std::mutex mutex_;
   id<MTLDevice> device_ = nil;
   id<MTLBinaryArchive> archive_ = nil;
-  std::filesystem::path directory_, recipes_path_, archive_path_, manifest_path_;
+  std::filesystem::path directory_, recipes_path_, archive_path_, manifest_path_, marker_path_;
   std::vector<PipelineRecipe> recipes_;
   std::unordered_set<uint64_t> recorded_, archived_;
   std::ofstream log_;
   bool dirty_ = false;
+  bool marker_present_ = false;
 };
 
 }  // namespace rex::graphics::gta4_metal

@@ -99,6 +99,10 @@ class IGraphicsSystem {
     return false;
   }
 
+  // Called before SetupPresentation, so before any GPU API object exists: housekeeping the shader
+  // storage needs done while the host's own shader caches are still closed. Default: none.
+  virtual void PrepareShaderStorage(const std::filesystem::path& cache_root) { (void)cache_root; }
+
   // Persistent shader/pipeline storage under the cache root. Default: none.
   virtual void InitializeShaderStorage(const std::filesystem::path& cache_root, uint32_t title_id,
                                        bool blocking) {

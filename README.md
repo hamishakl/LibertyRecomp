@@ -136,6 +136,11 @@ Every setting in `native.toml` can be passed as `--name=value`. Useful ones:
   Its first line is a `device summary` (GPU, Apple family, 32-bit float MSAA support, memory,
   macOS version). **Black screen or hang on another Mac:** send that file. M1 (Apple family 7)
   cannot multisample 32-bit float surfaces; the renderer substitutes RG16Float there and logs it.
+- **Crash or black screen at the shader loading screen.** Apple keeps its own shader cache for the
+  app under `$(getconf DARWIN_USER_CACHE_DIR)/OZORDI.LibertyRecomp/com.apple.metal`; a stale entry
+  there makes Metal fault while saving the rebuilt pipeline archive. The game now clears that cache
+  on the launch after a failed rebuild (the errors log says `cleared the host shader cache`), so a
+  second launch recovers by itself. To do it by hand, delete that directory with the game closed.
 - **Launch flags are not saved.** A cvar given on the command line (`--diagnostics`, `--log_file`,
   the capture script's CSV paths, `--gta4_performance_hud`) is never written to `native.toml` by the
   settings menu unless you change it there afterwards.

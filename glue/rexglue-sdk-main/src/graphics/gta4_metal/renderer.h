@@ -43,6 +43,8 @@ class Renderer {
   // Launch-time pipeline cache (PipelineStore). Call after Initialize, before the title submits commands.
   bool OpenPipelineStore(const std::filesystem::path& cache_root, uint32_t title_id, std::string& error);
   size_t PendingPipelineCount() const;
+  // Nothing buildable is pending, so no rebuild will run this launch or the next.
+  void SettlePipelineStore();
   // Compiles recorded-but-unarchived pipelines into the binary archive. progress(done, total) returns
   // false to stop early; work done so far is still saved.
   bool PrecompilePipelines(const std::function<bool(uint32_t, uint32_t)>& progress, std::string& error);

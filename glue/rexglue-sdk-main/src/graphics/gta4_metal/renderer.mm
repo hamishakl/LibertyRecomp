@@ -639,6 +639,8 @@ size_t Renderer::PendingPipelineCount() const {
   return size_t(std::count_if(pending.begin(),pending.end(),[&](const auto& r){return state_->RecipeBuildable(r);}));
 }
 
+void Renderer::SettlePipelineStore() { state_->pipeline_store.Settle(); }
+
 bool Renderer::PrecompilePipelines(const std::function<bool(uint32_t,uint32_t)>& progress,std::string& error) {
   auto& s=*state_;
   if(!s.pipeline_store.is_open()) return true;
