@@ -2,6 +2,7 @@
 #include "resource_state.h"
 #include "guest_state.h"
 #include <rex/cvar.h>
+#include <rex/logging.h>
 #include <algorithm>
 #include <bit>
 #include <fmt/format.h>
@@ -115,9 +116,22 @@ std::shared_ptr<SurfaceResource> ResourceStore::Surface(const gta4_native::Surfa
       width=found->second.physical_width; height=found->second.physical_height;
       if(found->second.sample_count_override) samples=found->second.sample_count_override;
     }
-    const auto format=SurfaceFormat(guest.format,depth);
+    auto format=SurfaceFormat(guest.format,depth);
     if(!width || !height || width>16384 || height>16384 || format==MTLPixelFormatInvalid) {
       error="Unsupported native surface format, extent or sample count"; return {};
+    }
+    if(samples>1 && format==MTLPixelFormatR32Float && !state_->context->device.supports32BitMSAA) {
+      // Apple GPU family 7 (M1, A14) cannot multisample 32-bit float formats; M2 and later can.
+      // Keep the pass's sample count so sibling attachments still match, and render into RG16Float
+      // instead. Resolves convert by format, so the title's R32F destination texture is unchanged;
+      // the 16-bit precision applies only on devices that would otherwise fail the allocation.
+      static bool warned=false;
+      if(!warned) {
+        warned=true;
+        REXLOG_WARN("gta4-metal: this GPU cannot multisample 32-bit float surfaces; surface {:08X} "
+                    "({}x{}, {} samples) renders as RG16Float", guest.handle, width, height, samples);
+      }
+      format=MTLPixelFormatRG16Float;
     }
     auto existing=state_->surfaces.find(guest.handle);
     if(existing!=state_->surfaces.end()) {
