@@ -1,3 +1,7 @@
+#include <crt_externs.h>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
 #include "gta4_app.h"
 #include "gta4_present_mode_policy.h"
 #include "gta4_streaming_hooks.h"
@@ -655,9 +659,17 @@ std::optional<rex::PathConfig> GTA4App::OnFinalizePaths(
 }
 
 void GTA4App::OnPreSetup(rex::RuntimeConfig& config) {
-  // Apple's Metal Performance HUD (FPS, GPU time, frame-interval graph). Metal reads the variable
-  // when the device is created, so it must be set before the GPU plugin loads below.
-  if (REXCVAR_GET(gta4_performance_hud)) setenv("MTL_HUD_ENABLED", "1", 1);
+  // Apple's Metal Performance HUD (FPS, GPU time, frame-interval graph). Metal reads
+  // MTL_HUD_ENABLED while the framework loads, which for this binary is before main(), so a
+  // setenv() here is too late and CAMetalLayer.developerHUDProperties does not help either
+  // (tried 2026-10-11). Restart the process with the variable in its environment instead; this
+  // runs before any window exists, and the variable stops the restart from repeating.
+  if (REXCVAR_GET(gta4_performance_hud) && !getenv("MTL_HUD_ENABLED")) {
+    setenv("MTL_HUD_ENABLED", "1", 1);
+    REXLOG_INFO("Metal performance HUD requested; restarting with MTL_HUD_ENABLED=1");
+    execv(*_NSGetArgv()[0] ? _NSGetArgv()[0][0] : "", *_NSGetArgv());
+    REXLOG_WARN("Could not restart for the Metal performance HUD: {}", std::strerror(errno));
+  }
   rex::input::mnk::SetNativeControllerCompatibilityBindings(
       gta4::input::KeyboardControllerBindings());
   if (!config.graphics && config.gpu_plugin.empty()) {
